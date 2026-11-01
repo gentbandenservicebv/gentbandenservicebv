@@ -1,0 +1,197 @@
+/* ─── Booking Spotlight Section ─────────────────────────────────── */
+.booking-spotlight-section {
+  padding: 40px 0 60px;
+  background: var(--surface);
+}
+
+.booking-spotlight-card {
+  background: linear-gradient(135deg, #0b192c 0%, #1e3e62 100%);
+  border-radius: var(--radius-xl);
+  padding: 56px 48px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 48px -12px rgba(11, 25, 44, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 768px) {
+  .booking-spotlight-card {
+    padding: 36px 24px;
+    border-radius: var(--radius-lg);
+  }
+}
+
+.booking-spotlight-card::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(1, 110, 185, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.booking-spotlight-content {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.booking-spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  margin-bottom: 16px;
+}
+
+.badge-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #4ade80;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #4ade80;
+  animation: pulse 2s infinite;
+}
+
+.booking-spotlight-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 600px) {
+  .booking-spotlight-title {
+    font-size: 1.7rem;
+  }
+}
+
+.booking-spotlight-desc {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 640px;
+  margin: 0 auto 36px;
+}
+
+/* 4 steps preview bar */
+.booking-steps-preview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+  text-align: left;
+}
+
+@media (max-width: 860px) {
+  .booking-steps-preview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-steps-preview {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preview-step-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.preview-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(1, 110, 185, 0.4);
+}
+
+.preview-step-item strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.preview-step-item span {
+  display: block;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Actions */
+.booking-spotlight-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.booking-btn-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  padding: 14px 32px;
+  box-shadow: 0 8px 24px rgba(1, 110, 185, 0.4);
+  transition: all 0.2s ease;
+}
+
+.booking-btn-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(1, 110, 185, 0.6);
+}
+
+.booking-btn-call {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  padding: 14px 28px;
+}
+
+.booking-btn-call:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+/* Trust footer line */
+.booking-trust-line {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
+  flex-wrap: wrap;
+}

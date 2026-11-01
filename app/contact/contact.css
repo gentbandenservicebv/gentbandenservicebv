@@ -1,0 +1,639 @@
+/* ─── Contact Page Styling ─────────────────────────────────────── */
+.page-hero {
+  padding: 135px 0 50px;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--dark);
+}
+
+.contact-layout {
+  padding: 60px 0 80px;
+  background: var(--surface);
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+/* Contact Info Sidebar */
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Appointment wizard callout banner */
+.contact-appointment-callout {
+  background: linear-gradient(135deg, #0b192c 0%, #1e3e62 100%);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  box-shadow: 0 8px 24px rgba(11, 25, 44, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-appointment-callout::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(1, 110, 185, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.callout-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.callout-content {
+  flex: 1;
+}
+
+.callout-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.callout-text {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin-bottom: 14px;
+}
+
+.callout-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(1, 110, 185, 0.3);
+  transition: all 0.2s ease;
+}
+
+.callout-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(1, 110, 185, 0.5);
+}
+
+/* Channels */
+.contact-channel-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.contact-channel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.contact-channel-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: rgba(1, 110, 185, 0.08);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contact-channel-card--whatsapp .contact-channel-icon {
+  background: rgba(37, 211, 102, 0.12);
+  color: #16a34a;
+}
+
+.contact-channel-title {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.contact-channel-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dark);
+  text-decoration: none;
+  display: block;
+  line-height: 1.3;
+}
+
+.contact-channel-value:hover {
+  color: var(--primary);
+}
+
+.contact-channel-desc {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* Hours Card */
+.contact-hours-card {
+  background: #0f172a;
+  color: var(--white);
+  border-radius: var(--radius-md);
+  padding: 24px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.contact-hours-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contact-badge-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.contact-badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.contact-hours-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-hours-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.contact-hours-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.contact-hours-row strong {
+  color: #ffffff;
+}
+
+.contact-hours-card .btn--outline {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.contact-hours-card .btn--outline:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(1, 110, 185, 0.4);
+}
+
+/* ── Form Card ─────────────────────────────────────────────────── */
+.contact-form-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 38px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 600px) {
+  .contact-form-card {
+    padding: 24px 18px;
+  }
+}
+
+.contact-form-header {
+  margin-bottom: 28px;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 600px) {
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.form-field label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.form-field label span.req {
+  color: #e63946;
+  margin-left: 2px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: #ffffff;
+  color: var(--dark);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(1, 110, 185, 0.12);
+  background: #ffffff;
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  background: #f8fafc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Custom styled Select */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.select-wrapper select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.select-wrapper::after {
+  content: "▾";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 130px;
+  line-height: 1.5;
+}
+
+/* Privacy Note */
+.form-privacy-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e2e8f0;
+}
+
+.privacy-shield-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Submit Button & Animations */
+.contact-submit-btn {
+  padding: 14px 28px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(1, 110, 185, 0.25);
+}
+
+.contact-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(1, 110, 185, 0.4);
+}
+
+.btn-send-flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.contact-submit-btn:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.btn-loading-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.spinner-dots {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error message */
+.form-error-alert {
+  background: #fef2f2;
+  border: 1.5px solid #ef4444;
+  color: #991b1b;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Success Box */
+.form-success-box {
+  background: #f0fdf4;
+  border: 1.5px solid #22c55e;
+  border-radius: var(--radius-md);
+  padding: 40px 24px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.form-success-icon {
+  width: 64px;
+  height: 64px;
+  background: #22c55e;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 auto 18px;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.35);
+}
+
+/* ── Map & Location Showcase Section ───────────────────────────── */
+.contact-map-section {
+  padding: 70px 0;
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.map-card-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.03);
+}
+
+@media (max-width: 900px) {
+  .map-card-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map-card-info {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .map-card-info {
+    padding: 24px 20px;
+  }
+}
+
+.map-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-features-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.check-bullet {
+  color: #16a34a;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.map-embed-container {
+  min-height: 380px;
+  width: 100%;
+  background: #e2e8f0;
+  position: relative;
+}
+
+.map-embed-container iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* ── FAQ Section ───────────────────────────────────────────────── */
+.contact-faq {
+  padding: 80px 0;
+  background: var(--surface);
+}
+
+.faq-list {
+  max-width: 800px;
+  margin: 40px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.faq-question {
+  width: 100%;
+  text-align: left;
+  padding: 20px 24px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--dark);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.faq-chevron {
+  font-size: 1.2rem;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.faq-item--open .faq-chevron {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 24px 20px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 0.94rem;
+}

@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "skills": {
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "0c30be0e118c2b7a0c4c57bd9e63bf110c7e420a79ec6ce7997153f3b1e066ee"
+    },
+    "emil-design-eng": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "computedHash": "51f2537e04d15911b41d78e2de24c36a0e26d41beae15e82a954fe5496a5eda9"
+    },
+    "prisma-8": {
+      "source": "prisma/orm",
+      "sourceType": "github",
+      "skillPath": "skills/prisma-8/SKILL.md",
+      "computedHash": "8f4c6249621e4614c13f8858a83deb630361cb80562dcfca304680e81b4e0bae"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-client-api/SKILL.md",
+      "computedHash": "cbbabff961c8e16b2d59f8c1ffb4e7e20be52154e778ab95121e0211d6d09969"
+    },
+    "prisma-database-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-database-setup/SKILL.md",
+      "computedHash": "0e11bb75ddfba8c6ee3dd776742699f7fe993d530497273232f1ffac80025e15"
+    },
+    "prisma-orm-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-orm-setup/SKILL.md",
+      "computedHash": "08c8bc188c5a304f549aea607320905c9edc0485692182bf590a56dfc71617ca"
+    },
+    "prisma-postgres-setup": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-postgres-setup/SKILL.md",
+      "computedHash": "db538316e4731435eaf259dbc51ebc3766442fa2a5e07c238918e7fb92d9bb93"
+    },
+    "prisma-upgrade-v7": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-upgrade-v7/SKILL.md",
+      "computedHash": "9a65f02d4ae2f3d1e81efb6be888f33a083b1c06d866ff5f762cc30786e4c8ce"
+    },
+    "programmatic-seo": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": "skills/programmatic-seo/SKILL.md",
+      "computedHash": "ed160b6c3692ff1d78c4cf2683d79d8960f5b99f479fce507b91ba712061a530"
+    },
+    "react-email": {
+      "source": "resend/react-email",
+      "sourceType": "github",
+      "skillPath": "skills/react-email/SKILL.md",
+      "computedHash": "da0feefc6ddf4aaeff930ab203d269774da464429e35b178d2403d69d2dc2fb3"
+    },
+    "resend": {
+      "source": "resend/resend-skills",
+      "sourceType": "github",
+      "skillPath": "skills/resend/SKILL.md",
+      "computedHash": "e12ac96a3c05509aabf1b03f40a3112e710e1bda060161b6495f851b7ac18f34"
+    },
+    "resend-design-skills": {
+      "source": "resend/design-skills",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "7714b74c6eca4e54de328fff00d23515807b0dee84dfc0e0d9ef0f7a0c83e722"
+    },
+    "seo-audit": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "skillPath": "skills/seo-audit/SKILL.md",
+      "computedHash": "9a94c66cb3098b03037f072b6f561cca75410c6d8611e50646baf9e8a5dabe8f"
+    },
+    "seo-local": {
+      "source": "agricidaniel/claude-seo",
+      "sourceType": "github",
+      "skillPath": "skills/seo-local/SKILL.md",
+      "computedHash": "01fe25e2495267f9491b1a2cc4d4fe6573840b162b0540af2cba25d0463c1e85"
+    },
+    "stripe-best-practices": {
+      "source": "stripe/ai",
+      "sourceType": "github",
+      "skillPath": "skills/stripe-best-practices/SKILL.md",
+      "computedHash": "671199d8bc7445ac6eaedabac838c562042476a8b353cb970bdfc6777bafebea"
+    },
+    "upgrade-stripe": {
+      "source": "stripe/ai",
+      "sourceType": "github",
+      "skillPath": "skills/upgrade-stripe/SKILL.md",
+      "computedHash": "9557ce790f5ca431be170cd3fe01a3566815fba65c7ce47ffd9414af8bff033d"
+    },
+    "uploadthing-nextjs": {
+      "source": "flohhhhh/skills",
+      "sourceType": "github",
+      "skillPath": "uploadthing-nextjs/SKILL.md",
+      "computedHash": "1a9fc2ecbe644fa1dce141cee80977822eff99affea569a729a23eeb2463a43d"
+    }
+  }
+}

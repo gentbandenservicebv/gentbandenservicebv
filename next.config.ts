@@ -5,6 +5,13 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
   },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "utfs.io" },
+      { protocol: "https", hostname: "**.ufs.sh" },
+      { protocol: "https", hostname: "cdn.tiresleader.com" },
+    ],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -14,6 +21,20 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: "/auth/signin",
+        permanent: true,
+      },
+      {
+        source: "/register",
+        destination: "/auth/signup",
+        permanent: true,
+      },
+    ];
   },
 };
 

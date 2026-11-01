@@ -1,0 +1,423 @@
+/* ─── Tires Section (Nieuw én tweedehands) ───────────────────── */
+.tires-section {
+  background: var(--surface);
+  position: relative;
+  scroll-margin-top: 80px;
+}
+
+/* Header typography assurance */
+.tires-section .section-header .label {
+  color: #016EB9 !important;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.tires-section .section-header .h2 {
+  color: #0F1117 !important;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.tires-section .section-header .lead {
+  color: #374151 !important;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Grid Layout */
+.tires-split {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+  align-items: stretch;
+}
+
+@media (max-width: 960px) {
+  .tires-split {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* ─── Card ───────────────────────────────────────────────────── */
+.tires-card {
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  border: 2px solid #E5E7EB;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.tires-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.16);
+}
+
+.tires-card--new {
+  border-color: rgba(1, 110, 185, 0.28);
+}
+
+.tires-card--new:hover {
+  border-color: #016EB9;
+}
+
+.tires-card--used {
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.tires-card--used:hover {
+  border-color: #10B981;
+}
+
+/* Media Showcase */
+.tires-card__media {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  background: #0F1117;
+}
+
+@media (max-width: 640px) {
+  .tires-card__media {
+    height: 220px;
+  }
+}
+
+.tires-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tires-card:hover .tires-card__img {
+  transform: scale(1.05);
+}
+
+/* Badge on Image */
+.tires-card__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.tires-card__badge--new {
+  background: #016EB9;
+}
+
+.tires-card__badge--used {
+  background: #059669;
+}
+
+/* Card Body */
+.tires-card__body {
+  padding: 32px 32px 36px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 20px;
+  background: #FFFFFF;
+}
+
+@media (max-width: 640px) {
+  .tires-card__body {
+    padding: 24px 20px 28px;
+  }
+}
+
+/* Top Section (Title + Price) */
+.tires-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tires-card__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tires-card__tag {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tires-card__tag--new {
+  color: #016EB9 !important;
+}
+
+.tires-card__tag--used {
+  color: #059669 !important;
+}
+
+.tires-card__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0F1117 !important;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Price Pill */
+.tires-card__price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.tires-card__price--new {
+  background: #EFF6FF;
+  border: 1.5px solid #93C5FD;
+}
+
+.tires-card__price--used {
+  background: #ECFDF5;
+  border: 1.5px solid #6EE7B7;
+}
+
+.tires-card__price-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4B5563 !important;
+}
+
+.tires-card__price-val {
+  font-size: 1.625rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.tires-card__price--new .tires-card__price-val {
+  color: #016EB9 !important;
+}
+
+.tires-card__price--used .tires-card__price-val {
+  color: #059669 !important;
+}
+
+.tires-card__price-unit {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #4B5563 !important;
+}
+
+/* Description */
+.tires-card__desc {
+  color: #374151 !important;
+  font-size: 0.9875rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* Features */
+.tires-card__features-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.tires-card__features-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111827 !important;
+  letter-spacing: -0.01em;
+}
+
+.tires-card__features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tires-card__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #1F2937 !important;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.check-icon-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.check-icon-circle--blue {
+  background: #016EB9;
+}
+
+.check-icon-circle--green {
+  background: #10B981;
+}
+
+/* Action Buttons Container */
+.tires-card__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #F3F4F6;
+}
+
+/* Custom Primary Button (Nieuwe banden) */
+.btn-primary-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  background: #016EB9 !important;
+  color: #FFFFFF !important;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border: 2px solid #016EB9 !important;
+  transition: all 180ms ease;
+  box-shadow: 0 4px 14px rgba(1, 110, 185, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary-custom:hover {
+  background: #005691 !important;
+  border-color: #005691 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(1, 110, 185, 0.45);
+}
+
+/* Custom Phone Button */
+.btn-phone-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: var(--radius-full);
+  background: #F3F4F6 !important;
+  color: #111827 !important;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border: 2px solid #E5E7EB !important;
+  transition: all 180ms ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-phone-custom:hover {
+  background: #111827 !important;
+  border-color: #111827 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Dark Button (Tweedehands bekijken) */
+.btn-dark-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  background: #0F121A !important;
+  color: #FFFFFF !important;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border: 2px solid #0F121A !important;
+  transition: all 180ms ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-dark-custom:hover {
+  background: #016EB9 !important;
+  border-color: #016EB9 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(1, 110, 185, 0.35);
+}
+
+/* Custom WhatsApp Button */
+.btn-whatsapp-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-radius: var(--radius-full);
+  background: #25D366 !important;
+  color: #FFFFFF !important;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  border: 2px solid #25D366 !important;
+  transition: all 180ms ease;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-whatsapp-custom:hover {
+  background: #1EBE5D !important;
+  border-color: #1EBE5D !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(37, 211, 102, 0.45);
+}
+
+@media (max-width: 640px) {
+  .tires-card__actions {
+    flex-direction: column;
+  }
+  .tires-card__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

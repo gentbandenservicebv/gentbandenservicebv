@@ -1,0 +1,338 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Better Auth tables
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean
+  image         String?
+  role          UserRole @default(CUSTOMER)
+  phone         String?
+  street        String?
+  postalCode    String?
+  city          String?
+  country       String?  @default("België")
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  sessions     Session[]
+  accounts     Account[]
+  orders       Order[]
+  appointments Appointment[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Business tables
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum TyreCondition {
+  NEW
+  USED
+}
+
+enum Season {
+  SUMMER
+  WINTER
+  ALL_SEASON
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum AppointmentType {
+  FITTING
+  REPAIR
+  INSPECTION
+  OTHER
+}
+
+model Tyre {
+  id             String        @id @default(cuid())
+  slug           String?
+  brand          String
+  model          String
+  size           String // e.g. "205/55 R16"
+  width          Int? // e.g. 205
+  aspectRatio    Int? // e.g. 55
+  diameter       Int? // e.g. 16 (inch)
+  speedIndex     String? // e.g. "V", "W", "Y", "H", "T"
+  loadIndex      String? // e.g. "91", "94", "102"
+  season         Season
+  condition      TyreCondition
+  price          Float
+  stock          Int           @default(0)
+  treadDepth     Float? // mm, specifically for used tyres
+  dotYear        String? // DOT code/production year, e.g. "2023" (crucial for secondhand tyres)
+  runflat        Boolean       @default(false)
+  reinforced     Boolean       @default(false) // XL / Extra Load
+  threepmsfRated Boolean       @default(false) // 3PMSF — Three Peak Mountain Snow Flake (alpine/winter certified)
+  msMarking      Boolean       @default(false) // M+S — Mud and Snow marking
+  selfSealing    Boolean       @default(false) // Self-sealing (SEAL / SealGuard / ContiSeal)
+  acoustic       Boolean       @default(false) // Acoustic / noise cancelling (foam insert)
+  electric       Boolean       @default(false) // EV-optimised / EVR / EVC / Elect (Electric Vehicle)
+  rimProtection  Boolean       @default(false) // FR / FSL / MFS / RPB / FP — Velgbeschermingsrand
+  iceGrip        Boolean       @default(false) // Ijsgrip / Noordse banden (ISO 19447 Nordic friction)
+  highLoad       Boolean       @default(false) // HL — High Load capacity (extra zwaar voor EV/hybride)
+  demo           Boolean       @default(false) // Demoband (nieuw gedemonteerd van nieuwe auto 0-50 km)
+  oeMarking      String? // OEM homologation: MO, AO, *, etc.
+  tyreClass      String? // UHP, C, LT, SUV, etc.
+  plyRating      String? // Ply rating / PR: 6PR, 8PR, 10PR, 12PR, C (commercial)
+  loadRange      String? // Load range letter: C, D, E, F (heavier-duty)
+  structureType  String? // Casing structure: S1 (standard), SL (Standard Load), RF (Reinforced) etc.
+  tubeless       Boolean @default(true) // Tubeless (TL) vs Tube-type (TT)
+  fuelEfficiency String? // EU Tyre label: A, B, C, D, E
+  wetGrip        String? // EU Tyre label: A, B, C, D, E
+  noiseLevel     Int? // dB, e.g. 70
+  description    String?
+  featured       Boolean       @default(false)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  images     TyreImage[]
+  orderItems OrderItem[]
+
+  @@map("tyre")
+}
+
+model TyreImage {
+  id        String   @id @default(cuid())
+  tyreId    String
+  tyre      Tyre     @relation(fields: [tyreId], references: [id], onDelete: Cascade)
+  url       String
+  fileKey   String // UploadThing file key
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("tyre_image")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Customer info
+  guestName          String?
+  guestEmail         String?
+  guestPhone         String?
+  // Delivery & Address details
+  serviceType        String?     @default("DELIVERY") // "MONTAGE" or "DELIVERY"
+  deliveryStreet     String?
+  deliveryPostalCode String?
+  deliveryCity       String?
+  deliveryCountry    String?     @default("België")
+  deliveryAddress    String?     // Full formatted delivery address
+  status             OrderStatus @default(PENDING)
+  totalAmount        Float
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  items OrderItem[]
+
+  @@map("order")
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tyreId   String
+  tyre     Tyre   @relation(fields: [tyreId], references: [id])
+  quantity Int
+  price    Float // snapshot at time of order
+
+  @@map("order_item")
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  userId      String?
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Guest info
+  guestName   String?
+  guestEmail  String?
+  guestPhone  String?
+  type        AppointmentType   @default(FITTING)
+  dateTime    DateTime
+  status      AppointmentStatus @default(PENDING)
+  notes       String?
+  vehicleInfo String? // e.g. "VW Golf 1.6 TDI"
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("appointment")
+}
+
+// Temporary OTP record for guest email verification
+model PendingAppointmentOtp {
+  id              String   @id @default(cuid())
+  email           String
+  otp             String   // 6-digit plain code (short-lived, expires in 10 min)
+  appointmentData String   // JSON blob of all form fields
+  expiresAt       DateTime
+  attempts        Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@map("pending_appointment_otp")
+}
+
+// User activity & cookie-based visitor tracking
+model VisitorSession {
+  id             String     @id
+  visitorId      String     // cookie gbs_vid
+  userId         String?
+  ip             String?
+  userAgent      String?
+  device         String?    // Desktop / Mobile / Tablet
+  browser        String?
+  os             String?
+  referrer       String?
+  entryPath      String
+  exitPath       String?
+  pageViewsCount Int        @default(1)
+  duration       Int        @default(0) // total duration in seconds
+  firstSeen      DateTime   @default(now())
+  lastSeen       DateTime   @default(now())
+  pageViews      PageView[]
+
+  @@index([visitorId])
+  @@index([lastSeen])
+  @@map("visitor_session")
+}
+
+model PageView {
+  id         String         @id @default(cuid())
+  sessionId  String
+  session    VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  visitorId  String
+  path       String
+  title      String?
+  referrer   String?
+  duration   Int?           // seconds spent on page
+  createdAt  DateTime       @default(now())
+
+  @@index([sessionId])
+  @@index([visitorId])
+  @@index([path])
+  @@index([createdAt])
+  @@map("page_view")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Secondhand tyre purchase submissions
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum SecondhandStatus {
+  PENDING   // Awaiting admin review
+  ACCEPTED  // Admin decided to buy
+  REJECTED  // Admin declined
+}
+
+model SecondhandSubmission {
+  id           String            @id @default(cuid())
+  // Customer contact
+  name         String
+  email        String
+  phone        String?
+  // Tyre details (filled in by customer)
+  brand        String
+  model        String?
+  size         String            // e.g. "205/55 R16"
+  season       String?           // SUMMER / WINTER / ALL_SEASON
+  quantity     Int               @default(4)
+  treadDepth   Float?            // mm remaining tread
+  dotYear      String?           // production year e.g. "2023"
+  condition    String?           // customer's own description
+  extraNotes   String?           // any other info from customer
+  // Photo URLs (comma-separated or JSON array)
+  photos       String?
+  // Admin review
+  status       SecondhandStatus  @default(PENDING)
+  offerPrice   Float?            // price admin is willing to pay per tyre
+  adminNotes   String?           // internal admin notes
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@map("secondhand_submission")
+}
+

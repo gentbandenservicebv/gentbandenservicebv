@@ -1,0 +1,334 @@
+/* ─── Hero ───────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--dark);
+  overflow: hidden;
+  padding-top: 72px;
+}
+
+/* Background */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 70% at 65% 35%, rgba(1, 110, 185, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 15% 85%, rgba(1, 110, 185, 0.12) 0%, transparent 55%),
+    linear-gradient(160deg, #090D14 0%, #0D1726 50%, #080C12 100%);
+}
+
+.hero__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.024) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 30%, rgba(0,0,0,0.5) 70%, transparent 100%);
+}
+
+.hero__tire-deco {
+  position: absolute;
+  right: -100px;
+  top: 50%;
+  transform: translateY(-50%);
+  animation: spinSlow 60s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes spinSlow {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to   { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Container */
+.hero__container {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 64px;
+  align-items: center;
+  padding-top: 64px;
+  padding-bottom: 100px;
+}
+
+/* Content */
+.hero__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hero__badge { margin-bottom: 24px; }
+
+.badge-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+.hero__headline {
+  margin-bottom: 20px;
+}
+
+.hero__headline-accent {
+  color: var(--primary);
+  position: relative;
+}
+
+.hero__sub {
+  font-size: clamp(1rem, 1.5vw + 0.3rem, 1.1875rem);
+  color: rgba(255,255,255,0.6);
+  line-height: 1.75;
+  max-width: 540px;
+  margin-bottom: 40px;
+}
+
+.hero__actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.hero__trust {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.hero__trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.hero__trust-item svg {
+  color: var(--primary);
+  background: rgba(1, 110, 185, 0.12);
+  border-radius: 50%;
+  padding: 2px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Finder card */
+.hero__finder {
+  position: relative;
+}
+
+.finder-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+}
+
+.finder-card__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.finder-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(1, 110, 185, 0.12);
+  border-radius: var(--radius);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.finder-card__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+
+.finder-card__sub {
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.45);
+  margin-top: 2px;
+}
+
+.finder-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.finder-card__form .form-label {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8125rem;
+}
+
+.finder-card__form .form-input {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--white);
+}
+
+.finder-card__form .form-input option {
+  background: var(--dark);
+  color: var(--white);
+}
+
+.finder-card__form .form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(1, 110, 185, 0.2);
+}
+
+/* Finder row (breedte/profiel/velg) */
+.finder-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.finder-group { flex: 1; }
+
+.finder-sep {
+  font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  padding-bottom: 14px;
+  font-size: 1.1rem;
+}
+
+/* Season selector */
+.finder-season {
+  display: flex;
+  gap: 8px;
+}
+
+.finder-season__opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.finder-season__opt input { display: none; }
+
+.finder-season__opt span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 6px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.04);
+  transition: all 150ms var(--ease-out);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.finder-season__opt input:checked + span {
+  border-color: var(--primary);
+  background: rgba(1, 110, 185, 0.12);
+  color: var(--white);
+}
+
+.finder-card__submit {
+  margin-top: 4px;
+}
+
+.finder-card__hint {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.35);
+  margin-top: 16px;
+}
+
+.finder-card__hint-link {
+  color: rgba(255,255,255,0.6);
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.2);
+  transition: color 150ms var(--ease-out);
+}
+.finder-card__hint-link:hover { color: var(--white); }
+
+/* Scroll indicator */
+.hero__scroll {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: fadeIn 1s 1s both;
+}
+
+.hero__scroll-dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(8px); }
+}
+
+.hero__scroll span {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hero__container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    padding-top: 48px;
+    padding-bottom: 80px;
+  }
+  .hero__tire-deco { display: none; }
+  .hero__finder { max-width: 480px; }
+}
+
+@media (max-width: 640px) {
+  .hero__actions { flex-direction: column; }
+  .hero__actions .btn { justify-content: center; }
+  .hero__trust { flex-direction: column; gap: 12px; }
+  .finder-row { gap: 4px; }
+  .finder-card { padding: 24px 20px; }
+  .finder-season { flex-wrap: wrap; }
+  .finder-season__opt { min-width: calc(50% - 4px); }
+}

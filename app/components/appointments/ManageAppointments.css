@@ -1,0 +1,1147 @@
+/* ─── Manage Appointments Component Styles ────────────────────────────────── */
+
+.appt-manage {
+  width: 100%;
+}
+
+.appt-manage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.appt-manage-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.appt-manage-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(1, 110, 185, 0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.appt-manage-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+.appt-manage-sub {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.appt-manage-tabs {
+  display: inline-flex;
+  background: var(--surface-2, #f1f5f9);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  gap: 4px;
+}
+
+.appt-manage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appt-manage-tab:hover {
+  color: var(--text);
+}
+
+.appt-manage-tab--active {
+  background: var(--white);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.appt-manage-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(1, 110, 185, 0.12);
+  color: var(--primary);
+}
+
+.appt-manage-tab--active .appt-manage-tab-badge {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ─── Guest Lookup Card ──────────────────────────────────────────────────── */
+.appt-lookup-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.appt-lookup-header {
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto 24px;
+}
+
+.appt-lookup-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.appt-lookup-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.appt-lookup-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.appt-lookup-form {
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appt-lookup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.appt-lookup-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.appt-lookup-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface, #fff);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.appt-lookup-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(1, 110, 185, 0.15);
+}
+
+.appt-lookup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius, 10px);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.appt-lookup-btn:hover:not(:disabled) {
+  background: var(--primary-dark, #005696);
+  transform: translateY(-1px);
+}
+
+.appt-lookup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.appt-lookup-login-callout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.appt-lookup-login-link {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.appt-lookup-login-link:hover {
+  text-decoration: underline;
+}
+
+/* ─── Appointments List & Cards ─────────────────────────────────────────── */
+.appt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.appt-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.appt-card:hover {
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.08));
+  border-color: rgba(1, 110, 185, 0.3);
+}
+
+.appt-card--cancelled {
+  opacity: 0.78;
+  background: #fafafa;
+}
+
+.appt-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light, #eef2f6);
+}
+
+.appt-card__service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.appt-card__service-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.appt-card__status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appt-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.appt-status-badge--PENDING {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.appt-status-badge--CONFIRMED {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.appt-status-badge--COMPLETED {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.appt-status-badge--CANCELLED {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.appt-status-badge--EXPIRED {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.appt-card--expired {
+  opacity: 0.9;
+  border-color: #e2e8f0;
+  background: #fafafb;
+}
+
+.appt-card--expired .appt-date-block {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+}
+
+.appt-expired-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-top: 14px;
+}
+
+/* ─── Card Body Layout ──────────────────────────────────────────────────── */
+.appt-card__body {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 640px) {
+  .appt-card__body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.appt-date-block {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.appt-date-block::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary, #016eb9);
+}
+
+.appt-card--cancelled .appt-date-block {
+  background: #64748b;
+}
+
+.appt-date-block__weekday {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2px;
+}
+
+.appt-date-block__day {
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  margin: 2px 0;
+}
+
+.appt-date-block__month {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 8px;
+}
+
+.appt-date-block__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: #fff;
+}
+
+.appt-relative-badge {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(1, 110, 185, 0.4);
+  color: #fff;
+}
+
+.appt-relative-badge--soon {
+  background: #22c55e;
+  color: #fff;
+}
+
+/* ─── Details Info ──────────────────────────────────────────────────────── */
+.appt-details-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appt-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.appt-detail-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.appt-detail-content {
+  flex: 1;
+  color: var(--text);
+}
+
+.appt-detail-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.appt-detail-val {
+  font-weight: 600;
+}
+
+.appt-detail-notes {
+  background: var(--surface-2, #f8fafc);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  white-space: pre-line;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.appt-ref-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.appt-ref-badge {
+  font-family: monospace;
+  background: var(--surface-2, #f1f5f9);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 600;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+.appt-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.appt-copy-btn:hover {
+  background: rgba(1, 110, 185, 0.08);
+}
+
+/* ─── Action Buttons Footer ─────────────────────────────────────────────── */
+.appt-card__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light, #eef2f6);
+}
+
+.appt-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--text);
+}
+
+.appt-action-btn:hover {
+  background: var(--surface-2, #f8fafc);
+  border-color: #cbd5e1;
+}
+
+.appt-action-btn--primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.appt-action-btn--primary:hover {
+  background: var(--primary-dark, #005696);
+  border-color: var(--primary-dark, #005696);
+}
+
+.appt-action-btn--danger {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fff;
+}
+
+.appt-action-btn--danger:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.appt-action-btn--directions {
+  margin-left: auto;
+}
+
+.appt-action-btn:disabled,
+.appt-action-btn--disabled {
+  opacity: 0.42 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(1) !important;
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+/* ─── Empty State ───────────────────────────────────────────────────────── */
+.appt-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--white);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg, 16px);
+}
+
+.appt-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.appt-empty-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.appt-empty-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 440px;
+  margin: 0 auto 20px;
+  line-height: 1.5;
+}
+
+.appt-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.appt-empty-btn:hover {
+  background: var(--primary-dark, #005696);
+}
+
+/* ─── Modal Dialogs (Reschedule & Cancel) ────────────────────────────────── */
+.appt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: apptFadeIn 0.2s ease-out;
+}
+
+@keyframes apptFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.appt-modal {
+  background: var(--white);
+  border-radius: var(--radius-lg, 18px);
+  max-width: 540px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: apptModalSlide 0.25s ease-out;
+}
+
+@keyframes apptModalSlide {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.appt-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light, #eef2f6);
+}
+
+.appt-modal__title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appt-modal__close {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appt-modal__close:hover {
+  background: var(--surface-2, #f1f5f9);
+  color: var(--text);
+}
+
+.appt-modal__body {
+  padding: 24px;
+}
+
+.appt-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-light, #eef2f6);
+  background: var(--surface, #fafafa);
+  border-radius: 0 0 var(--radius-lg, 18px) var(--radius-lg, 18px);
+}
+
+/* ─── Slot Picker inside Reschedule Modal ────────────────────────────────── */
+.appt-reschedule-quick-dates {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.appt-reschedule-quick-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, #f8fafc);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.appt-reschedule-quick-btn:hover {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+.appt-reschedule-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.appt-reschedule-slot-btn {
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.appt-reschedule-slot-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(1, 110, 185, 0.05);
+}
+
+.appt-reschedule-slot-btn--selected {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary) !important;
+}
+
+.appt-reschedule-slot-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  text-decoration: line-through;
+}
+
+.appt-toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appt-toast--success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.appt-toast--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ─── Responsive Adjustments for Mobile & Tablets ────────────────────────── */
+@media (max-width: 640px) {
+  .appt-manage-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .appt-manage-title-box {
+    gap: 10px;
+  }
+
+  .appt-manage-title-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+  }
+
+  .appt-manage-title {
+    font-size: 1.2rem;
+  }
+
+  .appt-manage-sub {
+    font-size: 0.82rem;
+  }
+
+  .appt-manage-tabs {
+    width: 100%;
+    display: flex;
+    border-radius: 10px;
+  }
+
+  .appt-manage-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+  }
+
+  /* Guest lookup card */
+  .appt-lookup-card {
+    padding: 22px 16px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+  }
+
+  .appt-lookup-header {
+    margin-bottom: 16px;
+  }
+
+  .appt-lookup-icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+
+  .appt-lookup-title {
+    font-size: 1.15rem;
+  }
+
+  .appt-lookup-desc {
+    font-size: 0.84rem;
+  }
+
+  .appt-lookup-input,
+  input[type="date"].appt-lookup-input {
+    padding: 11px 12px;
+    font-size: 1rem !important; /* Prevents iOS auto-zoom */
+    min-height: 46px;
+  }
+
+  .appt-lookup-btn {
+    padding: 12px;
+    font-size: 0.92rem;
+    min-height: 48px;
+  }
+
+  /* Appointment Card */
+  .appt-card {
+    padding: 16px 14px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+
+  .appt-card__top {
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .appt-card__service-badge {
+    font-size: 0.88rem;
+    gap: 6px;
+    flex-wrap: wrap;
+    word-break: break-word;
+  }
+
+  .appt-status-badge {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+
+  .appt-card__body {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* Horizontal Compact Date Bar for Mobile */
+  .appt-date-block {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: left;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .appt-date-block__weekday {
+    font-size: 0.7rem;
+    margin-bottom: 0;
+  }
+
+  .appt-date-block__day {
+    font-size: 1.45rem;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  .appt-date-block__month {
+    font-size: 0.78rem;
+    margin-bottom: 0;
+  }
+
+  .appt-date-block__time {
+    font-size: 0.85rem;
+    padding: 3px 8px;
+  }
+
+  .appt-relative-badge {
+    margin-top: 0;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+  }
+
+  .appt-details-block {
+    gap: 10px;
+  }
+
+  .appt-detail-row {
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .appt-detail-val {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .appt-ref-row {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .appt-ref-badge {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 0.75rem;
+  }
+
+  /* Card Actions: Primary full width, Cancel/Calendar in 2 cols, Route full width */
+  .appt-card__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  .appt-action-btn {
+    width: 100%;
+    margin-left: 0 !important;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+    text-align: center;
+    min-height: 42px;
+  }
+
+  .appt-action-btn--primary {
+    grid-column: 1 / -1;
+    min-height: 46px;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+
+  .appt-action-btn--directions {
+    grid-column: 1 / -1;
+    margin-left: 0 !important;
+  }
+
+  /* Modal Bottom Sheet */
+  .appt-modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .appt-modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: apptModalSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes apptModalSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .appt-modal__header {
+    padding: 16px 18px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-light, #eef2f6);
+  }
+
+  .appt-modal__title {
+    font-size: 1.1rem;
+  }
+
+  .appt-modal__body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+  }
+
+  .appt-modal__footer {
+    padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    flex-direction: column-reverse;
+    gap: 8px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border-light, #eef2f6);
+    background: #fff;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  }
+
+  .appt-modal__footer button {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    min-height: 46px;
+    font-size: 0.92rem;
+  }
+
+  .appt-reschedule-slots {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .appt-reschedule-slot-btn {
+    min-height: 44px;
+    font-size: 0.85rem;
+  }
+
+  /* Empty state */
+  .appt-empty-state {
+    padding: 36px 16px;
+    border-radius: 14px;
+  }
+
+  .appt-empty-icon {
+    font-size: 2.4rem;
+  }
+
+  .appt-empty-title {
+    font-size: 1.1rem;
+  }
+
+  .appt-empty-desc {
+    font-size: 0.84rem;
+    margin-bottom: 16px;
+  }
+
+  .appt-empty-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    min-height: 46px;
+  }
+}
+
+@media (max-width: 390px) {
+  .appt-date-block {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .appt-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .appt-action-btn {
+    grid-column: 1 / -1;
+  }
+
+  .appt-reschedule-slots {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
