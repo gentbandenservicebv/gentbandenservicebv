@@ -1413,3 +1413,192 @@ export async function sendSecondhandReviewResult(data: {
     console.error("[Resend] secondhand review result email failed:", error.message);
   }
 }
+
+// ── Return Request Emails ───────────────────────────────────────────────────
+
+export interface ReturnEmailData {
+  id: string;
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  reason: string;
+  reasonDetails?: string | null;
+  itemsInfo?: string | null;
+}
+
+const RETURN_REASONS_NL: Record<string, string> = {
+  WRONG_SIZE: "Verkeerde bandenmaat besteld",
+  WITHDRAWAL: "Bedenktijd (14 dagen herroepingsrecht)",
+  NOT_NEEDED: "Niet meer nodig",
+  INCORRECT_DELIVERY: "Verkeerd artikel geleverd",
+  DAMAGED: "Beschadigd of productiefout (garantie)",
+  OTHER: "Andere reden",
+};
+
+/**
+ * Sent to the customer confirming their return request was received.
+ */
+export async function sendReturnRequestCustomerEmail(data: ReturnEmailData) {
+  const safeName = escapeHtml(data.customerName);
+  const safeOrderShort = escapeHtml(data.orderId.slice(-8).toUpperCase());
+  const safeReason = escapeHtml(RETURN_REASONS_NL[data.reason] ?? data.reason);
+  const safeDetails = data.reasonDetails ? escapeHtml(data.reasonDetails) : null;
+  const safeItems = data.itemsInfo ? escapeHtml(data.itemsInfo) : null;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Retourverzoek ontvangen – Gent Bandenservice</title>
+</head>
+<body style="margin:0;padding:0;background:#0f0f0f;font-family:system-ui,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#1a1a2e;border-radius:16px;overflow:hidden;max-width:600px;width:100%;">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#016eb9 0%,#004d84 100%);padding:40px 40px 32px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.75);text-transform:uppercase;">Gent Bandenservice BV</p>
+              <h1 style="margin:0;font-size:26px;font-weight:800;color:#fff;">🔄 Retourverzoek ontvangen</h1>
+              <p style="margin:12px 0 0;font-size:15px;color:rgba(255,255,255,0.85);">Bestelling #${safeOrderShort}</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 20px;font-size:16px;color:#e0e0e0;">Beste <strong style="color:#fff;">${safeName}</strong>,</p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#bbb;">
+                Wij hebben uw retourverzoek voor bestelling <strong style="color:#fff;">#${safeOrderShort}</strong> succesvol ontvangen. 
+                Ons serviceteam beoordeelt uw aanvraag binnen <strong>1 werkdag</strong> en stuurt u de verdere instructies.
+              </p>
+
+              <!-- Summary Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;border-radius:12px;overflow:hidden;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#016eb9;text-transform:uppercase;">Aanvraagoverzicht</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;width:140px;font-size:13px;color:#888;">Bestelnummer</td>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;font-size:14px;color:#fff;font-weight:600;">#${safeOrderShort}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;font-size:13px;color:#888;">Reden</td>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;font-size:14px;color:#fff;font-weight:600;">${safeReason}</td>
+                      </tr>
+                      ${safeItems ? `<tr>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;font-size:13px;color:#888;">Betreft banden</td>
+                        <td style="padding:8px 0;border-bottom:1px solid #222;font-size:14px;color:#fff;">${safeItems}</td>
+                      </tr>` : ""}
+                      ${safeDetails ? `<tr>
+                        <td style="padding:8px 0;font-size:13px;color:#888;vertical-align:top;">Toelichting</td>
+                        <td style="padding:8px 0;font-size:14px;color:#bbb;">${safeDetails}</td>
+                      </tr>` : ""}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Return Conditions Reminder -->
+              <div style="background:#16213e;border-left:3px solid #016eb9;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:28px;">
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#fff;">⚠️ Belangrijke herinnering voorwaarden:</p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#bbb;">
+                  Banden kunnen alleen geretourneerd worden indien ze <strong>ongebruikt, ongemonteerd en onbeschadigd</strong> zijn, met originele labels intact. 
+                  Reeds gemonteerde of bereden banden zijn uitgesloten van herroeping.
+                </p>
+              </div>
+
+              <!-- Return Address -->
+              <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#fff;">📍 Inleveren of opsturen naar:</p>
+              <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#bbb;">
+                Gent Bandenservice BV · Dendermondsesteenweg 428, 9040 Gent<br/>
+                🕒 Maandag t/m Zaterdag: 09:00 – 18:00
+              </p>
+
+              <p style="margin:0;font-size:14px;color:#888;">Vragen? Bel ons direct op <a href="tel:0467871205" style="color:#60afff;text-decoration:none;">0467 87 12 05</a> of mail naar <a href="mailto:info@gentbandenservice.be" style="color:#60afff;text-decoration:none;">info@gentbandenservice.be</a>.</p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0a0a0a;padding:20px 40px;text-align:center;border-top:1px solid #222;">
+              <p style="margin:0;font-size:12px;color:#555;">Gent Bandenservice BV · Dendermondsesteenweg 428, 9040 Gent · BTW: BE 1041.093.575</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: [data.customerEmail],
+      subject: `Bevestiging retourverzoek #${safeOrderShort} – Gent Bandenservice`,
+      html,
+    });
+    if (error) {
+      console.error("[Resend] Customer return confirmation email failed:", error.message);
+    }
+  } catch (err) {
+    console.error("[Resend] Error sending customer return confirmation:", err);
+  }
+}
+
+/**
+ * Sent to the shop notification inbox when a customer submits a return request.
+ */
+export async function sendReturnRequestShopEmail(data: ReturnEmailData) {
+  const safeName = escapeHtml(data.customerName);
+  const safeEmail = escapeHtml(data.customerEmail);
+  const safePhone = data.customerPhone ? escapeHtml(data.customerPhone) : "Niet opgegeven";
+  const safeOrderShort = escapeHtml(data.orderId.slice(-8).toUpperCase());
+  const safeReason = escapeHtml(RETURN_REASONS_NL[data.reason] ?? data.reason);
+  const safeDetails = data.reasonDetails ? escapeHtml(data.reasonDetails) : "Geen extra toelichting";
+  const safeItems = data.itemsInfo ? escapeHtml(data.itemsInfo) : "Alle bestelde artikelen";
+
+  const html = `
+    <div style="font-family:sans-serif;padding:24px;background:#f8fafc;color:#1e293b;">
+      <div style="max-width:600px;background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;margin:auto;">
+        <h2 style="color:#dc2626;margin-top:0;">⚠️ Nieuw retourverzoek ingediend</h2>
+        <p>Er is een nieuwe retouraanvraag binnengekomen voor bestelling <strong>#${safeOrderShort}</strong>.</p>
+        
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;">
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;width:140px;">Klant</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;">${safeName}</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;">E-mail</td><td style="padding:8px 0;border-bottom:1px solid #eee;"><a href="mailto:${safeEmail}">${safeEmail}</a></td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;">Telefoon</td><td style="padding:8px 0;border-bottom:1px solid #eee;">${safePhone}</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;">Bestelnummer</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;">#${safeOrderShort}</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;">Reden</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:600;color:#dc2626;">${safeReason}</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#64748b;">Artikelen</td><td style="padding:8px 0;border-bottom:1px solid #eee;">${safeItems}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b;vertical-align:top;">Klanttoelichting</td><td style="padding:8px 0;white-space:pre-wrap;">${safeDetails}</td></tr>
+        </table>
+
+        <p style="margin:20px 0 0;font-size:13px;color:#64748b;">
+          Beheer retouraanvragen via het <a href="${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/admin" style="color:#016eb9;font-weight:700;">Admin Dashboard</a>.
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: [SHOP_EMAIL],
+      replyTo: data.customerEmail,
+      subject: `[Retourverzoek] Bestelling #${safeOrderShort} – ${data.customerName}`,
+      html,
+    });
+    if (error) {
+      console.error("[Resend] Shop return notification failed:", error.message);
+    }
+  } catch (err) {
+    console.error("[Resend] Error sending shop return notification:", err);
+  }
+}

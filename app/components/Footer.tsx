@@ -16,6 +16,7 @@ const quickLinks = [
   { href: "/banden", label: "Banden" },
   { href: "/diensten", label: "Diensten" },
   { href: "/verkoop-banden", label: "Tweedehands banden verkopen" },
+  { href: "/retourbeleid", label: "Retour & Herroeping" },
   { href: "/over-ons", label: "Over ons" },
   { href: "/contact", label: "Contact" },
 ];
@@ -157,6 +158,7 @@ function FooterInner() {
               © {new Date().getFullYear()} Gent Bandenservice BV • BTW/KBO: BE 1041.093.575 • Alle rechten voorbehouden.
             </p>
             <div className="footer__legal">
+              <Link href="/retourbeleid" className="footer__legal-link">Retourbeleid</Link>
               <Link href="/privacy" className="footer__legal-link">Privacybeleid</Link>
               <Link href="/cookies" className="footer__legal-link">Cookiebeleid</Link>
               <button

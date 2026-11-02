@@ -135,6 +135,18 @@ export interface OrderEntry {
       images?: Array<{ url: string; isPrimary: boolean }>;
     };
   }>;
+  returnRequests?: Array<{
+    id: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string | null;
+    reason: string;
+    reasonDetails: string | null;
+    itemsInfo: string | null;
+    status: "PENDING" | "APPROVED" | "REJECTED" | "REFUNDED";
+    adminNotes: string | null;
+    createdAt: string;
+  }>;
 }
 
 const ORDER_STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -308,6 +320,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "analytics">("dashboard");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [secondhandSubmissions, setSecondhandSubmissions] = useState<SecondhandEntry[]>([]);
   const [secondhandStatusFilter, setSecondhandStatusFilter] = useState<"ALL" | "PENDING" | "ACCEPTED" | "REJECTED">("ALL");
   const [secondhandSearch, setSecondhandSearch] = useState("");
@@ -560,6 +573,38 @@ export default function AdminPage() {
       }
     } catch {
       setMessage({ type: "error", text: "Verbindingsfout bij het verwijderen van de bestelling." });
+    } finally {
+      setOrderActionLoading(null);
+    }
+  }
+
+  async function updateReturnStatus(orderId: string, returnId: string, newStatus: string) {
+    setOrderActionLoading(returnId + newStatus);
+    try {
+      const res = await fetch(`/api/returns/${returnId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders((prev) =>
+          prev.map((o) => {
+            if (o.id !== orderId) return o;
+            return {
+              ...o,
+              returnRequests: o.returnRequests?.map((r) =>
+                r.id === returnId ? { ...r, status: updated.status } : r
+              ),
+            };
+          })
+        );
+        setMessage({ type: "success", text: `Retouraanvraag status aangepast naar ${newStatus}.` });
+      } else {
+        setMessage({ type: "error", text: "Fout bij bijwerken van retouraanvraag." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Verbindingsfout bij bijwerken van retouraanvraag." });
     } finally {
       setOrderActionLoading(null);
     }
@@ -1262,36 +1307,91 @@ export default function AdminPage() {
 
   return (
     <div className="admin-layout">
+      {/* Mobile Top Navigation Bar */}
+      <header className="admin-mobile-bar">
+        <div className="admin-mobile-bar__brand">
+          <button
+            type="button"
+            className="admin-mobile-bar__toggle"
+            onClick={() => setIsMobileNavOpen((prev) => !prev)}
+            aria-label="Menu openen"
+          >
+            {isMobileNavOpen ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            )}
+          </button>
+          <div className="admin-mobile-bar__title">
+            <span>Admin</span>
+            <span className="admin-mobile-bar__tab-badge">
+              {activeTab === "dashboard" && "Dashboard"}
+              {activeTab === "tyres" && "Banden"}
+              {activeTab === "orders" && "Bestellingen"}
+              {activeTab === "appointments" && "Afspraken"}
+              {activeTab === "secondhand" && "2de hands"}
+              {activeTab === "analytics" && "Statistieken"}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href="/" className="admin-btn admin-btn--xs admin-btn--outline" title="Naar website" style={{ padding: "4px 8px", fontSize: "0.75rem" }}>
+            🌐 Website
+          </Link>
+          <div className="admin-sidebar__avatar" style={{ width: 30, height: 30, fontSize: "0.75rem" }}>
+            {session?.user?.name?.[0]?.toUpperCase() ?? "A"}
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileNavOpen && (
+        <div
+          className="admin-sidebar-overlay"
+          onClick={() => setIsMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar${isMobileNavOpen ? " admin-sidebar--open" : ""}`}>
         <div className="admin-sidebar__brand">
           <span className="admin-sidebar__logo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
           </span>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="admin-sidebar__title">Admin Panel</div>
             <div className="admin-sidebar__sub">Gent Bandenservice</div>
           </div>
+          <button
+            type="button"
+            className="admin-sidebar__close-btn"
+            onClick={() => setIsMobileNavOpen(false)}
+            aria-label="Sluit menu"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className="admin-nav">
           <button
             className={`admin-nav__item${activeTab === "dashboard" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("dashboard")}
+            onClick={() => { setActiveTab("dashboard"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Dashboard
           </button>
           <button
             className={`admin-nav__item${activeTab === "tyres" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("tyres")}
+            onClick={() => { setActiveTab("tyres"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
             Bandenbeheer
           </button>
           <button
             className={`admin-nav__item${activeTab === "orders" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("orders")}
+            onClick={() => { setActiveTab("orders"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             Bestellingen
@@ -1303,7 +1403,7 @@ export default function AdminPage() {
           </button>
           <button
             className={`admin-nav__item${activeTab === "appointments" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("appointments")}
+            onClick={() => { setActiveTab("appointments"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Afspraken
@@ -1315,7 +1415,7 @@ export default function AdminPage() {
           </button>
           <button
             className={`admin-nav__item${activeTab === "secondhand" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("secondhand")}
+            onClick={() => { setActiveTab("secondhand"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             Tweedehands Inkoop
@@ -1327,7 +1427,7 @@ export default function AdminPage() {
           </button>
           <button
             className={`admin-nav__item${activeTab === "analytics" ? " admin-nav__item--active" : ""}`}
-            onClick={() => setActiveTab("analytics")}
+            onClick={() => { setActiveTab("analytics"); setIsMobileNavOpen(false); }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             Activiteit &amp; Cookies
@@ -1393,7 +1493,7 @@ export default function AdminPage() {
               </div>
 
               {/* KPI stat cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 28 }}>
+              <div className="admin-stats-grid">
                 {/* Revenue */}
                 <div style={{ background: "linear-gradient(135deg, #016eb9 0%, #0284c7 100%)", borderRadius: 14, padding: "20px 22px", color: "#fff" }}>
                   <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.8, marginBottom: 8 }}>Totale Omzet</div>
@@ -1424,7 +1524,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div className="admin-dashboard-split-grid">
                 {/* Upcoming appointments */}
                 <div style={{ background: "#1a1d27", borderRadius: 14, border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden" }}>
                   <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -2531,6 +2631,10 @@ export default function AdminPage() {
 
               return (
                 <>
+                  {/* Table scroll hint for touch/mobile */}
+                  <div className="admin-table-scroll-hint">
+                    <span>↔️</span> Veeg horizontaal om alle kolommen te bekijken
+                  </div>
                   <div className="admin-table-wrap">
                     <table className="admin-table">
                       <thead>
@@ -2760,8 +2864,15 @@ export default function AdminPage() {
 
         {/* ── ORDERS TAB ────────────────────────────────── */}
         {activeTab === "orders" && (() => {
+          const ordersWithReturns = orders.filter((o) => o.returnRequests && o.returnRequests.length > 0);
+          const pendingReturns = orders.filter((o) => o.returnRequests?.some((r) => r.status === "PENDING"));
+
           const filteredOrders = orders.filter((o) => {
-            if (orderStatusFilter !== "ALL" && o.status !== orderStatusFilter) return false;
+            if (orderStatusFilter === "RETURNS") {
+              if (!o.returnRequests || o.returnRequests.length === 0) return false;
+            } else if (orderStatusFilter !== "ALL" && o.status !== orderStatusFilter) {
+              return false;
+            }
             if (orderSearch.trim()) {
               const q = orderSearch.toLowerCase();
               const customer = (o.user?.name || o.guestName || "").toLowerCase();
@@ -2787,9 +2898,9 @@ export default function AdminPage() {
             <>
               <div className="admin-header">
                 <div>
-                  <h1 className="admin-page-title">Bestellingen Beheer</h1>
+                  <h1 className="admin-page-title">Bestellingen &amp; Retouren</h1>
                   <p className="admin-page-sub">
-                    {orders.length} bestellingen totaal · €{totalRevenue.toFixed(2)} omzet (incl. BTW)
+                    {orders.length} bestellingen · €{totalRevenue.toFixed(2)} omzet · {ordersWithReturns.length} retouraanvragen
                   </p>
                 </div>
                 <button
@@ -2801,7 +2912,7 @@ export default function AdminPage() {
               </div>
 
               {/* Stats overview */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
+              <div className="admin-stats-grid">
                 <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "14px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
                   <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Totaal Bestellingen</div>
                   <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0b192c", marginTop: 4 }}>{orders.length}</div>
@@ -2824,36 +2935,60 @@ export default function AdminPage() {
                     {orders.filter((o) => o.status === "COMPLETED").length}
                   </div>
                 </div>
+                <div
+                  style={{
+                    background: pendingReturns.length > 0 ? "#fffbeb" : "#ffffff",
+                    border: pendingReturns.length > 0 ? "1px solid #fde68a" : "1px solid #e2e8f0",
+                    borderRadius: 12,
+                    padding: "14px 18px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setOrderStatusFilter("RETURNS")}
+                  title="Klik om alle retouraanvragen te bekijken"
+                >
+                  <div style={{ fontSize: "0.75rem", color: pendingReturns.length > 0 ? "#b45309" : "#64748b", fontWeight: 700, textTransform: "uppercase" }}>
+                    ↩ Retouraanvragen
+                  </div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: pendingReturns.length > 0 ? "#d97706" : "#0b192c", marginTop: 4 }}>
+                    {ordersWithReturns.length}{pendingReturns.length > 0 && <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#d97706", marginLeft: 6 }}>({pendingReturns.length} nieuw)</span>}
+                  </div>
+                </div>
               </div>
 
               {/* Filter and search toolbar */}
               <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {["ALL", "CONFIRMED", "READY", "COMPLETED", "CANCELLED", "PENDING"].map((st) => (
+                  {["ALL", "CONFIRMED", "READY", "COMPLETED", "RETURNS", "CANCELLED", "PENDING"].map((st) => (
                     <button
                       key={st}
                       onClick={() => setOrderStatusFilter(st)}
                       className={`admin-filter-pill${orderStatusFilter === st ? " admin-filter-pill--active" : ""}`}
                     >
-                      {st === "ALL" ? "Alle" : ORDER_STATUS_CONFIG[st]?.label ?? st}
+                      {st === "ALL" ? "Alle" : st === "RETURNS" ? "↩ Retouren" : ORDER_STATUS_CONFIG[st]?.label ?? st}
                       {" "}
                       <span style={{ opacity: 0.65 }}>
-                        ({st === "ALL" ? orders.length : orders.filter((o) => o.status === st).length})
+                        ({st === "ALL" ? orders.length : st === "RETURNS" ? ordersWithReturns.length : orders.filter((o) => o.status === st).length})
                       </span>
                     </button>
                   ))}
                 </div>
 
-                <div style={{ minWidth: 260 }}>
+                <div style={{ flex: "1 1 240px", minWidth: 200 }}>
                   <input
                     type="text"
                     className="admin-input"
                     placeholder="Zoek op klant, e-mail, band of ID..."
                     value={orderSearch}
                     onChange={(e) => setOrderSearch(e.target.value)}
-                    style={{ margin: 0, padding: "8px 14px", fontSize: "0.85rem" }}
+                    style={{ margin: 0, padding: "8px 14px", fontSize: "0.85rem", width: "100%" }}
                   />
                 </div>
+              </div>
+
+              {/* Table scroll hint for touch/mobile */}
+              <div className="admin-table-scroll-hint">
+                <span>↔️</span> Veeg horizontaal om alle kolommen te bekijken
               </div>
 
               {/* Orders Table */}
@@ -2957,6 +3092,13 @@ export default function AdminPage() {
                             </td>
                             <td>
                               <span className={`admin-badge ${sc.cls}`}>{sc.label}</span>
+                              {o.returnRequests && o.returnRequests.length > 0 && (
+                                <div style={{ marginTop: 4 }}>
+                                  <span style={{ fontSize: "0.7rem", fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#fef3c7", color: "#92400e", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                    ↩ Retour ({o.returnRequests[0].status})
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td onClick={(e) => e.stopPropagation()}>
                               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -3015,8 +3157,8 @@ export default function AdminPage() {
                           {/* Expanded Order Details */}
                           {isExpanded && (
                             <tr style={{ background: "#f8fafc" }}>
-                              <td colSpan={7} style={{ padding: "18px 24px" }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24 }}>
+                              <td colSpan={7} style={{ padding: "14px 16px" }}>
+                                <div className="admin-order-detail-grid">
                                   {/* Left: Items list */}
                                   <div>
                                     <h4 style={{ margin: "0 0 10px", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b" }}>
@@ -3085,6 +3227,77 @@ export default function AdminPage() {
                                         <p style={{ margin: 0, fontSize: "0.825rem", color: "#475569", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
                                           {o.notes}
                                         </p>
+                                      </div>
+                                    )}
+
+                                    {/* Return requests block */}
+                                    {o.returnRequests && o.returnRequests.length > 0 && (
+                                      <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "12px 14px" }}>
+                                        <h4 style={{ margin: "0 0 8px", fontSize: "0.8rem", textTransform: "uppercase", color: "#92400e", display: "flex", alignItems: "center", gap: 6 }}>
+                                          <span>↩</span> Retouraanvragen ({o.returnRequests.length})
+                                        </h4>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                          {o.returnRequests.map((ret) => (
+                                            <div key={ret.id} style={{ background: "#ffffff", border: "1px solid #fef3c7", borderRadius: 6, padding: "10px 12px" }}>
+                                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                                                <div>
+                                                  <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#1e293b" }}>{ret.reason}</span>
+                                                  <span style={{ fontSize: "0.75rem", color: "#64748b", marginLeft: 8 }}>
+                                                    {new Date(ret.createdAt).toLocaleDateString("nl-BE")}
+                                                  </span>
+                                                </div>
+                                                <span style={{
+                                                  fontSize: "0.72rem",
+                                                  fontWeight: 700,
+                                                  padding: "2px 8px",
+                                                  borderRadius: 4,
+                                                  background: ret.status === "APPROVED" ? "#dcfce7" : ret.status === "REFUNDED" ? "#dbeafe" : ret.status === "REJECTED" ? "#fee2e2" : "#fef3c7",
+                                                  color: ret.status === "APPROVED" ? "#166534" : ret.status === "REFUNDED" ? "#1e40af" : ret.status === "REJECTED" ? "#991b1b" : "#92400e",
+                                                }}>
+                                                  {ret.status}
+                                                </span>
+                                              </div>
+                                              {ret.reasonDetails && (
+                                                <p style={{ margin: "0 0 8px", fontSize: "0.8rem", color: "#475569" }}>
+                                                  {ret.reasonDetails}
+                                                </p>
+                                              )}
+                                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                                                <button
+                                                  type="button"
+                                                  className="admin-btn admin-btn--xs"
+                                                  style={{ background: "#16a34a", color: "#fff", border: "none" }}
+                                                  onClick={() => updateReturnStatus(o.id, ret.id, "APPROVED")}
+                                                >
+                                                  ✓ Goedkeuren
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className="admin-btn admin-btn--xs"
+                                                  style={{ background: "#0284c7", color: "#fff", border: "none" }}
+                                                  onClick={() => updateReturnStatus(o.id, ret.id, "REFUNDED")}
+                                                >
+                                                  💳 Terugbetaald
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className="admin-btn admin-btn--xs"
+                                                  style={{ background: "#dc2626", color: "#fff", border: "none" }}
+                                                  onClick={() => updateReturnStatus(o.id, ret.id, "REJECTED")}
+                                                >
+                                                  ✕ Afwijzen
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  className="admin-btn admin-btn--xs admin-btn--outline"
+                                                  onClick={() => updateReturnStatus(o.id, ret.id, "PENDING")}
+                                                >
+                                                  ⏳ Wachtend
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     )}
 
@@ -3244,7 +3457,7 @@ export default function AdminPage() {
               </div>
 
               {/* KPI Stat Cards (1-Click Filters) */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 22 }}>
+              <div className="admin-stats-grid">
                 {/* Total */}
                 <div
                   onClick={() => { setApptStatusFilter("ALL"); setApptDateFilter("ALL"); }}
@@ -3568,14 +3781,7 @@ export default function AdminPage() {
                                 }}
                               >
                                 <div
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "110px 1fr auto",
-                                    gap: 16,
-                                    padding: "16px 20px",
-                                    alignItems: "center",
-                                    cursor: "pointer",
-                                  }}
+                                  className="admin-appt-card__header"
                                   onClick={() => setExpandedAppt(isExpanded ? null : a.id)}
                                 >
                                   {/* Time block */}
@@ -3763,7 +3969,7 @@ export default function AdminPage() {
 
                                 {/* Expanded Details Box */}
                                 {isExpanded && (
-                                  <div style={{ padding: "14px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.2)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                                  <div className="admin-appt-detail-grid">
                                     <div>
                                       <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 }}>
                                         Boekingsdetails
@@ -3798,7 +4004,11 @@ export default function AdminPage() {
 
               {/* ─── VIEW 2: TABLE VIEW ────────────────────────── */}
               {apptViewMode === "table" && filteredAppointments.length > 0 && (
-                <div className="admin-table-wrap">
+                <>
+                  <div className="admin-table-scroll-hint">
+                    <span>↔️</span> Veeg horizontaal om alle kolommen te bekijken
+                  </div>
+                  <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
@@ -3982,7 +4192,8 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              </>
+            )}
 
               {/* ─── MODAL: AFSPRAAK WIJZIGEN / VERZETTEN ──────────────────── */}
               {editingAppt && (
@@ -5057,7 +5268,7 @@ export default function AdminPage() {
               </div>
 
               {/* KPI Stat Cards (1-Click Filters) */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 14, marginBottom: 24 }}>
+              <div className="admin-stats-grid">
                 {/* Total */}
                 <div
                   onClick={() => setSecondhandStatusFilter("ALL")}
@@ -5418,7 +5629,7 @@ export default function AdminPage() {
                                 <div style={{ fontWeight: 700, fontSize: 14, color: "#60afff", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
                                   <span>🔍 Beoordeling & Bod uitbrengen</span>
                                 </div>
-                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+                                <div className="admin-secondhand-detail-grid">
                                   <div>
                                     <label style={{ fontSize: 12, fontWeight: 600, color: "rgba(255, 255, 255, 0.7)", display: "block", marginBottom: 6 }}>
                                       Bod per stuk (€)

@@ -588,6 +588,89 @@
   color: var(--primary);
 }
 
+.order-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 1px solid var(--border);
+}
+
+.order-card__actions-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.order-btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.order-btn-link--invoice {
+  color: #0b192c;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+}
+
+.order-btn-link--invoice:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.order-btn-link--return {
+  color: #016eb9;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.order-btn-link--return:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.order-return-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.order-return-status--APPROVED {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.order-return-status--REFUNDED {
+  background: #e0e7ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+.order-return-status--REJECTED {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
 /* ─── Loading skeleton ─────────────────────────────────────────── */
 .skeleton {
   background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);

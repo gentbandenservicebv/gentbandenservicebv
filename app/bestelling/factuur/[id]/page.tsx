@@ -114,7 +114,30 @@ function InvoiceContent({ params }: { params: Promise<{ id: string }> }) {
           <Link href="/banden" className="invoice-nav-link">
             ← Terug naar banden
           </Link>
-          <div className="invoice-actions">
+          <div className="invoice-actions" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <Link
+              href={`/retourbeleid?orderId=${order.id}`}
+              className="invoice-return-link"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                background: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: 8,
+                color: "#334155",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              <span>Retour aanvragen</span>
+            </Link>
             <button
               type="button"
               className="invoice-print-btn"
@@ -306,6 +329,18 @@ function InvoiceContent({ params }: { params: Promise<{ id: string }> }) {
 
           {/* Footer legal */}
           <div className="invoice-footer">
+            <div style={{ padding: "12px 16px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 14, textAlign: "left" }}>
+              <strong style={{ fontSize: "0.825rem", color: "#1e293b", display: "block", marginBottom: 4 }}>
+                14 Dagen Bedenktijd &amp; Retourbeleid (Boek VI WER):
+              </strong>
+              <p style={{ margin: 0, fontSize: "0.775rem", color: "#64748b", lineHeight: 1.5 }}>
+                Niet-gemonteerde en ongebruikte banden kunnen binnen 14 kalenderdagen na ontvangst kosteloos worden geretourneerd in onze werkplaats te Gent (Dendermondsesteenweg 428) of via ophaling.{" "}
+                <Link href={`/retourbeleid?orderId=${order.id}`} style={{ color: "var(--primary)", textDecoration: "underline", fontWeight: 600 }}>
+                  Dien online een retouraanvraag in
+                </Link>{" "}
+                of raadpleeg ons volledige retourbeleid.
+              </p>
+            </div>
             <p>Gent Bandenservice BV · Dendermondsesteenweg 428, 9040 Gent · RPR Gent · BTW BE 1041.093.575</p>
             <p>Bedankt voor uw vertrouwen in Gent Bandenservice BV!</p>
           </div>

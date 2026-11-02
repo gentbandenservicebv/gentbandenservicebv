@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
 
 // GET /api/orders - list orders (admin or own orders)
 export async function GET(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: req.headers });
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -108,6 +108,9 @@ export async function GET(req: NextRequest) {
     where: user?.role === "ADMIN" ? {} : { userId: session.user.id },
     include: {
       items: { include: { tyre: { include: { images: { where: { isPrimary: true } } } } } },
+      returnRequests: {
+        orderBy: { createdAt: "desc" },
+      },
       user: {
         select: {
           id: true,

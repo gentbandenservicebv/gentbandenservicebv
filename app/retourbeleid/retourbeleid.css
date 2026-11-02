@@ -1,0 +1,365 @@
+/* ==========================================================================
+   Return Policy (Retourbeleid) & Return Request Portal — Gent Bandenservice BV
+   ========================================================================== */
+
+.retour-page {
+  background: var(--surface);
+  min-height: 100vh;
+}
+
+/* ─── Hero ────────────────────────────────────────────────────────── */
+.retour-hero {
+  background: radial-gradient(circle at 80% 20%, rgba(1, 110, 185, 0.22) 0%, transparent 60%),
+              linear-gradient(180deg, #0a0d14 0%, #121620 100%);
+  padding: 116px 0 60px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.retour-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(1, 110, 185, 0.2);
+  border: 1px solid rgba(1, 110, 185, 0.4);
+  color: #60afff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  margin-bottom: 16px;
+}
+
+.retour-hero__title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.retour-hero__sub {
+  font-size: 1.05rem;
+  color: #94a3b8;
+  max-width: 650px;
+  line-height: 1.6;
+}
+
+/* ─── Pillars Grid ────────────────────────────────────────────────── */
+.retour-pillars-section {
+  padding: 40px 0 60px;
+  margin-top: -30px;
+  position: relative;
+  z-index: 2;
+}
+
+.retour-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .retour-pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .retour-pillars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.retour-pillar-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.retour-pillar-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.retour-pillar-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(1, 110, 185, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+.retour-pillar-card h3 {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 6px;
+}
+
+.retour-pillar-card p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ─── Main Content Layout ─────────────────────────────────────────── */
+.retour-content-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  padding-bottom: 90px;
+  align-items: flex-start;
+}
+
+@media (max-width: 992px) {
+  .retour-content-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* ─── Legal Policy Text Article ───────────────────────────────────── */
+.retour-article {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+@media (max-width: 600px) {
+  .retour-article {
+    padding: 28px 20px;
+  }
+}
+
+.retour-article h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-top: 32px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.retour-article h2:first-of-type {
+  margin-top: 0;
+}
+
+.retour-article p,
+.retour-article li {
+  font-size: 0.94rem;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.retour-article ul {
+  padding-left: 20px;
+  margin: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.retour-highlight-box {
+  background: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 0.92rem;
+  color: #166534;
+  line-height: 1.6;
+}
+
+.retour-warning-box {
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  border-radius: 0 10px 10px 0;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-size: 0.92rem;
+  color: #991b1b;
+  line-height: 1.6;
+}
+
+/* ─── Interactive Return Request Form ─────────────────────────────── */
+.retour-portal-box {
+  background: #ffffff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 34px 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 90px;
+}
+
+@media (max-width: 600px) {
+  .retour-portal-box {
+    padding: 24px 20px;
+    position: static;
+  }
+}
+
+.retour-portal-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+}
+
+.retour-portal-header h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.retour-portal-header p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.retour-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.retour-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 500px) {
+  .retour-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.retour-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.retour-form-group label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.retour-form-group input,
+.retour-form-group select,
+.retour-form-group textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: #ffffff;
+  font-size: 0.92rem;
+  color: var(--dark);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
+
+.retour-form-group input:focus,
+.retour-form-group select:focus,
+.retour-form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(1, 110, 185, 0.15);
+}
+
+.retour-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.5;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.retour-checkbox-label input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.retour-submit-btn {
+  width: 100%;
+  padding: 13px;
+  font-size: 0.98rem;
+  font-weight: 800;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Success & Error Alert */
+.retour-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.retour-success-box {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  text-align: center;
+}
+
+.retour-success-icon {
+  font-size: 2.8rem;
+  margin-bottom: 12px;
+}
+
+.retour-success-box h3 {
+  color: #166534;
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.retour-success-box p {
+  font-size: 0.92rem;
+  color: #14532d;
+  line-height: 1.6;
+  margin: 0 0 16px;
+}

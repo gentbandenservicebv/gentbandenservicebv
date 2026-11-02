@@ -59,6 +59,7 @@ export const ModelName = {
   TyreImage: 'TyreImage',
   Order: 'Order',
   OrderItem: 'OrderItem',
+  ReturnRequest: 'ReturnRequest',
   Appointment: 'Appointment',
   PendingAppointmentOtp: 'PendingAppointmentOtp',
   VisitorSession: 'VisitorSession',
@@ -237,6 +238,24 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const ReturnRequestScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  customerName: 'customerName',
+  customerEmail: 'customerEmail',
+  customerPhone: 'customerPhone',
+  reason: 'reason',
+  reasonDetails: 'reasonDetails',
+  itemsInfo: 'itemsInfo',
+  status: 'status',
+  adminNotes: 'adminNotes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReturnRequestScalarFieldEnum = (typeof ReturnRequestScalarFieldEnum)[keyof typeof ReturnRequestScalarFieldEnum]
 
 
 export const AppointmentScalarFieldEnum = {

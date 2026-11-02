@@ -46,6 +46,12 @@ interface Order {
   notes: string | null;
   createdAt: string;
   items: OrderItem[];
+  returnRequests?: {
+    id: string;
+    status: "PENDING" | "APPROVED" | "REJECTED" | "REFUNDED";
+    reason: string;
+    createdAt: string;
+  }[];
 }
 
 type Tab = "profile" | "appointments" | "orders" | "security";
@@ -471,6 +477,45 @@ function OrdersTab() {
                     </div>
                     <div className="order-card__total">
                       Totaal: <span>{formatPrice(order.totalAmount)}</span>
+                    </div>
+                  </div>
+
+                  <div className="order-card__actions">
+                    <div className="order-card__actions-left">
+                      <Link
+                        href={`/bestelling/factuur/${order.id}`}
+                        className="order-btn-link order-btn-link--invoice"
+                      >
+                        📄 Factuur
+                      </Link>
+
+                      {order.returnRequests && order.returnRequests.length > 0 ? (
+                        (() => {
+                          const latestReturn = order.returnRequests[0];
+                          const returnLabelMap: Record<string, string> = {
+                            PENDING: "⏳ Retouraanvraag in behandeling",
+                            APPROVED: "✅ Retouraanvraag goedgekeurd",
+                            REFUNDED: "💳 Terugbetaling voltooid",
+                            REJECTED: "❌ Retouraanvraag afgewezen",
+                          };
+                          return (
+                            <span className={`order-return-status order-return-status--${latestReturn.status}`}>
+                              {returnLabelMap[latestReturn.status] || latestReturn.status}
+                            </span>
+                          );
+                        })()
+                      ) : order.status !== "CANCELLED" ? (
+                        <Link
+                          href={`/retourbeleid?orderId=${order.id}`}
+                          className="order-btn-link order-btn-link--return"
+                        >
+                          ↩ Retour aanvragen
+                        </Link>
+                      ) : null}
+                    </div>
+
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-subtle)" }}>
+                      14d bedenktijd conform WER
                     </div>
                   </div>
                 </div>

@@ -242,14 +242,7 @@ export default function AdminAnalyticsView() {
       </div>
 
       {/* ── KPI METRICS ROW ──────────────────────────── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 16,
-          marginBottom: 28,
-        }}
-      >
+      <div className="admin-stats-grid">
         {/* Realtime Live Online */}
         <div
           style={{
@@ -357,7 +350,7 @@ export default function AdminAnalyticsView() {
       </div>
 
       {/* ── TWO-COLUMN SECTION: TOP PAGES & DEVICES ─────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 24, marginBottom: 32 }}>
+      <div className="admin-dashboard-split-grid" style={{ marginBottom: 32 }}>
         {/* Most visited pages */}
         <div
           style={{
@@ -540,7 +533,8 @@ export default function AdminAnalyticsView() {
               onChange={(e) => setSearchFilter(e.target.value)}
               className="admin-input"
               style={{
-                width: 240,
+                flex: "1 1 200px",
+                minWidth: 160,
                 padding: "8px 12px",
                 fontSize: "0.82rem",
                 background: "#10121a",
@@ -555,6 +549,8 @@ export default function AdminAnalyticsView() {
               onChange={(e) => setDeviceFilter(e.target.value)}
               className="admin-select"
               style={{
+                flex: "1 1 140px",
+                minWidth: 130,
                 padding: "8px 12px",
                 fontSize: "0.82rem",
                 background: "#10121a",
