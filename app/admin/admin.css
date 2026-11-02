@@ -792,9 +792,43 @@
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
-.admin-dropzone:hover {
+.admin-dropzone:hover,
+.admin-dropzone[data-state="ready"]:hover {
   border-color: rgba(1, 110, 185, 0.65) !important;
   background: rgba(1, 110, 185, 0.05) !important;
+}
+
+/* UT internal element overrides for dark admin theme */
+.admin-dropzone .ut-label,
+.admin-dropzone [class*="ut-label"] {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.admin-dropzone .ut-allowed-content,
+.admin-dropzone [class*="ut-allowed-content"] {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.admin-dropzone .ut-button,
+.admin-dropzone [class*="ut-button"] {
+  background: #016eb9 !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  border: none !important;
+  font-size: 0.85rem !important;
+  padding: 8px 18px !important;
+  cursor: pointer !important;
+}
+
+.admin-dropzone .ut-button:hover,
+.admin-dropzone [class*="ut-button"]:hover {
+  background: #015a9a !important;
+}
+
+.admin-dropzone svg path,
+.admin-dropzone svg circle {
+  fill: rgba(1, 110, 185, 0.5) !important;
+  stroke: rgba(1, 110, 185, 0.5) !important;
 }
 
 /* Paste zone bar */
