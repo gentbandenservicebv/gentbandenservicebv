@@ -121,7 +121,7 @@ function FooterInner() {
             </div>
 
             {/* Contact */}
-            <div className="footer__col">
+            <div className="footer__col footer__col--contact">
               <h3 className="footer__heading">Contact</h3>
               <ul className="footer__list footer__list--contact">
                 <li>
@@ -175,7 +175,7 @@ function FooterInner() {
                   padding: 0,
                   font: "inherit",
                   cursor: "pointer",
-                  color: "inherit",
+
                 }}
               >
                 Cookie-instellingen

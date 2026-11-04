@@ -703,6 +703,13 @@
   top: 96px;
 }
 
+@media (max-width: 990px) {
+  .vb-aside {
+    position: static;
+    top: auto;
+  }
+}
+
 .vb-aside__card {
   background: #ffffff;
   border: 1px solid #E2E8F0;

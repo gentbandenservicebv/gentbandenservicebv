@@ -2698,13 +2698,6 @@
   padding-bottom: 56px;
 }
 
-@media (max-width: 900px) {
-  .pd-layout {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-}
-
 /* Gallery */
 .pd-gallery {
   display: flex;
@@ -2712,6 +2705,18 @@
   gap: 12px;
   position: sticky;
   top: 80px;
+}
+
+@media (max-width: 900px) {
+  .pd-layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .pd-gallery {
+    position: static;
+    top: auto;
+  }
 }
 
 .pd-gallery__main {
@@ -2972,6 +2977,12 @@
   display: flex;
   gap: 10px;
   align-items: stretch;
+}
+
+@media (max-width: 480px) {
+  .pd-secondary-actions {
+    flex-direction: column;
+  }
 }
 
 .pd-appointment-btn {
