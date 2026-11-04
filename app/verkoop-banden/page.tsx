@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUploadThing } from "@/lib/uploadthing";
+import { compressImages } from "@/lib/image-compression";
 import "./verkoop-banden.css";
 
 const SEASON_OPTIONS = [
@@ -85,7 +86,11 @@ export default function VerkoopBandenPage() {
     }
     
     const filesToUpload = selectedFiles.slice(0, remaining);
-    startUpload(filesToUpload);
+    compressImages(filesToUpload).then(({ files: compressed }) => {
+      startUpload(compressed);
+    }).catch(() => {
+      startUpload(filesToUpload);
+    });
     // Reset file input so user can choose more files later
     e.target.value = "";
   }
@@ -111,7 +116,11 @@ export default function VerkoopBandenPage() {
     }
 
     const filesToUpload = droppedFiles.slice(0, remaining);
-    startUpload(filesToUpload);
+    compressImages(filesToUpload).then(({ files: compressed }) => {
+      startUpload(compressed);
+    }).catch(() => {
+      startUpload(filesToUpload);
+    });
   }
 
   function removePhoto(indexToRemove: number) {

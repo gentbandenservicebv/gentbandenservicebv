@@ -7,6 +7,7 @@ import Image from "next/image";
 import * as XLSX from "xlsx";
 import { useSession, signOut } from "@/lib/auth-client";
 import { UploadDropzone, useUploadThing } from "@/lib/uploadthing";
+import { compressImages } from "@/lib/image-compression";
 import AdminAnalyticsView from "./AdminAnalyticsView";
 import "./admin.css";
 
@@ -467,8 +468,13 @@ export default function AdminPage() {
       }
       if (imageFiles.length > 0) {
         setIsPasting(true);
-        setMessage({ type: "success", text: `Afbeelding geplakt — uploaden...` });
-        startUpload(imageFiles);
+        setMessage({ type: "success", text: `Afbeelding geplakt — comprimeren...` });
+        compressImages(imageFiles).then(({ files: compressed, summary }) => {
+          if (summary) setMessage({ type: "success", text: `⚡ ${summary} — uploaden...` });
+          startUpload(compressed);
+        }).catch(() => {
+          startUpload(imageFiles);
+        });
       }
     };
     window.addEventListener("paste", handlePaste);
@@ -2481,6 +2487,58 @@ export default function AdminPage() {
                             <span className="admin-upload-hint">(sleep, plak met Ctrl+V, of klik om te bladeren — max. 10)</span>
                           </h4>
 
+                          {/* Dedicated camera / file picker button (optimized for iPhone) */}
+                          <div style={{ marginBottom: 10 }}>
+                            <label
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "10px 18px",
+                                background: "linear-gradient(135deg, #016eb9 0%, #0b192c 100%)",
+                                border: "1px solid rgba(255, 255, 255, 0.15)",
+                                borderRadius: 10,
+                                color: "#ffffff",
+                                fontWeight: 700,
+                                fontSize: "0.875rem",
+                                cursor: isPasting ? "not-allowed" : "pointer",
+                                boxShadow: "0 4px 14px rgba(1, 110, 185, 0.3)",
+                                transition: "all 150ms ease",
+                              }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                              </svg>
+                              <span>{isPasting ? "Foto's optimaliseren & uploaden…" : "📷 Foto nemen met camera of fotobibliotheek (Auto-compressie)"}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                multiple
+                                style={{ display: "none" }}
+                                disabled={isPasting}
+                                onChange={async (e) => {
+                                  if (!e.target.files || e.target.files.length === 0) return;
+                                  const files = Array.from(e.target.files);
+                                  setIsPasting(true);
+                                  setMessage({ type: "success", text: "Foto's comprimeren (MB's verkleinen voor snelle upload)..." });
+                                  try {
+                                    const { files: compressed, summary } = await compressImages(files);
+                                    if (summary) {
+                                      setMessage({ type: "success", text: `⚡ ${summary} — uploaden...` });
+                                    }
+                                    startUpload(compressed);
+                                  } catch (err) {
+                                    console.error("Camera upload error:", err);
+                                    startUpload(files);
+                                  }
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          </div>
+
                           {/* Paste / clipboard hint bar */}
                           <div
                             className={`admin-paste-zone${isPasting ? " admin-paste-zone--loading" : ""}${isPasteDragOver ? " admin-paste-zone--over" : ""}`}
@@ -2492,7 +2550,11 @@ export default function AdminPage() {
                               const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
                               if (files.length > 0) {
                                 setIsPasting(true);
-                                startUpload(files);
+                                setMessage({ type: "success", text: "Foto's comprimeren..." });
+                                compressImages(files).then(({ files: compressed, summary }) => {
+                                  if (summary) setMessage({ type: "success", text: `⚡ ${summary} — uploaden...` });
+                                  startUpload(compressed);
+                                }).catch(() => startUpload(files));
                               }
                             }}
                           >
@@ -2504,12 +2566,25 @@ export default function AdminPage() {
                                 <path d="M5 4h2a1 1 0 0 1 1 1v1h8V5a1 1 0 0 1 1-1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
                               </svg>
                             )}
-                            <span>{isPasting ? "Uploaden…" : "Plak afbeelding (Ctrl+V) of sleep hier naartoe"}</span>
+                            <span>{isPasting ? "Comprimeren & uploaden…" : "Plak afbeelding (Ctrl+V) of sleep hier naartoe"}</span>
                           </div>
 
-                          {/* UploadDropzone: browse + drag-and-drop */}
+                          {/* UploadDropzone: browse + drag-and-drop with auto compression */}
                           <UploadDropzone
                             endpoint="tyreImages"
+                            onBeforeUploadBegin={async (files) => {
+                              setMessage({ type: "success", text: "Foto's comprimeren..." });
+                              try {
+                                const { files: compressed, summary } = await compressImages(files);
+                                if (summary) {
+                                  setMessage({ type: "success", text: `⚡ ${summary} — uploaden naar server...` });
+                                }
+                                return compressed;
+                              } catch (err) {
+                                console.warn("[UploadDropzone] Compression fallback:", err);
+                                return files;
+                              }
+                            }}
                             onClientUploadComplete={(res) => {
                               console.log("[Upload] complete:", res);
                               onUploadDone(res);
