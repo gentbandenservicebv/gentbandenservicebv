@@ -62,6 +62,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Validate secondhand tires delivery restriction
+    const hasSecondhand = itemsToProcess.some(
+      (item) => tyresMap.get(item.tyreId)?.condition === "USED"
+    );
+    if (hasSecondhand && !withMontage) {
+      return NextResponse.json(
+        {
+          error:
+            "Tweedehands banden kunnen niet geleverd worden. Kies voor montage of afhaling in onze werkplaats.",
+        },
+        { status: 400 }
+      );
+    }
+
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
     // Build line items for Stripe Checkout

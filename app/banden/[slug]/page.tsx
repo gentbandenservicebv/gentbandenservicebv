@@ -556,6 +556,32 @@ function TyreDetailContent() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [relatedTyres, setRelatedTyres] = useState<Tyre[]>([]);
 
+  // Hover zoom lens & floating window state (like Bandenleader)
+  const [zoomActive, setZoomActive] = useState(false);
+  const [lensPos, setLensPos] = useState({ x: 0, y: 0 });
+  const [bgPos, setBgPos] = useState({ x: 0, y: 0 });
+  const mainImgRef = useRef<HTMLDivElement>(null);
+  const LENS_SIZE = 140;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mainImgRef.current) return;
+    const rect = mainImgRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const maxX = rect.width - LENS_SIZE;
+    const maxY = rect.height - LENS_SIZE;
+
+    const x = Math.max(0, Math.min(maxX, mouseX - LENS_SIZE / 2));
+    const y = Math.max(0, Math.min(maxY, mouseY - LENS_SIZE / 2));
+
+    setLensPos({ x, y });
+
+    const pctX = maxX > 0 ? (x / maxX) * 100 : 0;
+    const pctY = maxY > 0 ? (y / maxY) * 100 : 0;
+    setBgPos({ x: pctX, y: pctY });
+  };
+
   // Load tyre details
   useEffect(() => {
     if (!identifier) return;
@@ -671,6 +697,12 @@ function TyreDetailContent() {
     tyre.diameter ? { label: "Velgdiameter", value: `${tyre.diameter}″` } : { label: "", value: null },
     { label: "Seizoen", value: SEASON_LABEL[tyre.season] },
     { label: "Conditie", value: isNew ? "Nieuw" : "2de hands" },
+    {
+      label: "Levering & Montage",
+      value: isNew
+        ? "Thuislevering mogelijk of montage in onze werkplaats"
+        : "⚠️ Uitsluitend montage of afhaling in werkplaats (geen bezorging)",
+    },
     speedLoad ? { label: "Last/snelheidsindex", value: speedLoad } : { label: "", value: null },
     tyre.treadDepth ? { label: "Profieldiepte", value: `${tyre.treadDepth} mm` } : { label: "", value: null },
     tyre.dotYear ? { label: "DOT-jaar", value: tyre.dotYear } : { label: "", value: null },
@@ -718,7 +750,13 @@ function TyreDetailContent() {
 
           {/* Left: Gallery */}
           <div className="pd-gallery">
-            <div className="pd-gallery__main">
+            <div
+              className="pd-gallery__main"
+              ref={mainImgRef}
+              onMouseEnter={() => setZoomActive(true)}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => setZoomActive(false)}
+            >
               {currentImg ? (
                 <Image
                   src={currentImg.url}
@@ -739,7 +777,53 @@ function TyreDetailContent() {
                 {isNew ? "Nieuw" : "2de hands"}
               </span>
               {tyre.runflat && <span className="pd-badge pd-badge--rft pd-badge--rft-pos">Runflat</span>}
+
+              {/* Zoom hint badge (Desktop only) */}
+              {currentImg && (
+                <div className="pd-zoom-hint">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
+                  <span>Beweeg muis voor zoom</span>
+                </div>
+              )}
+
+              {/* Lens overlay moving over primary image */}
+              {zoomActive && currentImg && (
+                <div
+                  className="pd-zoom-lens"
+                  style={{
+                    left: `${lensPos.x}px`,
+                    top: `${lensPos.y}px`,
+                    width: `${LENS_SIZE}px`,
+                    height: `${LENS_SIZE}px`,
+                  }}
+                />
+              )}
             </div>
+
+            {/* Separate floating zoom window (like Bandenleader) */}
+            {zoomActive && currentImg && (
+              <div className="pd-zoom-window">
+                <div
+                  className="pd-zoom-window__img"
+                  style={{
+                    backgroundImage: `url(${currentImg.url})`,
+                    backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
+                    backgroundSize: "280% 280%",
+                  }}
+                />
+                <div className="pd-zoom-window__header">
+                  <div className="pd-zoom-window__title">
+                    <span style={{ fontWeight: 800 }}>{tyre.brand}</span> {tyre.model}
+                  </div>
+                  <span className="pd-zoom-window__badge">HD Detail</span>
+                </div>
+              </div>
+            )}
 
             {/* Thumbnail strip */}
             {tyre.images.length > 1 && (
@@ -914,6 +998,24 @@ function TyreDetailContent() {
                     </>
                   )}
                 </div>
+
+                {/* Delivery policy notice */}
+                {!isNew ? (
+                  <div className="pd-delivery-banner pd-delivery-banner--used">
+                    <span className="pd-delivery-banner__icon">🏪</span>
+                    <div className="pd-delivery-banner__content">
+                      <strong>Uitsluitend montage &amp; afhaling ter plaatse</strong>
+                      <p>Tweedehands banden kunnen niet verzonden worden. Direct beschikbaar in onze werkplaats te Gent.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pd-delivery-banner pd-delivery-banner--new">
+                    <span className="pd-delivery-banner__icon">🚚</span>
+                    <div className="pd-delivery-banner__content">
+                      <strong>Gratis levering aan huis</strong> of vakkundige montage in onze werkplaats.
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons: Bestel nu + Maak afspraak + Favoriet */}

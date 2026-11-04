@@ -126,6 +126,14 @@ function CheckoutContent() {
     }
   }, [user, name, email]);
 
+  const hasSecondhand = cart.some((it) => it.condition === "USED");
+
+  useEffect(() => {
+    if (hasSecondhand && !withMontage) {
+      setWithMontage(true);
+    }
+  }, [hasSecondhand, withMontage]);
+
   const totalCount = cart.reduce((acc, it) => acc + it.quantity, 0);
   const tyreSubtotal = cart.reduce((acc, it) => acc + it.price * it.quantity, 0);
   const montageSubtotal = withMontage ? MONTAGE_PRICE * totalCount : 0;
@@ -141,6 +149,10 @@ function CheckoutContent() {
     }
 
     if (!withMontage) {
+      if (hasSecondhand) {
+        setCheckoutError("Tweedehands banden kunnen niet verzonden worden. Kies voor montage of afhaling in onze werkplaats.");
+        return;
+      }
       if (!address.street.trim() || !address.postalCode.trim() || !address.city.trim()) {
         setCheckoutError("Vul alstublieft uw straat, postcode en gemeente in voor de bezorging.");
         return;
@@ -462,61 +474,99 @@ function CheckoutContent() {
                 </div>
 
                 <div className="checkout-service-options">
-                  {/* Option A: With Montage -> routes to /afspraak keeping cart */}
+                  {/* Option A: With Montage / Workshop */}
                   <div
-                    className="checkout-service-card"
-                    onClick={handleSelectMontage}
+                    className={`checkout-service-card ${withMontage ? "checkout-service-card--active" : ""}`}
+                    onClick={() => setWithMontage(true)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => (e.key === " " || e.key === "Enter") && handleSelectMontage()}
+                    onKeyDown={(e) => (e.key === " " || e.key === "Enter") && setWithMontage(true)}
                   >
                     <input
                       type="radio"
                       className="checkout-service-radio"
-                      checked={false}
-                      onChange={handleSelectMontage}
+                      checked={withMontage}
+                      onChange={() => setWithMontage(true)}
                     />
                     <div className="checkout-service-content">
                       <div className="checkout-service-headline">
                         <span className="checkout-service-name">
-                          🔧 Montage &amp; Balancering in onze werkplaats
+                          🔧 Montage &amp; Afhaling in onze werkplaats
                         </span>
                         <span className="checkout-service-price" style={{ color: "var(--primary)" }}>
-                          Afspraak inplannen →
+                          {hasSecondhand ? "Verplicht voor 2de hands" : "Populairste keuze"}
                         </span>
                       </div>
                       <p className="checkout-service-desc">
                         Vakkundig gemonteerd en gebalanceerd in onze werkplaats (Dendermondsesteenweg 428, Gent).
-                        U wordt doorgestuurd naar de afsprakenplanner met uw bandenmaat ({cart[0]?.size || "uit winkelmand"}) automatisch ingevuld. <strong>Uw winkelmand blijft bewaard!</strong>
+                        {hasSecondhand && " Tweedehands banden worden altijd in onze werkplaats gecontroleerd en gemonteerd of klaargelegd voor afhaling."}
                       </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectMontage();
+                        }}
+                        style={{
+                          marginTop: 8,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "none",
+                          border: "none",
+                          color: "var(--primary)",
+                          fontWeight: 700,
+                          fontSize: "0.85rem",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        Wilt u vooraf een specifiek tijdslot reserveren? Open de planner →
+                      </button>
                     </div>
                   </div>
 
                   {/* Option B: Without Montage (Home Delivery) */}
                   <div
-                    className={`checkout-service-card ${!withMontage ? "checkout-service-card--active" : ""}`}
-                    onClick={() => setWithMontage(false)}
+                    className={`checkout-service-card ${!withMontage ? "checkout-service-card--active" : ""} ${hasSecondhand ? "checkout-service-card--disabled" : ""}`}
+                    onClick={() => {
+                      if (hasSecondhand) return;
+                      setWithMontage(false);
+                    }}
                     role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === " " && setWithMontage(false)}
+                    tabIndex={hasSecondhand ? -1 : 0}
+                    onKeyDown={(e) => {
+                      if (hasSecondhand) return;
+                      if (e.key === " ") setWithMontage(false);
+                    }}
                   >
                     <input
                       type="radio"
                       className="checkout-service-radio"
-                      checked={!withMontage}
-                      onChange={() => setWithMontage(false)}
+                      checked={!withMontage && !hasSecondhand}
+                      disabled={hasSecondhand}
+                      onChange={() => {
+                        if (hasSecondhand) return;
+                        setWithMontage(false);
+                      }}
                     />
                     <div className="checkout-service-content">
                       <div className="checkout-service-headline">
                         <span className="checkout-service-name">
                           📦 Levering aan huis (Zonder montage)
                         </span>
-                        <span className="checkout-service-price" style={{ color: "#16a34a" }}>
-                          Gratis bezorging
+                        <span className="checkout-service-price" style={{ color: hasSecondhand ? "#dc2626" : "#16a34a" }}>
+                          {hasSecondhand ? "Niet leverbaar" : "Gratis bezorging"}
                         </span>
                       </div>
                       <p className="checkout-service-desc">
-                        Uw banden worden snel en zorgvuldig afgeleverd op uw woon- of bedrijfsadres. Vul hieronder uw adres in.
+                        {hasSecondhand ? (
+                          <span style={{ color: "#b45309", fontWeight: 600 }}>
+                            ⚠️ Tweedehands banden worden niet verzonden. Deze zijn uitsluitend beschikbaar voor montage of afhaling in onze werkplaats.
+                          </span>
+                        ) : (
+                          "Uw banden worden snel en zorgvuldig afgeleverd op uw woon- of bedrijfsadres. Vul hieronder uw adres in."
+                        )}
                       </p>
                     </div>
                   </div>

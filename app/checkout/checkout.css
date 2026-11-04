@@ -573,6 +573,18 @@
   box-shadow: 0 0 0 1px var(--primary, #016eb9);
 }
 
+.checkout-service-card--disabled {
+  opacity: 0.65;
+  cursor: not-allowed !important;
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.checkout-service-card--disabled:hover {
+  border-color: #e2e8f0 !important;
+  background: #f8fafc !important;
+}
+
 .checkout-service-radio {
   margin-top: 3px;
   accent-color: var(--primary, #016eb9);
