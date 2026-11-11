@@ -348,6 +348,157 @@ export async function sendAppointmentRescheduled(
   }).catch((err) => console.error("[Resend] reschedule shop notice failed:", err));
 }
 
+// ── Appointment Reminder (1 day before) ───────────────────────────────────────
+
+export async function sendAppointmentReminder(
+  data: AppointmentEmailData
+): Promise<{ success: boolean; error?: string }> {
+  const email = data.userEmail ?? data.guestEmail;
+  if (!email) {
+    return { success: false, error: "Geen e-mailadres voor afspraak" };
+  }
+
+  const name = data.userName ?? data.guestName ?? "Klant";
+  const typeLabel = TYPE_LABELS[data.type] ?? data.type;
+  const dtStr = formatDT(data.dateTime);
+
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herinnering aan uw afspraak – Gent Bandenservice</title>
+</head>
+<body style="margin:0;padding:0;background:#0f0f0f;font-family:system-ui,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#1a1a2e;border-radius:16px;overflow:hidden;max-width:600px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#016eb9 0%,#00a6fb 100%);padding:40px 40px 32px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.85);text-transform:uppercase;">Gent Bandenservice</p>
+              <h1 style="margin:0;font-size:28px;font-weight:800;color:#fff;">⏰ Herinnering Afspraak</h1>
+              <p style="margin:12px 0 0;font-size:15px;color:rgba(255,255,255,0.95);font-weight:500;">Morgen verwachten wij u in onze werkplaats!</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 32px;">
+              <p style="margin:0 0 20px;font-size:16px;color:#e0e0e0;">Beste <strong style="color:#fff;">${escapeHtml(name)}</strong>,</p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#ccc;">
+                Dit is een vriendelijke herinnering dat uw afspraak bij <strong>Gent Bandenservice</strong> morgen plaatsvindt. Hieronder vindt u een overzicht van alle details:
+              </p>
+
+              <!-- Details Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f0f0f;border:1px solid #28283e;border-radius:12px;overflow:hidden;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.5px;color:#00a6fb;text-transform:uppercase;">Overzicht van uw afspraak</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;width:130px;font-size:13px;color:#888;">Dienst</td>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:14px;color:#fff;font-weight:600;">${escapeHtml(typeLabel)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:13px;color:#888;">Datum &amp; tijd</td>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:15px;color:#00e5a3;font-weight:700;">${dtStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:13px;color:#888;">Locatie</td>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:14px;color:#fff;font-weight:600;">Dendermondsesteenweg 428, 9040 Gent</td>
+                      </tr>
+                      ${data.vehicleInfo ? `
+                      <tr>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:13px;color:#888;">Voertuig</td>
+                        <td style="padding:10px 0;border-bottom:1px solid #1f1f30;font-size:14px;color:#fff;">${escapeHtml(data.vehicleInfo)}</td>
+                      </tr>` : ""}
+                      ${data.notes ? `
+                      <tr>
+                        <td style="padding:10px 0;font-size:13px;color:#888;vertical-align:top;">Opmerkingen</td>
+                        <td style="padding:10px 0;font-size:14px;color:#fff;">${escapeHtml(data.notes)}</td>
+                      </tr>` : ""}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Google Maps Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=Dendermondsesteenweg+428,+9040+Gent" target="_blank" style="display:inline-block;background:#016eb9;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px;letter-spacing:0.3px;">
+                      📍 Route plannen (Google Maps)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Practical Tips Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#16213e;border-left:4px solid #00a6fb;border-radius:0 8px 8px 0;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#00a6fb;text-transform:uppercase;letter-spacing:1px;">Praktische tips</p>
+                    <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:#ddd;">
+                      <li>Kom bij voorkeur <strong>5 à 10 minuten voor</strong> het afgesproken tijdstip aan.</li>
+                      <li>Heeft u wielen met een antidiefstaldop of velgenslot? Leg deze alvast op uw passagierszetel.</li>
+                      <li>Kunt u toch niet komen? Gelieve ons zo snel mogelijk te contacteren zodat we uw plek kunnen vrijmaken.</li>
+                    </ul>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Contact info -->
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#888;text-align:center;">
+                Heeft u nog vragen of wenst u iets te wijzigen?<br/>
+                Bel ons op <a href="tel:0467871205" style="color:#00a6fb;text-decoration:none;font-weight:600;">0467 87 12 05</a> of stuur een e-mail naar <a href="mailto:info@gentbandenservice.be" style="color:#00a6fb;text-decoration:none;">info@gentbandenservice.be</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0a0a0a;padding:24px 32px;text-align:center;border-top:1px solid #1f1f30;">
+              <p style="margin:0 0 4px;font-size:12px;color:#666;font-weight:500;">Gent Bandenservice BV</p>
+              <p style="margin:0;font-size:11px;color:#444;">Dendermondsesteenweg 428, 9040 Gent · BTW: BE 1041.093.575</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  try {
+    const { error } = await resend.emails.send(
+      {
+        from: FROM,
+        to: [email],
+        subject: `⏰ Herinnering: uw afspraak morgen bij Gent Bandenservice (${dtStr})`,
+        html,
+      },
+      { idempotencyKey: `appointment-reminder/${data.id}` }
+    );
+
+    if (error) {
+      console.error("[Resend] reminder email failed:", error.message);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Resend] reminder email exception:", msg);
+    return { success: false, error: msg };
+  }
+}
+
 
 // ── OTP verification email ────────────────────────────────────────────────────
 

@@ -193,6 +193,7 @@ export async function PATCH(
       where: { id },
       data: {
         dateTime: newDateTime,
+        reminderSentAt: null,
         // If it was cancelled or pending, set to PENDING or CONFIRMED
         status: appointment.status === "CANCELLED" ? "PENDING" : appointment.status,
         notes: updatedNotes,
@@ -241,7 +242,7 @@ export async function PATCH(
         ...(body.guestName !== undefined ? { guestName: body.guestName } : {}),
         ...(body.guestPhone !== undefined ? { guestPhone: body.guestPhone } : {}),
         ...(body.guestEmail !== undefined ? { guestEmail: body.guestEmail } : {}),
-        ...(dateTimeChanged ? { dateTime: newDateTime } : {}),
+        ...(dateTimeChanged ? { dateTime: newDateTime, reminderSentAt: null } : {}),
         ...(body.notes !== undefined ? { notes: body.notes } : {}),
         ...(body.vehicleInfo !== undefined ? { vehicleInfo: body.vehicleInfo } : {}),
       },
