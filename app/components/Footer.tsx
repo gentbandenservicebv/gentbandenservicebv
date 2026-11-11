@@ -6,15 +6,17 @@ import { usePathname } from "next/navigation";
 import "./Footer.css";
 
 const services = [
-  "Montage & Balans",
-  "Bandenherstelling",
-  "TPMS Veranderen",
-  "Bandeninspectie",
+  { label: "Montage & Balans", href: "/diensten#montage" },
+  { label: "Bandenherstelling", href: "/diensten#herstelling" },
+  { label: "Mobiele Bandenservice", href: "/mobiele-service" },
+  { label: "TPMS Veranderen", href: "/diensten#tpms" },
+  { label: "Bandeninspectie", href: "/diensten#inspectie" },
 ];
 
 const quickLinks = [
   { href: "/banden", label: "Banden" },
   { href: "/diensten", label: "Diensten" },
+  { href: "/mobiele-service", label: "Mobiele Service" },
   { href: "/verkoop-banden", label: "Tweedehands banden verkopen" },
   { href: "/retourbeleid", label: "Retour & Herroeping" },
   { href: "/over-ons", label: "Over ons" },
@@ -97,9 +99,9 @@ function FooterInner() {
               <h3 className="footer__heading">Diensten</h3>
               <ul className="footer__list">
                 {services.map((s) => (
-                  <li key={s}>
-                    <Link href="/diensten" className="footer__link">
-                      {s}
+                  <li key={s.label}>
+                    <Link href={s.href} className="footer__link">
+                      {s.label}
                     </Link>
                   </li>
                 ))}

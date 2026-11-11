@@ -10,6 +10,7 @@ import "./Header.css";
 const navLinks = [
   { href: "/banden", label: "Banden" },
   { href: "/diensten", label: "Diensten" },
+  { href: "/mobiele-service", label: "Mobiele Service" },
   { href: "/over-ons", label: "Over ons" },
   { href: "/contact", label: "Contact" },
 ];
