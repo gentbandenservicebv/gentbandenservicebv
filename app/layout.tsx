@@ -9,6 +9,7 @@ import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 import CookieConsent from "./components/CookieConsent";
 import UserActivityTracker from "./components/UserActivityTracker";
+import { Analytics } from "@vercel/analytics/next"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -173,6 +174,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <CookieConsent />
         </Suspense>
+        <Analytics />
       </body>
     </html>
   );
