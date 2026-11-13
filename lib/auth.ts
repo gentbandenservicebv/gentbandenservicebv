@@ -34,6 +34,11 @@ export const auth = betterAuth({
       },
     },
   },
+  rateLimit: {
+    enabled: true,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // 10 requests per hour
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24,     // 1 day

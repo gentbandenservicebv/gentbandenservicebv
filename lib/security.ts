@@ -147,3 +147,17 @@ export function checkRateLimit(
   bucket.count += 1;
   return { allowed: true, remaining: limit - bucket.count, retryAfterSec: 0 };
 }
+
+/**
+ * Extracts the real client IP from a Next.js request, respecting common
+ * reverse-proxy headers (Vercel, Cloudflare, standard proxies).
+ * Falls back to "unknown" when no header is present (e.g. local dev).
+ */
+export function getClientIp(request: { headers: { get(name: string): string | null } }): string {
+  return (
+    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("cf-connecting-ip")?.trim() ||
+    "unknown"
+  );
+}

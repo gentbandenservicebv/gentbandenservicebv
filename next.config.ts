@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "utfs.io" },
       { protocol: "https", hostname: "**.ufs.sh" },
       { protocol: "https", hostname: "cdn.tiresleader.com" },
+      // Google Places API profile photos
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
   cacheComponents: true,
