@@ -8,6 +8,8 @@ interface DimensionCombination {
   w: number;
   p: number;
   d: number;
+  rimKey: string;
+  isC: boolean;
   s: string;
   stock: number;
 }
@@ -17,20 +19,52 @@ interface DimensionsData {
   totalVariants: number;
   widths: number[];
   profiles: number[];
-  diameters: number[];
+  diameters: string[];
   combinations: DimensionCombination[];
 }
 
-// Fallbacks while loading from the database
-const FALLBACK_WIDTHS = [175, 185, 195, 205, 215, 225, 235, 245, 255];
-const FALLBACK_PROFILES = [40, 45, 50, 55, 60, 65];
-const FALLBACK_RIMS = [15, 16, 17, 18, 19, 20];
+// Fallback combinations in case database is loading or unavailable
+const FALLBACK_COMBINATIONS: DimensionCombination[] = [
+  { w: 195, p: 65, d: 15, rimKey: "15", isC: false, s: "ALL_SEASON", stock: 12 },
+  { w: 205, p: 55, d: 16, rimKey: "16", isC: false, s: "SUMMER", stock: 24 },
+  { w: 205, p: 60, d: 16, rimKey: "16", isC: false, s: "ALL_SEASON", stock: 8 },
+  { w: 215, p: 55, d: 17, rimKey: "17", isC: false, s: "SUMMER", stock: 10 },
+  { w: 215, p: 65, d: 16, rimKey: "16C", isC: true, s: "ALL_SEASON", stock: 16 },
+  { w: 225, p: 40, d: 18, rimKey: "18", isC: false, s: "SUMMER", stock: 14 },
+  { w: 225, p: 40, d: 19, rimKey: "19", isC: false, s: "SUMMER", stock: 6 },
+  { w: 225, p: 45, d: 17, rimKey: "17", isC: false, s: "SUMMER", stock: 18 },
+  { w: 225, p: 45, d: 18, rimKey: "18", isC: false, s: "ALL_SEASON", stock: 12 },
+  { w: 235, p: 65, d: 16, rimKey: "16C", isC: true, s: "ALL_SEASON", stock: 8 },
+];
+
+const POPULAR_SIZES = [
+  { label: "205/55 R16", w: "205", p: "55", r: "16" },
+  { label: "195/65 R15", w: "195", p: "65", r: "15" },
+  { label: "215/65 R16C", w: "215", p: "65", r: "16C" },
+  { label: "225/45 R17", w: "225", p: "45", r: "17" },
+  { label: "225/40 R18", w: "225", p: "40", r: "18" },
+  { label: "205/60 R16", w: "205", p: "60", r: "16" },
+];
+
+function sortRims(a: string, b: string): number {
+  const numA = parseInt(a, 10);
+  const numB = parseInt(b, 10);
+  if (numA !== numB) return numA - numB;
+  return a.localeCompare(b);
+}
+
+function formatRimDisplay(rimVal: string): string {
+  if (rimVal.endsWith("C")) {
+    const num = parseInt(rimVal, 10);
+    return `${num}"C (Bestelwagen)`;
+  }
+  return `${rimVal}"`;
+}
 
 export default function TireFinder() {
   const router = useRouter();
 
   const [data, setData] = useState<DimensionsData | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // Form selections
   const [width, setWidth] = useState<string>("");
@@ -38,7 +72,7 @@ export default function TireFinder() {
   const [rim, setRim] = useState<string>("");
   const [season, setSeason] = useState<string>("all");
 
-  // Fetch real dimensions from the database API
+  // Fetch real dimensions & live stock from the database API
   useEffect(() => {
     let active = true;
     fetch("/api/tyres/dimensions")
@@ -47,15 +81,12 @@ export default function TireFinder() {
         return res.json();
       })
       .then((json: DimensionsData) => {
-        if (active && json.combinations) {
+        if (active && json && Array.isArray(json.combinations) && json.combinations.length > 0) {
           setData(json);
         }
       })
       .catch((err) => {
-        console.error("Fout bij ophalen bandenmaten:", err);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+        console.error("Bandenmaten API fallback actief:", err);
       });
 
     return () => {
@@ -63,63 +94,105 @@ export default function TireFinder() {
     };
   }, []);
 
-  // Compute available widths from database data
-  const availableWidths = useMemo(() => {
-    if (!data?.combinations || data.combinations.length === 0) {
-      return FALLBACK_WIDTHS;
-    }
-    return [...new Set(data.combinations.map((c) => c.w))].sort((a, b) => a - b);
+  const allCombinations = useMemo(() => {
+    return data?.combinations ?? FALLBACK_COMBINATIONS;
   }, [data]);
 
-  // Compute available profiles based on selected width
+  // 1. SMART WIDTHS:
+  // Derived strictly from combinations existing in the DB (filtered by profile/rim if already selected)
+  const availableWidths = useMemo(() => {
+    let list = allCombinations;
+    if (profile) {
+      list = list.filter((c) => c.p === Number(profile));
+    }
+    if (rim) {
+      list = list.filter((c) => (c.rimKey || String(c.d)) === rim);
+    }
+    return Array.from(new Set(list.map((c) => c.w))).sort((a, b) => a - b);
+  }, [allCombinations, profile, rim]);
+
+  // 2. SMART PROFILES:
+  // When a width is selected (e.g. 225), ONLY shows profiles that exist in the DB for that width (e.g. 40, 45)
   const availableProfiles = useMemo(() => {
-    if (!data?.combinations || data.combinations.length === 0) {
-      return FALLBACK_PROFILES;
+    let list = allCombinations;
+    if (width) {
+      list = list.filter((c) => c.w === Number(width));
     }
-    const filtered = width
-      ? data.combinations.filter((c) => c.w === Number(width))
-      : data.combinations;
-    return [...new Set(filtered.map((c) => c.p))].sort((a, b) => a - b);
-  }, [data, width]);
+    if (rim) {
+      list = list.filter((c) => (c.rimKey || String(c.d)) === rim);
+    }
+    return Array.from(new Set(list.map((c) => c.p))).sort((a, b) => a - b);
+  }, [allCombinations, width, rim]);
 
-  // Compute available rims based on selected width and profile
+  // 3. SMART RIMS:
+  // When width and profile are selected (e.g. 225/40), ONLY shows diameters that exist in the DB for that combo (e.g. 18, 19, NOT 15!)
   const availableRims = useMemo(() => {
-    if (!data?.combinations || data.combinations.length === 0) {
-      return FALLBACK_RIMS;
+    let list = allCombinations;
+    if (width) {
+      list = list.filter((c) => c.w === Number(width));
     }
-    let filtered = data.combinations;
-    if (width) filtered = filtered.filter((c) => c.w === Number(width));
-    if (profile) filtered = filtered.filter((c) => c.p === Number(profile));
-    return [...new Set(filtered.map((c) => c.d))].sort((a, b) => a - b);
-  }, [data, width, profile]);
+    if (profile) {
+      list = list.filter((c) => c.p === Number(profile));
+    }
+    const keys = Array.from(new Set(list.map((c) => c.rimKey || String(c.d))));
+    return keys.sort(sortRims);
+  }, [allCombinations, width, profile]);
 
-  // Reset profile if no longer in available list
+  // Stock lookup maps for the current filtered view
+  const stockMapWidth = useMemo(() => {
+    const map = new Map<number, number>();
+    allCombinations.forEach((c) => {
+      if (profile && c.p !== Number(profile)) return;
+      if (rim && (c.rimKey || String(c.d)) !== rim) return;
+      map.set(c.w, (map.get(c.w) || 0) + c.stock);
+    });
+    return map;
+  }, [allCombinations, profile, rim]);
+
+  const stockMapProfile = useMemo(() => {
+    const map = new Map<number, number>();
+    allCombinations.forEach((c) => {
+      if (width && c.w !== Number(width)) return;
+      if (rim && (c.rimKey || String(c.d)) !== rim) return;
+      map.set(c.p, (map.get(c.p) || 0) + c.stock);
+    });
+    return map;
+  }, [allCombinations, width, rim]);
+
+  const stockMapRim = useMemo(() => {
+    const map = new Map<string, number>();
+    allCombinations.forEach((c) => {
+      if (width && c.w !== Number(width)) return;
+      if (profile && c.p !== Number(profile)) return;
+      const key = c.rimKey || String(c.d);
+      map.set(key, (map.get(key) || 0) + c.stock);
+    });
+    return map;
+  }, [allCombinations, width, profile]);
+
+  // Auto-reset selections when they are no longer valid in the newly filtered list
   useEffect(() => {
-    if (profile && !availableProfiles.includes(Number(profile))) {
+    if (profile && availableProfiles.length > 0 && !availableProfiles.includes(Number(profile))) {
       setProfile("");
     }
   }, [availableProfiles, profile]);
 
-  // Reset rim if no longer in available list
   useEffect(() => {
-    if (rim && !availableRims.includes(Number(rim))) {
+    if (rim && availableRims.length > 0 && !availableRims.includes(rim)) {
       setRim("");
     }
   }, [availableRims, rim]);
 
   // Compute live matching stock & model count
   const matchingStats = useMemo(() => {
-    if (!data?.combinations) {
-      return { totalStock: 29894, variants: 2004 };
-    }
-
-    let list = data.combinations;
+    let list = allCombinations;
     const hasFilters = Boolean(width || profile || rim || (season && season !== "all"));
 
     if (!hasFilters) {
       return {
-        totalStock: data.totalInStock || 29894,
-        variants: data.totalVariants || list.length,
+        totalStock: data?.totalInStock || list.reduce((sum, i) => sum + i.stock, 0),
+        variants: data?.totalVariants || list.length,
+        isDefault: true,
       };
     }
 
@@ -130,7 +203,7 @@ export default function TireFinder() {
       list = list.filter((c) => c.p === Number(profile));
     }
     if (rim) {
-      list = list.filter((c) => c.d === Number(rim));
+      list = list.filter((c) => (c.rimKey || String(c.d)) === rim);
     }
     if (season && season !== "all") {
       const sMap: Record<string, string> = {
@@ -148,8 +221,9 @@ export default function TireFinder() {
     return {
       totalStock,
       variants: list.length,
+      isDefault: false,
     };
-  }, [data, width, profile, rim, season]);
+  }, [allCombinations, data, width, profile, rim, season]);
 
   // Handle form submission
   function handleSubmit(e: React.FormEvent) {
@@ -169,6 +243,16 @@ export default function TireFinder() {
     setProfile("");
     setRim("");
     setSeason("all");
+  }
+
+  function handleQuickSelect(size: { w: string; p: string; r: string }) {
+    if (width === size.w && profile === size.p && rim === size.r) {
+      handleReset();
+    } else {
+      setWidth(size.w);
+      setProfile(size.p);
+      setRim(size.r);
+    }
   }
 
   const hasSelections = Boolean(width || profile || rim || (season && season !== "all"));
@@ -214,11 +298,15 @@ export default function TireFinder() {
           gap: 8,
           padding: "8px 12px",
           marginBottom: 16,
-          background: "rgba(34, 197, 94, 0.1)",
-          border: "1px solid rgba(34, 197, 94, 0.25)",
+          background: matchingStats.isDefault || matchingStats.totalStock > 0
+            ? "rgba(34, 197, 94, 0.1)"
+            : "rgba(1, 110, 185, 0.12)",
+          border: matchingStats.isDefault || matchingStats.totalStock > 0
+            ? "1px solid rgba(34, 197, 94, 0.25)"
+            : "1px solid rgba(1, 110, 185, 0.3)",
           borderRadius: "8px",
           fontSize: "0.82rem",
-          color: "#86efac",
+          color: matchingStats.isDefault || matchingStats.totalStock > 0 ? "#86efac" : "#93c5fd",
         }}
       >
         <span
@@ -227,21 +315,33 @@ export default function TireFinder() {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            backgroundColor: "#22c55e",
-            boxShadow: "0 0 8px rgba(34, 197, 94, 0.7)",
+            backgroundColor: matchingStats.isDefault || matchingStats.totalStock > 0 ? "#22c55e" : "#3b82f6",
+            boxShadow: matchingStats.isDefault || matchingStats.totalStock > 0
+              ? "0 0 8px rgba(34, 197, 94, 0.7)"
+              : "0 0 8px rgba(59, 130, 246, 0.7)",
             animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
             flexShrink: 0,
           }}
         />
         <span>
           {hasSelections ? (
-            <>
-              <strong>{matchingStats.totalStock.toLocaleString("nl-NL")}</strong> banden op voorraad{" "}
-              <span style={{ opacity: 0.75 }}>({matchingStats.variants} types)</span>
-            </>
+            matchingStats.totalStock > 0 ? (
+              <>
+                <strong>{matchingStats.totalStock.toLocaleString("nl-NL")}</strong> banden op voorraad{" "}
+                <span style={{ opacity: 0.75 }}>({matchingStats.variants} types)</span>
+              </>
+            ) : (
+              <>
+                <strong>Direct leverbaar op bestelling</strong>{" "}
+                <span style={{ opacity: 0.85 }}>(snelle montage in Gent)</span>
+              </>
+            )
           ) : (
             <>
-              <strong>{matchingStats.totalStock.toLocaleString("nl-NL")}</strong> banden direct leverbaar
+              <strong>
+                {(matchingStats.totalStock > 0 ? matchingStats.totalStock : 2500).toLocaleString("nl-NL")}
+              </strong>{" "}
+              banden direct leverbaar in Gent
             </>
           )}
         </span>
@@ -260,14 +360,16 @@ export default function TireFinder() {
               className="form-input"
               value={width}
               onChange={(e) => setWidth(e.target.value)}
-              disabled={loading}
             >
               <option value="">Breedte</option>
-              {availableWidths.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
+              {availableWidths.map((w) => {
+                const stock = stockMapWidth.get(w) || 0;
+                return (
+                  <option key={w} value={w}>
+                    {w} {stock > 0 ? `(${stock} op voorraad)` : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -284,14 +386,16 @@ export default function TireFinder() {
               className="form-input"
               value={profile}
               onChange={(e) => setProfile(e.target.value)}
-              disabled={loading}
             >
               <option value="">Profiel</option>
-              {availableProfiles.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
+              {availableProfiles.map((p) => {
+                const stock = stockMapProfile.get(p) || 0;
+                return (
+                  <option key={p} value={p}>
+                    {p} {stock > 0 ? `(${stock} op voorraad)` : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -308,15 +412,37 @@ export default function TireFinder() {
               className="form-input"
               value={rim}
               onChange={(e) => setRim(e.target.value)}
-              disabled={loading}
             >
               <option value="">Velg</option>
-              {availableRims.map((r) => (
-                <option key={r} value={r}>
-                  {r}&quot;
-                </option>
-              ))}
+              {availableRims.map((r) => {
+                const stock = stockMapRim.get(r) || 0;
+                return (
+                  <option key={r} value={r}>
+                    {formatRimDisplay(r)} {stock > 0 ? `(${stock} op voorraad)` : ""}
+                  </option>
+                );
+              })}
             </select>
+          </div>
+        </div>
+
+        {/* Quick popular size shortcuts */}
+        <div className="finder-quick">
+          <span className="finder-quick__label">Populaire maten:</span>
+          <div className="finder-quick__chips">
+            {POPULAR_SIZES.map((s) => {
+              const isActive = width === s.w && profile === s.p && rim === s.r;
+              return (
+                <button
+                  key={s.label}
+                  type="button"
+                  className={`finder-quick__chip ${isActive ? "finder-quick__chip--active" : ""}`}
+                  onClick={() => handleQuickSelect(s)}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -347,7 +473,9 @@ export default function TireFinder() {
         <button type="submit" className="btn btn--primary w-full finder-card__submit">
           <span>
             {hasSelections
-              ? `Banden bekijken (${matchingStats.totalStock.toLocaleString("nl-NL")})`
+              ? matchingStats.totalStock > 0
+                ? `Banden bekijken (${matchingStats.totalStock.toLocaleString("nl-NL")})`
+                : "Banden zoeken & bestellen"
               : "Banden zoeken"}
           </span>
           <SearchIcon />

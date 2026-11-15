@@ -446,8 +446,9 @@ export function TyreDetailSkeleton() {
 
       {/* Product layout skeleton */}
       <section className="section bg-surface pd-section">
-        <div className="container pd-layout">
-          {/* Left: Gallery Skeleton */}
+        <div className="container">
+          <div className="pd-layout">
+            {/* Left: Gallery Skeleton */}
           <div className="pd-gallery">
             <div className="pd-skeleton-main">
               <div className="skeleton-shimmer" style={{ width: "100%", height: "100%" }} />
@@ -525,7 +526,7 @@ export function TyreDetailSkeleton() {
         </div>
 
         {/* Related items skeleton */}
-        <div className="container pd-related-section">
+        <div className="pd-related-section">
           <div style={{ marginBottom: 20 }}>
             <div className="skeleton-bar skeleton-shimmer" style={{ width: 260, height: 24, marginBottom: 8 }} />
             <div className="skeleton-bar skeleton-shimmer" style={{ width: 340, height: 15 }} />
@@ -536,7 +537,8 @@ export function TyreDetailSkeleton() {
             ))}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
     </div>
   );
 }
@@ -552,6 +554,10 @@ function TyreDetailContent() {
   const [descExpanded, setDescExpanded] = useState(false);
   const descRef = useRef<HTMLParagraphElement>(null);
   const [descOverflows, setDescOverflows] = useState(false);
+
+  // Mobile sticky bottom CTA when in-page CTA box scrolls out of view
+  const ctaBoxRef = useRef<HTMLDivElement>(null);
+  const [showStickyBottom, setShowStickyBottom] = useState(false);
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [relatedTyres, setRelatedTyres] = useState<Tyre[]>([]);
@@ -614,6 +620,29 @@ function TyreDetailContent() {
     const el = descRef.current;
     if (!el) return;
     setDescOverflows(el.scrollHeight > el.clientHeight + 2);
+  }, [tyre]);
+
+  // Show mobile sticky bottom bar when in-page CTA scrolls out of view
+  useEffect(() => {
+    const el = ctaBoxRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Only trigger sticky bar if CTA has scrolled out of view ABOVE the viewport
+        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+          setShowStickyBottom(true);
+        } else {
+          setShowStickyBottom(false);
+        }
+      },
+      {
+        threshold: 0,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
   }, [tyre]);
 
   // Fetch related tyres (same size or same season)
@@ -746,7 +775,8 @@ function TyreDetailContent() {
 
       {/* Product layout */}
       <section className="section bg-surface pd-section">
-        <div className="container pd-layout">
+        <div className="container">
+          <div className="pd-layout">
 
           {/* Left: Gallery */}
           <div className="pd-gallery">
@@ -1019,7 +1049,7 @@ function TyreDetailContent() {
               </div>
 
               {/* Action Buttons: Bestel nu + Maak afspraak + Favoriet */}
-              <div className="pd-info__cta">
+              <div className="pd-info__cta" ref={ctaBoxRef}>
                 <button
                   type="button"
                   className="btn btn--primary btn--lg pd-buy-btn"
@@ -1066,7 +1096,6 @@ function TyreDetailContent() {
                   <span
                     className="pd-spec-label"
                     data-tooltip={tooltip}
-                    data-tooltip-pos="right"
                     title={tooltip}
                     tabIndex={tooltip ? 0 : undefined}
                   >
@@ -1086,7 +1115,7 @@ function TyreDetailContent() {
 
         {/* Related Products Section (Using exact same TyreCard as tires page) */}
         {relatedTyres.length > 0 && (
-          <div className="container pd-related-section">
+          <div className="pd-related-section">
             <div className="pd-related-header">
               <div>
                 <h2 className="pd-related-title">Gerelateerde banden in deze maat</h2>
@@ -1115,7 +1144,37 @@ function TyreDetailContent() {
             </div>
           </div>
         )}
+        </div>
       </section>
+
+      {/* Mobile Sticky Bottom Bar: smoothly appears only when in-page CTA scrolls out of view */}
+      <div className={`pd-mobile-bottom-bar ${showStickyBottom ? "pd-mobile-bottom-bar--visible" : ""}`}>
+        <div className="pd-mobile-bottom-bar__inner">
+          <div className="pd-mobile-bottom-bar__price">
+            <span className="pd-mobile-bottom-bar__val">€{tyre.price.toFixed(2)}</span>
+            <span className="pd-mobile-bottom-bar__unit">incl. BTW</span>
+          </div>
+
+          <div className="pd-mobile-bottom-bar__actions">
+            <Link
+              href={`/afspraak?service=fitting&tire=${encodeURIComponent(`${tyre.brand} ${tyre.model} (${tyre.size})`)}&size=${encodeURIComponent(tyre.size)}&tireId=${encodeURIComponent(tyre.id)}`}
+              className="pd-mobile-bottom-bar__btn pd-mobile-bottom-bar__btn--appt"
+            >
+              <CalendarIcon size={16} />
+              <span>Afspraak</span>
+            </Link>
+
+            <button
+              type="button"
+              className="pd-mobile-bottom-bar__btn pd-mobile-bottom-bar__btn--buy"
+              onClick={() => handleAddToCart(tyre)}
+            >
+              <CartSmallIcon size={18} />
+              <span>Bestel nu</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

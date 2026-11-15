@@ -492,7 +492,20 @@ function matchesFilters(
   if (excludeField !== "size") {
     if (excludeField !== "width" && f.width && tyre.width !== Number(f.width)) return false;
     if (excludeField !== "profile" && f.profile && tyre.aspectRatio !== Number(f.profile)) return false;
-    if (excludeField !== "rim" && f.rim && tyre.diameter !== Number(f.rim)) return false;
+    if (excludeField !== "rim" && f.rim) {
+      const isC = f.rim.toUpperCase().includes("C");
+      const rimNum = parseInt(f.rim, 10);
+      if (tyre.diameter !== rimNum) return false;
+      if (isC) {
+        const isTyreC = Boolean(
+          (tyre.size && /\b\d{2}C\b/i.test(tyre.size)) ||
+          (tyre.size && /C$/i.test(tyre.size.trim())) ||
+          (tyre.plyRating && /C|6PR|8PR|10PR|12PR/i.test(tyre.plyRating)) ||
+          tyre.tyreClass === "C"
+        );
+        if (!isTyreC) return false;
+      }
+    }
   }
 
   // 3. Brand
@@ -638,15 +651,27 @@ function FilterSidebar({
       if (filters.profile && t.aspectRatio !== Number(filters.profile)) return false;
       return matchesFilters(t, filters, search, "size");
     });
-    const map = new Map<number, number>();
+    const map = new Map<string, number>();
     list.forEach((t) => {
       if (typeof t.diameter === "number") {
-        map.set(t.diameter, (map.get(t.diameter) || 0) + 1);
+        const isTyreC = Boolean(
+          (t.size && /\b\d{2}C\b/i.test(t.size)) ||
+          (t.size && /C$/i.test(t.size.trim())) ||
+          (t.plyRating && /C|6PR|8PR|10PR|12PR/i.test(t.plyRating)) ||
+          t.tyreClass === "C"
+        );
+        const key = isTyreC ? `${t.diameter}C` : String(t.diameter);
+        map.set(key, (map.get(key) || 0) + 1);
       }
     });
     return {
       total: list.length,
-      rims: Array.from(map.entries()).sort((a, b) => a[0] - b[0]),
+      rims: Array.from(map.entries()).sort((a, b) => {
+        const numA = parseInt(a[0], 10);
+        const numB = parseInt(b[0], 10);
+        if (numA !== numB) return numA - numB;
+        return a[0].localeCompare(b[0]);
+      }),
     };
   }, [allTyres, filters, search]);
 
@@ -1064,7 +1089,9 @@ function FilterSidebar({
                     >
                       <option value="">Alle ({availableRims.total})</option>
                       {availableRims.rims.map(([r, count]) => (
-                        <option key={r} value={r}>{r}&quot; ({count})</option>
+                        <option key={r} value={r}>
+                          {r.endsWith("C") ? `${parseInt(r, 10)}"C (Bestelwagen)` : `${r}"`} ({count})
+                        </option>
                       ))}
                     </select>
                   </div>

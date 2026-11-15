@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { BRANDS } from "@/app/merken/page";
 
 const SITE_URL = "https://www.gentbandenservice.be";
 
@@ -16,6 +17,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/merken`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.85,
     },
     {
       url: `${SITE_URL}/diensten`,
@@ -84,7 +91,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    return [...staticRoutes, ...tyreRoutes];
+    const brandRoutes: MetadataRoute.Sitemap = BRANDS.map((brand) => ({
+      url: `${SITE_URL}/merken/${brand.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+
+    return [...staticRoutes, ...brandRoutes, ...tyreRoutes];
   } catch {
     return staticRoutes;
   }
