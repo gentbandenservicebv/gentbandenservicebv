@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { sendSecondhandSubmissionConfirmation } from "@/lib/resend";
+import {
+  sendSecondhandSubmissionConfirmation,
+  sendSecondhandSubmissionShopNotification,
+} from "@/lib/resend";
 import {
   sanitizeString,
   sanitizeOptionalString,
@@ -153,23 +156,41 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // 6. Send confirmation email to customer (non-blocking)
-  sendSecondhandSubmissionConfirmation({
-    id: submission.id,
-    name: submission.name,
-    email: submission.email,
-    brand: submission.brand,
-    model: submission.model,
-    size: submission.size,
-    season: submission.season,
-    quantity: submission.quantity,
-    treadDepth: submission.treadDepth,
-    dotYear: submission.dotYear,
-    condition: submission.condition,
-    photosCount: validatedPhotos.length > 0 ? validatedPhotos.length : undefined,
-  }).catch((err) =>
-    console.error("[Resend] secondhand confirmation fire-and-forget failed:", err)
-  );
+  // 6. Send emails: both notification to shop owner and confirmation to customer
+  await Promise.allSettled([
+    // Shop owner notification
+    sendSecondhandSubmissionShopNotification({
+      id: submission.id,
+      name: submission.name,
+      email: submission.email,
+      phone: submission.phone,
+      brand: submission.brand,
+      model: submission.model,
+      size: submission.size,
+      season: submission.season,
+      quantity: submission.quantity,
+      treadDepth: submission.treadDepth,
+      dotYear: submission.dotYear,
+      condition: submission.condition,
+      extraNotes: submission.extraNotes,
+      photos: validatedPhotos,
+    }),
+    // Customer confirmation
+    sendSecondhandSubmissionConfirmation({
+      id: submission.id,
+      name: submission.name,
+      email: submission.email,
+      brand: submission.brand,
+      model: submission.model,
+      size: submission.size,
+      season: submission.season,
+      quantity: submission.quantity,
+      treadDepth: submission.treadDepth,
+      dotYear: submission.dotYear,
+      condition: submission.condition,
+      photosCount: validatedPhotos.length > 0 ? validatedPhotos.length : undefined,
+    }),
+  ]);
 
   return NextResponse.json(submission, { status: 201 });
 }

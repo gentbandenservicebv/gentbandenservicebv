@@ -526,6 +526,179 @@
   background: #F8FAFC;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   animation: vb-pop 200ms ease-out;
+  cursor: zoom-in;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.vb-photo-item:hover {
+  transform: translateY(-2px);
+  border-color: #016eb9;
+  box-shadow: 0 6px 16px rgba(1, 110, 185, 0.2);
+}
+
+.vb-photo-zoom-hint {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.vb-photo-item:hover .vb-photo-zoom-hint {
+  opacity: 1;
+}
+
+/* Lightbox Modal */
+.vb-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: vbFadeIn 160ms ease-out;
+}
+
+@keyframes vbFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vb-lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: #1a1d27;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+}
+
+.vb-lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: rgba(15, 17, 23, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vb-lightbox-counter {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.vb-lightbox-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vb-lightbox-external {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 6px;
+  padding: 5px 10px;
+  text-decoration: none;
+  transition: all 140ms ease;
+}
+
+.vb-lightbox-external:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #ffffff;
+}
+
+.vb-lightbox-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 140ms ease;
+}
+
+.vb-lightbox-close:hover {
+  background: rgba(239, 68, 68, 0.85);
+}
+
+.vb-lightbox-body {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0d13;
+  padding: 16px;
+  min-width: 320px;
+  min-height: 280px;
+}
+
+.vb-lightbox-img {
+  max-width: 86vw;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.vb-lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  transition: all 150ms ease;
+}
+
+.vb-lightbox-nav:hover {
+  background: #016eb9;
+  border-color: #016eb9;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.vb-lightbox-nav--prev {
+  left: 16px;
+}
+
+.vb-lightbox-nav--next {
+  right: 16px;
 }
 
 @keyframes vb-pop {

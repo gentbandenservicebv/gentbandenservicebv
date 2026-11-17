@@ -428,6 +428,32 @@ export default function AdminPage() {
   const [isPasteDragOver, setIsPasteDragOver] = useState(false);
   const uploadZoneRef = useRef<HTMLDivElement>(null);
 
+  // Lightbox modal state for viewing full-size images (e.g. secondhand tyres)
+  const [adminLightbox, setAdminLightbox] = useState<{
+    list: string[];
+    index: number;
+    title?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!adminLightbox) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setAdminLightbox(null);
+      if (e.key === "ArrowLeft") {
+        setAdminLightbox((prev) =>
+          prev ? { ...prev, index: prev.index > 0 ? prev.index - 1 : prev.list.length - 1 } : null
+        );
+      }
+      if (e.key === "ArrowRight") {
+        setAdminLightbox((prev) =>
+          prev ? { ...prev, index: prev.index < prev.list.length - 1 ? prev.index + 1 : 0 } : null
+        );
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [adminLightbox]);
+
   const onUploadDone = useCallback(
     (res: { key: string; url?: string; ufsUrl?: string; serverData?: { url?: string } }[]) => {
       const imgs = res.map((f) => ({
@@ -5475,14 +5501,25 @@ export default function AdminPage() {
                     const isExpanded = expandedSecondhand === s.id;
                     const actionKey = s.id;
 
-                    // Parse photos if any
+                    // Parse photos if any (handles single or double-encoded JSON, array, or comma-separated)
                     let photoList: string[] = [];
                     if (s.photos) {
                       try {
-                        const parsed = JSON.parse(s.photos);
-                        if (Array.isArray(parsed)) photoList = parsed;
+                        let parsed: unknown = typeof s.photos === "string" ? JSON.parse(s.photos) : s.photos;
+                        if (typeof parsed === "string") {
+                          try {
+                            parsed = JSON.parse(parsed);
+                          } catch {
+                            // keep as string
+                          }
+                        }
+                        if (Array.isArray(parsed)) {
+                          photoList = parsed.map((item) => String(item).trim()).filter(Boolean);
+                        } else if (typeof parsed === "string") {
+                          photoList = parsed.split(",").map((item) => item.trim()).filter(Boolean);
+                        }
                       } catch {
-                        photoList = s.photos.split(",").filter(Boolean);
+                        photoList = String(s.photos).split(",").map((item) => item.trim()).filter(Boolean);
                       }
                     }
 
@@ -5660,40 +5697,64 @@ export default function AdminPage() {
                               <div style={{ background: "rgba(255, 255, 255, 0.025)", border: "1px solid rgba(255, 255, 255, 0.07)", borderRadius: 12, padding: "16px 18px", marginBottom: 20 }}>
                                 <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "rgba(255, 255, 255, 0.65)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                                   <span>📸 Geüploade foto&apos;s ({photoList.length})</span>
-                                  <span style={{ fontSize: "0.7rem", color: "rgba(255, 255, 255, 0.4)", fontWeight: 400 }}>(klik om te vergroten)</span>
+                                  <span style={{ fontSize: "0.7rem", color: "#60afff", fontWeight: 600 }}>(klik om te vergroten)</span>
                                 </div>
                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                                  {photoList
-                                    .filter((url) => typeof url === "string" && (url.startsWith("https://") || url.startsWith("/uploads/")))
-                                    .map((url, idx) => (
-                                      <a
-                                        key={idx}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                  {photoList.map((url, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() =>
+                                        setAdminLightbox({
+                                          list: photoList,
+                                          index: idx,
+                                          title: `${s.brand} ${s.model || ""} (${s.size}) – ${s.name}`,
+                                        })
+                                      }
+                                      style={{
+                                        position: "relative",
+                                        width: 100,
+                                        height: 100,
+                                        borderRadius: 10,
+                                        overflow: "hidden",
+                                        border: "1.5px solid rgba(255, 255, 255, 0.15)",
+                                        display: "block",
+                                        background: "#0a0c10",
+                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+                                        cursor: "zoom-in",
+                                        padding: 0,
+                                        transition: "transform 0.18s ease, border-color 0.18s ease",
+                                      }}
+                                      title="Klik om foto te vergroten"
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={url}
+                                        alt={`Band foto ${idx + 1}`}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                      />
+                                      <div
                                         style={{
-                                          position: "relative",
-                                          width: 100,
-                                          height: 100,
-                                          borderRadius: 10,
-                                          overflow: "hidden",
-                                          border: "1.5px solid rgba(255, 255, 255, 0.12)",
-                                          display: "block",
-                                          background: "#0a0c10",
-                                          boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
-                                          cursor: "zoom-in",
-                                          transition: "transform 0.18s ease, border-color 0.18s ease",
+                                          position: "absolute",
+                                          bottom: 4,
+                                          right: 4,
+                                          background: "rgba(15, 23, 42, 0.8)",
+                                          borderRadius: 4,
+                                          padding: "3px 5px",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          color: "#fff",
                                         }}
-                                        title="Klik om foto in nieuw tabblad te openen"
                                       >
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                          src={url}
-                                          alt={`Band foto ${idx + 1}`}
-                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        />
-                                      </a>
-                                    ))}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                          <circle cx="11" cy="11" r="8" />
+                                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                          <line x1="11" y1="8" x2="11" y2="14" />
+                                          <line x1="8" y1="11" x2="14" y2="11" />
+                                        </svg>
+                                      </div>
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
                             )}
@@ -5809,6 +5870,228 @@ export default function AdminPage() {
         {/* ── ANALYTICS & COOKIE TRACKING TAB ────────────── */}
         {activeTab === "analytics" && <AdminAnalyticsView />}
       </main>
+
+      {/* Secondhand / General Image Lightbox Modal */}
+      {adminLightbox && adminLightbox.list[adminLightbox.index] && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(10, 12, 16, 0.94)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            animation: "adminFadeIn 140ms ease-out",
+          }}
+          onClick={() => setAdminLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              position: "relative",
+              maxWidth: "92vw",
+              maxHeight: "92vh",
+              display: "flex",
+              flexDirection: "column",
+              background: "#161922",
+              border: "1.5px solid rgba(255, 255, 255, 0.12)",
+              borderRadius: 16,
+              overflow: "hidden",
+              boxShadow: "0 30px 80px rgba(0, 0, 0, 0.8)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 20px",
+                background: "rgba(22, 25, 34, 0.98)",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                gap: 16,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#60afff" }}>
+                  Foto {adminLightbox.index + 1} van {adminLightbox.list.length}
+                </span>
+                {adminLightbox.title && (
+                  <span
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "rgba(255, 255, 255, 0.6)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    · {adminLightbox.title}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <a
+                  href={adminLightbox.list[adminLightbox.index]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    color: "#38bdf8",
+                    background: "rgba(56, 189, 248, 0.12)",
+                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    textDecoration: "none",
+                  }}
+                  title="Open originele foto in nieuw tabblad"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                  <span>Origineel</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setAdminLightbox(null)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                    color: "#fff",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Sluiten (Esc)"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#0a0c10",
+                padding: 16,
+                minWidth: 320,
+                minHeight: 280,
+              }}
+            >
+              {adminLightbox.list.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAdminLightbox((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            index: prev.index > 0 ? prev.index - 1 : prev.list.length - 1,
+                          }
+                        : null
+                    )
+                  }
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "rgba(22, 25, 34, 0.85)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    color: "#fff",
+                    fontSize: 26,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 10,
+                  }}
+                  title="Vorige foto (←)"
+                >
+                  ‹
+                </button>
+              )}
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={adminLightbox.list[adminLightbox.index]}
+                alt={`Band foto ${adminLightbox.index + 1}`}
+                style={{
+                  maxWidth: "86vw",
+                  maxHeight: "78vh",
+                  objectFit: "contain",
+                  borderRadius: 8,
+                  display: "block",
+                }}
+              />
+
+              {adminLightbox.list.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAdminLightbox((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            index: prev.index < prev.list.length - 1 ? prev.index + 1 : 0,
+                          }
+                        : null
+                    )
+                  }
+                  style={{
+                    position: "absolute",
+                    right: 16,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 44,
+                    height: 44,
+                    borderRadius: "50%",
+                    background: "rgba(22, 25, 34, 0.85)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    color: "#fff",
+                    fontSize: 26,
+                    lineHeight: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 10,
+                  }}
+                  title="Volgende foto (→)"
+                >
+                  ›
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useUploadThing } from "@/lib/uploadthing";
@@ -49,10 +49,26 @@ export default function VerkoopBandenPage() {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState<FormData>(INITIAL);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [previewPhotoIndex, setPreviewPhotoIndex] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (previewPhotoIndex === null) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setPreviewPhotoIndex(null);
+      if (e.key === "ArrowLeft") {
+        setPreviewPhotoIndex((curr) => (curr !== null && curr > 0 ? curr - 1 : photos.length - 1));
+      }
+      if (e.key === "ArrowRight") {
+        setPreviewPhotoIndex((curr) => (curr !== null && curr < photos.length - 1 ? curr + 1 : 0));
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewPhotoIndex, photos.length]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,7 +155,7 @@ export default function VerkoopBandenPage() {
           ...form,
           quantity: Number(form.quantity) || 4,
           treadDepth: form.treadDepth ? Number(form.treadDepth) : undefined,
-          photos: photos.length > 0 ? JSON.stringify(photos) : null,
+          photos: photos.length > 0 ? photos : [],
         }),
       });
       const data = await res.json();
@@ -617,7 +633,20 @@ export default function VerkoopBandenPage() {
                   {photos.length > 0 && (
                     <div className="vb-photo-grid">
                       {photos.map((url, idx) => (
-                        <div key={idx} className="vb-photo-item">
+                        <div
+                          key={idx}
+                          className="vb-photo-item"
+                          onClick={() => setPreviewPhotoIndex(idx)}
+                          title="Klik om foto te vergroten"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setPreviewPhotoIndex(idx);
+                            }
+                          }}
+                        >
                           <Image
                             src={url}
                             alt={`Band foto ${idx + 1}`}
@@ -626,6 +655,14 @@ export default function VerkoopBandenPage() {
                             className="vb-photo-img"
                             unoptimized
                           />
+                          <div className="vb-photo-zoom-hint">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <circle cx="11" cy="11" r="8" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                              <line x1="11" y1="8" x2="11" y2="14" />
+                              <line x1="8" y1="11" x2="14" y2="11" />
+                            </svg>
+                          </div>
                           <button
                             type="button"
                             className="vb-photo-remove"
@@ -760,6 +797,91 @@ export default function VerkoopBandenPage() {
           )}
         </div>
       </section>
+
+      {/* Lightbox / Enlarged Photo Modal */}
+      {previewPhotoIndex !== null && photos[previewPhotoIndex] && (
+        <div
+          className="vb-lightbox-overlay"
+          onClick={() => setPreviewPhotoIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vergrote foto weergave"
+        >
+          <div className="vb-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <div className="vb-lightbox-header">
+              <span className="vb-lightbox-counter">
+                Foto {previewPhotoIndex + 1} van {photos.length}
+              </span>
+              <div className="vb-lightbox-actions">
+                <a
+                  href={photos[previewPhotoIndex]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="vb-lightbox-external"
+                  title="Open origineel in nieuw tabblad"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                  <span>Origineel</span>
+                </a>
+                <button
+                  type="button"
+                  className="vb-lightbox-close"
+                  onClick={() => setPreviewPhotoIndex(null)}
+                  title="Sluiten (Esc)"
+                  aria-label="Sluiten"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="vb-lightbox-body">
+              {photos.length > 1 && (
+                <button
+                  type="button"
+                  className="vb-lightbox-nav vb-lightbox-nav--prev"
+                  onClick={() =>
+                    setPreviewPhotoIndex((curr) =>
+                      curr !== null && curr > 0 ? curr - 1 : photos.length - 1
+                    )
+                  }
+                  title="Vorige foto (←)"
+                  aria-label="Vorige foto"
+                >
+                  ‹
+                </button>
+              )}
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photos[previewPhotoIndex]}
+                alt={`Band foto ${previewPhotoIndex + 1}`}
+                className="vb-lightbox-img"
+              />
+
+              {photos.length > 1 && (
+                <button
+                  type="button"
+                  className="vb-lightbox-nav vb-lightbox-nav--next"
+                  onClick={() =>
+                    setPreviewPhotoIndex((curr) =>
+                      curr !== null && curr < photos.length - 1 ? curr + 1 : 0
+                    )
+                  }
+                  title="Volgende foto (→)"
+                  aria-label="Volgende foto"
+                >
+                  ›
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

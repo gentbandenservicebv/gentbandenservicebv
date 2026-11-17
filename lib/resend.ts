@@ -1400,18 +1400,227 @@ export async function sendSecondhandSubmissionConfirmation(
 </body>
 </html>`;
 
-  const { error } = await resend.emails.send(
-    {
-      from: FROM,
-      to: [data.email],
-      subject: `Aanvraag ontvangen – ${safeQuantity}× ${safeBrand} ${safeSize} | Gent Bandenservice`,
-      html,
-    },
-    { idempotencyKey: `secondhand-confirm/${data.id}` }
-  );
+  try {
+    const { error } = await resend.emails.send(
+      {
+        from: FROM,
+        to: [data.email],
+        subject: `Aanvraag ontvangen – ${safeQuantity}× ${safeBrand} ${safeSize} | Gent Bandenservice`,
+        html,
+      },
+      { idempotencyKey: `secondhand-confirm/${data.id}` }
+    );
 
-  if (error) {
-    console.error("[Resend] secondhand confirmation failed:", error.message);
+    if (error) {
+      console.error("[Resend] secondhand confirmation failed:", error.message);
+    }
+  } catch (err) {
+    console.error("[Resend] Error sending secondhand customer confirmation:", err);
+  }
+}
+
+export interface SecondhandShopEmailData {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  brand: string;
+  model?: string | null;
+  size: string;
+  season?: string | null;
+  quantity: number;
+  treadDepth?: number | null;
+  dotYear?: string | null;
+  condition?: string | null;
+  extraNotes?: string | null;
+  photos?: string[];
+}
+
+/**
+ * Sent to the shop notification inbox (SHOP_EMAIL) when a customer
+ * submits a secondhand tyre offer through /verkoop-banden.
+ */
+export async function sendSecondhandSubmissionShopNotification(
+  data: SecondhandShopEmailData
+) {
+  const safeName = escapeHtml(data.name);
+  const safeEmail = escapeHtml(data.email);
+  const safePhone = data.phone ? escapeHtml(data.phone) : "Niet opgegeven";
+  const safeBrand = escapeHtml(data.brand);
+  const safeModel = data.model ? escapeHtml(data.model) : "";
+  const safeSize = escapeHtml(data.size);
+  const rawSeason = data.season ? (SEASON_NL[data.season] ?? data.season) : null;
+  const seasonLabel = rawSeason ? escapeHtml(rawSeason) : "Niet gespecificeerd";
+  const safeQuantity = Number(data.quantity) || 4;
+  const safeTreadDepth =
+    typeof data.treadDepth === "number"
+      ? `${data.treadDepth.toFixed(1)} mm`
+      : "Niet opgegeven";
+  const safeDotYear = data.dotYear ? escapeHtml(data.dotYear) : "Niet opgegeven";
+  const safeCondition = data.condition ? escapeHtml(data.condition) : "Niet opgegeven";
+  const safeExtraNotes = data.extraNotes
+    ? escapeHtml(data.extraNotes)
+    : "Geen extra opmerkingen";
+  const photos = Array.isArray(data.photos) ? data.photos : [];
+  const adminUrl = `${process.env.BETTER_AUTH_URL ?? "https://www.gentbandenservice.be"}/admin`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nieuwe inkoopaanvraag tweedehands banden – Gent Bandenservice</title>
+</head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;overflow:hidden;max-width:600px;width:100%;box-shadow:0 4px 16px rgba(0,0,0,0.06);border:1px solid #e2e8f0;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#016eb9 0%,#005691 100%);padding:28px 32px;color:#fff;">
+              <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;">Gent Bandenservice BV · Inkoop</p>
+              <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">🛞 Nieuwe tweedehands banden aangeboden</h1>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 20px;font-size:15px;color:#334155;line-height:1.5;">
+                Er is een nieuwe aanvraag binnengekomen via het inkoopformulier.
+              </p>
+
+              <!-- Customer info -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 12px;font-size:12px;font-weight:700;letter-spacing:1px;color:#016eb9;text-transform:uppercase;">Klantgegevens</p>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#1e293b;">
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;width:120px;">Naam:</td>
+                        <td style="padding:6px 0;font-weight:600;">${safeName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">E-mail:</td>
+                        <td style="padding:6px 0;"><a href="mailto:${safeEmail}" style="color:#016eb9;text-decoration:none;font-weight:600;">${safeEmail}</a></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Telefoon:</td>
+                        <td style="padding:6px 0;"><a href="tel:${safePhone}" style="color:#016eb9;text-decoration:none;font-weight:600;">${safePhone}</a></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Tyre details -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 12px;font-size:12px;font-weight:700;letter-spacing:1px;color:#016eb9;text-transform:uppercase;">Bandendetails</p>
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#1e293b;">
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;width:120px;">Merk &amp; Model:</td>
+                        <td style="padding:6px 0;font-weight:700;color:#0f172a;">${safeBrand}${safeModel ? ` ${safeModel}` : ""}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Maat:</td>
+                        <td style="padding:6px 0;font-weight:700;color:#016eb9;">${safeSize}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Aantal:</td>
+                        <td style="padding:6px 0;font-weight:600;">${safeQuantity} stuks</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Seizoen:</td>
+                        <td style="padding:6px 0;">${seasonLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Profieldiepte:</td>
+                        <td style="padding:6px 0;">${safeTreadDepth}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">DOT-jaar:</td>
+                        <td style="padding:6px 0;">${safeDotYear}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;">Staat:</td>
+                        <td style="padding:6px 0;">${safeCondition}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:#64748b;vertical-align:top;">Opmerkingen:</td>
+                        <td style="padding:6px 0;white-space:pre-wrap;">${safeExtraNotes}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Photos if any -->
+              ${photos.length > 0 ? `
+              <div style="margin-bottom:24px;">
+                <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:1px;color:#016eb9;text-transform:uppercase;">
+                  Ontvangen foto's (${photos.length})
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                  ${photos.map((p, idx) => `
+                    <a href="${escapeHtml(p)}" target="_blank" style="display:inline-block;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;text-decoration:none;">
+                      <img src="${escapeHtml(p)}" alt="Band foto ${idx + 1}" style="width:110px;height:80px;object-fit:cover;display:block;" />
+                    </a>
+                  `).join("")}
+                </div>
+              </div>` : ""}
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 10px;">
+                <tr>
+                  <td align="center">
+                    <a href="${adminUrl}" style="display:inline-block;background:#016eb9;color:#ffffff;font-size:15px;font-weight:700;padding:14px 28px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(1,110,185,0.3);">
+                      Beheer aanvraag in Admin Dashboard →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
+                U kunt direct antwoorden op deze e-mail om contact op te nemen met ${safeName}.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;font-size:12px;color:#94a3b8;">Gent Bandenservice BV · Dendermondsesteenweg 428, 9040 Gent</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const { error } = await resend.emails.send(
+      {
+        from: FROM,
+        to: [SHOP_EMAIL],
+        replyTo: data.email,
+        subject: `[Inkoop 2de hands] ${safeQuantity}× ${safeBrand} ${safeSize} – ${safeName}`,
+        html,
+      },
+      { idempotencyKey: `secondhand-shop-notify/${data.id}` }
+    );
+
+    if (error) {
+      console.error("[Resend] secondhand shop notification failed:", error.message);
+    }
+  } catch (err) {
+    console.error("[Resend] Error sending secondhand shop notification:", err);
   }
 }
 
