@@ -42,6 +42,18 @@ function SuccessContent() {
 
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deliveryDays, setDeliveryDays] = useState("2–5 werkdagen");
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.delivery_time_min && d?.delivery_time_max) {
+          setDeliveryDays(`${d.delivery_time_min}–${d.delivery_time_max} ${d.delivery_time_unit || "werkdagen"}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!sessionId) {
@@ -161,7 +173,7 @@ function SuccessContent() {
               </h3>
             </div>
             <p style={{ margin: 0, fontSize: "0.925rem", color: "#475569", lineHeight: 1.55 }}>
-              Uw bestelling wordt met zorg voorbereid en binnen 1-2 werkdagen verzonden.
+              Uw bestelling wordt met zorg voorbereid en binnen {deliveryDays} verzonden.
               {session?.metadata?.deliveryAddress && (
                 <span style={{ display: "block", marginTop: 8, fontWeight: 600, color: "#1e293b" }}>
                   Bezorgadres: {session.metadata.deliveryAddress}

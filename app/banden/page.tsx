@@ -165,9 +165,11 @@ interface TyreCardProps {
   isFav: boolean;
   onToggleFav: (tyre: Tyre) => void;
   onAddToCart: (tyre: Tyre) => void;
+  deliveryTimeText?: string;
+  inStockText?: string;
 }
 
-function TyreCard({ tyre, isFav, onToggleFav, onAddToCart }: TyreCardProps) {
+function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inStockText }: TyreCardProps) {
   const [added, setAdded] = useState(false);
   const primaryImg = tyre.images.find((i) => i.isPrimary) ?? tyre.images[0];
   const isNew = tyre.condition === "NEW";
@@ -363,9 +365,11 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart }: TyreCardProps) {
             </div>
             <div className="tyre-card__stock">
               {tyre.stock > 0 ? (
-                <span className="tyre-card__stock--in">● Op voorraad</span>
+                <span className="tyre-card__stock--in">● {inStockText || "Op voorraad"}</span>
               ) : (
-                <span className="tyre-card__stock--order text-xs text-slate-400">● Levertijd 2–3 d.</span>
+                <span className="tyre-card__stock--order text-xs text-slate-400">
+                  ● Levertijd {deliveryTimeText || "2–5 d."}
+                </span>
               )}
             </div>
           </div>
@@ -1369,6 +1373,25 @@ function BandenCatalogContent() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ITEMS_PER_PAGE = 12;
 
+  // Dynamic delivery time & stock status from site settings
+  const [deliveryTimeText, setDeliveryTimeText] = useState("2–5 d.");
+  const [inStockText, setInStockText] = useState("Op voorraad");
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.delivery_time_min && d?.delivery_time_max) {
+          const unitShort = d.delivery_time_unit === "werkdagen" ? "werkd." : d.delivery_time_unit || "d.";
+          setDeliveryTimeText(`${d.delivery_time_min}–${d.delivery_time_max} ${unitShort}`);
+        }
+        if (d?.in_stock_text) {
+          setInStockText(d.in_stock_text);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Sync favorites
   useEffect(() => {
     setFavorites(getFavorites());
@@ -1712,7 +1735,7 @@ function BandenCatalogContent() {
                         <div className="bc-feat-card__meta">
                           <span className="bc-feat-card__season">{seasonLabel[tyre.season]}</span>
                           {tyre.stock > 0 ? (
-                            <span className="bc-feat-card__stock bc-feat-card__stock--in">Op voorraad</span>
+                            <span className="bc-feat-card__stock bc-feat-card__stock--in">{inStockText || "Op voorraad"}</span>
                           ) : (
                             <span className="bc-feat-card__stock bc-feat-card__stock--order">Leverbaar</span>
                           )}
@@ -1901,6 +1924,8 @@ function BandenCatalogContent() {
                         isFav={favorites.includes(tyre.id)}
                         onToggleFav={handleToggleFav}
                         onAddToCart={handleAddToCart}
+                        deliveryTimeText={deliveryTimeText}
+                        inStockText={inStockText}
                       />
                     ))}
                   </div>

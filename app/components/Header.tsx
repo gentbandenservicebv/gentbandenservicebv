@@ -27,6 +27,22 @@ function HeaderInner() {
   const [favCount, setFavCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Announcement banner from admin settings
+  const [siteSettings, setSiteSettings] = useState<{
+    shop_banner_enabled?: string;
+    shop_message?: string;
+  }>({});
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setSiteSettings(d);
+      })
+      .catch(() => {});
+  }, []);
+
   const { data: session } = useSession();
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
 
@@ -118,6 +134,56 @@ function HeaderInner() {
   return (
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`}>
+        {siteSettings.shop_banner_enabled === "true" && !bannerDismissed && (
+          <div
+            style={{
+              background: "linear-gradient(90deg, #016eb9 0%, #0284c7 100%)",
+              color: "#ffffff",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              padding: "9px 16px",
+              textAlign: "center",
+              position: "relative",
+              zIndex: 1001,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {siteSettings.shop_message || "Welkom bij Gent Bandenservice BV • Snelle service & vakkundige montage"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setBannerDismissed(true)}
+              style={{
+                background: "rgba(255,255,255,0.15)",
+                border: "none",
+                color: "#ffffff",
+                cursor: "pointer",
+                fontSize: 14,
+                lineHeight: 1,
+                padding: "3px 7px",
+                marginLeft: 8,
+                borderRadius: 4,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              title="Sluiten"
+              aria-label="Sluit melding"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <div className="container">
           <nav className="header__nav">
             {/* Logo */}

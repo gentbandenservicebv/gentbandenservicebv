@@ -220,10 +220,14 @@ export default function CartDrawer() {
 
               {/* Service info banner */}
               <div className="cart-drawer__service-pill">
-                <span>🔧</span>
+                <span>📦</span>
                 <div>
-                  <strong>Montage of levering</strong>
-                  <p>In de volgende stap kiest u eenvoudig voor montage in onze werkplaats (Dendermondsesteenweg 428, 9040 Gent) of thuislevering.</p>
+                  <strong>Gratis levering vanaf 2 banden</strong>
+                  <p>
+                    {totalCount === 1
+                      ? "Tip: Voeg nog 1 band toe om te profiteren van gratis levering aan huis!"
+                      : "Kies bij het afrekenen voor vakkundige montage in onze werkplaats of gratis thuislevering."}
+                  </p>
                 </div>
               </div>
             </>

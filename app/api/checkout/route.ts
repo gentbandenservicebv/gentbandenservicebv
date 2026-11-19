@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getSiteSettings } from "@/lib/settings";
 
 const MONTAGE_PRICE_CENTS = 1999; // €19.99 per tyre
 
@@ -132,6 +133,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Shipping fee rule: Free shipping from 2 tyres, 1 tyre customer pays shipping
+    const siteSettings = await getSiteSettings();
+    const minTyresForFreeShipping = parseInt(siteSettings.free_shipping_min_tyres, 10) || 2;
+    const singleTyreShippingCost = parseFloat(siteSettings.shipping_cost) || 9.95;
+    const applyShippingFee = !withMontage && totalTyreCount > 0 && totalTyreCount < minTyresForFreeShipping && singleTyreShippingCost > 0;
+
+    if (applyShippingFee) {
+      lineItems.push({
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Verzendkosten (1 losse band)",
+            description: `Standaard bezorging aan huis voor ${totalTyreCount} band. Gratis bezorging vanaf ${minTyresForFreeShipping} banden.`,
+          },
+          unit_amount: Math.round(singleTyreShippingCost * 100),
+        },
+        quantity: 1,
+      });
+    }
+
     // Format address string if provided and montage is not selected
     const street = address?.street?.trim() || "";
     const postalCode = address?.postalCode?.trim() || "";
@@ -150,6 +171,7 @@ export async function POST(req: NextRequest) {
         serviceType: withMontage ? "MONTAGE" : "DELIVERY",
         totalTyres: String(totalTyreCount),
         withMontage: withMontage ? "true" : "false",
+        shippingFee: applyShippingFee ? String(singleTyreShippingCost) : "0",
         guestName: guestName || "",
         guestEmail: guestEmail || "",
         guestPhone: guestPhone || "",

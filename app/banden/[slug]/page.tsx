@@ -168,9 +168,11 @@ interface TyreCardProps {
   isFav: boolean;
   onToggleFav: (tyre: Tyre) => void;
   onAddToCart: (tyre: Tyre) => void;
+  deliveryTimeText?: string;
+  inStockText?: string;
 }
 
-function TyreCard({ tyre, isFav, onToggleFav, onAddToCart }: TyreCardProps) {
+function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inStockText }: TyreCardProps) {
   const [added, setAdded] = useState(false);
   const primaryImg = tyre.images.find((i) => i.isPrimary) ?? tyre.images[0];
   const isNew = tyre.condition === "NEW";
@@ -361,9 +363,11 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart }: TyreCardProps) {
             </div>
             <div className="tyre-card__stock">
               {tyre.stock > 0 ? (
-                <span className="tyre-card__stock--in">● Op voorraad</span>
+                <span className="tyre-card__stock--in">● {inStockText || "Op voorraad"}</span>
               ) : (
-                <span className="tyre-card__stock--order text-xs text-slate-400">● Levertijd 2–3 d.</span>
+                <span className="tyre-card__stock--order text-xs text-slate-400">
+                  ● Levertijd {deliveryTimeText || "2–5 d."}
+                </span>
               )}
             </div>
           </div>
@@ -568,6 +572,30 @@ function TyreDetailContent() {
   const [bgPos, setBgPos] = useState({ x: 0, y: 0 });
   const mainImgRef = useRef<HTMLDivElement>(null);
   const LENS_SIZE = 140;
+
+  // Dynamic delivery settings from admin
+  const [deliveryInfo, setDeliveryInfo] = useState<{ min: string; max: string; unit: string; inStockText: string }>({
+    min: "2",
+    max: "5",
+    unit: "werkdagen",
+    inStockText: "Op voorraad",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setDeliveryInfo({
+            min: data.delivery_time_min || "2",
+            max: data.delivery_time_max || "5",
+            unit: data.delivery_time_unit || "werkdagen",
+            inStockText: data.in_stock_text || "Op voorraad",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!mainImgRef.current) return;
@@ -1019,12 +1047,12 @@ function TyreDetailContent() {
                   {tyre.stock > 0 ? (
                     <>
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="5" fill="#10b981" /></svg>
-                      Direct op voorraad (montage al vanaf morgen mogelijk)
+                      {deliveryInfo.inStockText || "Direct op voorraad"} (montage al vanaf morgen mogelijk)
                     </>
                   ) : (
                     <>
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="5" fill="#2563eb" /></svg>
-                      Leverbaar binnen 2–3 werkdagen
+                      Leverbaar binnen {deliveryInfo.min}–{deliveryInfo.max} {deliveryInfo.unit}
                     </>
                   )}
                 </div>
@@ -1139,6 +1167,8 @@ function TyreDetailContent() {
                   isFav={favorites.includes(rel.id)}
                   onToggleFav={handleToggleFavorite}
                   onAddToCart={handleAddToCart}
+                  deliveryTimeText={`${deliveryInfo.min}–${deliveryInfo.max} ${deliveryInfo.unit === "werkdagen" ? "werkd." : deliveryInfo.unit}`}
+                  inStockText={deliveryInfo.inStockText}
                 />
               ))}
             </div>

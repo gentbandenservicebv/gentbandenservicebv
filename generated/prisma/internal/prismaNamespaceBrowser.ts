@@ -65,6 +65,7 @@ export const ModelName = {
   VisitorSession: 'VisitorSession',
   PageView: 'PageView',
   SecondhandSubmission: 'SecondhandSubmission',
+  SiteSetting: 'SiteSetting',
   Invoice: 'Invoice'
 } as const
 
@@ -350,6 +351,15 @@ export const SecondhandSubmissionScalarFieldEnum = {
 } as const
 
 export type SecondhandSubmissionScalarFieldEnum = (typeof SecondhandSubmissionScalarFieldEnum)[keyof typeof SecondhandSubmissionScalarFieldEnum]
+
+
+export const SiteSettingScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SiteSettingScalarFieldEnum = (typeof SiteSettingScalarFieldEnum)[keyof typeof SiteSettingScalarFieldEnum]
 
 
 export const InvoiceScalarFieldEnum = {

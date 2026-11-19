@@ -1995,8 +1995,10 @@ export interface InvoiceEmailData {
 /**
  * Sends a clean, professional invoice email to the customer.
  */
+import fs from "fs";
+import path from "path";
 import { generateInvoicePdfBuffer } from "@/lib/invoice-pdf";
-import { generateEpcQrDataUrl, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
+import { generateEpcQrBuffer, generateEpcQrDataUrl, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
 
 export async function sendInvoiceEmail(data: InvoiceEmailData) {
   if (!data.customerEmail) return { success: false, error: "Geen e-mailadres" };
@@ -2024,15 +2026,31 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
   const isPaid = data.status === "PAID";
   const isOverschrijving = !data.paymentMethod || data.paymentMethod.toLowerCase().includes("overschrijving");
 
+  // Read logo for inline CID embedding (guaranteed display in email clients)
+  let logoBuffer: Buffer | null = null;
+  try {
+    const logoPath = path.join(process.cwd(), "public", "logo-white-text.png");
+    if (fs.existsSync(logoPath)) {
+      logoBuffer = fs.readFileSync(logoPath);
+    }
+  } catch (err) {
+    console.error("[Resend] Failed to read logo-white-text.png:", err);
+  }
+
+  let qrBuffer: Buffer | null = null;
   let qrDataUrl = "";
   if (!isPaid && isOverschrijving) {
     try {
+      qrBuffer = await generateEpcQrBuffer({
+        amount: data.totalAmount,
+        invoiceNumber: data.invoiceNumber,
+      });
       qrDataUrl = await generateEpcQrDataUrl({
         amount: data.totalAmount,
         invoiceNumber: data.invoiceNumber,
       });
     } catch (err) {
-      console.error("[Resend] QR data url generation failed:", err);
+      console.error("[Resend] QR data generation failed:", err);
     }
   }
 
@@ -2078,7 +2096,7 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td width="54" valign="middle" style="padding-right:16px;">
-                    <img src="${baseUrl}/logo-white-text.png" width="48" height="54" alt="Gent Bandenservice" style="display:block;border:none;" />
+                    <img src="${logoBuffer ? "cid:logo" : `${baseUrl}/logo-white-text.png`}" width="48" height="54" alt="Gent Bandenservice" style="display:block;border:none;" />
                   </td>
                   <td valign="middle">
                     <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;">Gent Bandenservice BV</p>
@@ -2181,10 +2199,10 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
                     <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.5);">Of scan de QR-code direct met uw bank-app (KBC, Belfius, ING, Fortis).</p>
                   </td>
                   ${
-                    qrDataUrl
+                    qrBuffer || qrDataUrl
                       ? `
                   <td width="110" align="center" valign="middle">
-                    <img src="${qrDataUrl}" width="100" height="100" alt="Betaal QR Code" style="display:block;border-radius:8px;background:#ffffff;padding:4px;" />
+                    <img src="${qrBuffer ? "cid:epc-qr" : qrDataUrl}" width="100" height="100" alt="Betaal QR Code" style="display:block;border-radius:8px;background:#ffffff;padding:4px;" />
                   </td>
                   `
                       : ""
@@ -2265,13 +2283,41 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
       subject: `Factuur #${safeNumber} – Gent Bandenservice BV`,
       html,
     };
+    const attachments: Array<{
+      filename?: string;
+      content?: Buffer;
+      contentType?: string;
+      contentId?: string;
+    }> = [];
+
+    if (logoBuffer) {
+      attachments.push({
+        filename: "logo.png",
+        content: logoBuffer,
+        contentType: "image/png",
+        contentId: "logo",
+      });
+    }
+
+    if (qrBuffer) {
+      attachments.push({
+        filename: "payment-qr.png",
+        content: qrBuffer,
+        contentType: "image/png",
+        contentId: "epc-qr",
+      });
+    }
+
     if (pdfBuffer) {
-      emailPayload.attachments = [
-        {
-          filename: `Factuur-${data.invoiceNumber}.pdf`,
-          content: pdfBuffer,
-        },
-      ];
+      attachments.push({
+        filename: `Factuur-${data.invoiceNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      });
+    }
+
+    if (attachments.length > 0) {
+      emailPayload.attachments = attachments;
     }
     const { error } = await resend.emails.send(emailPayload);
     if (error) {

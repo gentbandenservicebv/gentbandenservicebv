@@ -348,6 +348,37 @@ function AppointmentContent() {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [isClosedDay, setIsClosedDay] = useState(false);
 
+  // Dynamic site settings from admin
+  const [siteSettings, setSiteSettings] = useState<{
+    delivery_time_min?: string;
+    delivery_time_max?: string;
+    delivery_time_unit?: string;
+    in_stock_text?: string;
+    shop_open?: string;
+    shop_message?: string;
+    contact_phone?: string;
+    contact_email?: string;
+    contact_address?: string;
+    company_name?: string;
+    opening_hours?: string;
+  }>({});
+
+  const deliveryInfo = {
+    min: siteSettings.delivery_time_min || "2",
+    max: siteSettings.delivery_time_max || "3",
+    unit: siteSettings.delivery_time_unit || "werkdagen",
+    inStockText: siteSettings.in_stock_text ? `Direct ${siteSettings.in_stock_text.toLowerCase()}` : "Direct op voorraad",
+  };
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setSiteSettings(d);
+      })
+      .catch(() => {});
+  }, []);
+
   const [vehicleBrandModel, setVehicleBrandModel] = useState("");
   const [vehiclePlate, setVehiclePlate] = useState("");
   const [plateResult, setPlateResult] = useState<PlateCheckResult>({ formatted: "", country: "BE", isValid: false });
@@ -430,23 +461,24 @@ function AppointmentContent() {
     const base = new Date();
     if (isOrderTyre) {
       const currentDay = base.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-      let daysToAdd = 3;
+      const minDeliveryDays = Math.max(1, parseInt(deliveryInfo.min, 10) || 2);
+      let daysToAdd = minDeliveryDays + 1;
 
       if (currentDay === 1 || currentDay === 2 || currentDay === 3) {
-        // Weekdays (Mon, Tue, Wed): arrives in 2-3 business days
-        daysToAdd = 3;
+        // Weekdays (Mon, Tue, Wed): arrives in minDeliveryDays
+        daysToAdd = Math.max(minDeliveryDays + 1, 3);
       } else if (currentDay === 4) {
-        // Thursday: delivery comes after weekend (Mon/Tue) -> min Tuesday (+5 days)
-        daysToAdd = 5;
+        // Thursday: delivery comes after weekend
+        daysToAdd = Math.max(minDeliveryDays + 3, 5);
       } else if (currentDay === 5) {
-        // Friday: delivery comes after weekend (Tue/Wed) -> min Wednesday (+5 days)
-        daysToAdd = 5;
+        // Friday: delivery comes after weekend
+        daysToAdd = Math.max(minDeliveryDays + 3, 5);
       } else if (currentDay === 6) {
-        // Saturday: delivery comes Wed/Thu -> min Thursday (+5 days)
-        daysToAdd = 5;
+        // Saturday
+        daysToAdd = Math.max(minDeliveryDays + 3, 5);
       } else if (currentDay === 0) {
-        // Sunday: ordered on Sunday, arrives Thu -> min Thursday (+4 days)
-        daysToAdd = 4;
+        // Sunday
+        daysToAdd = Math.max(minDeliveryDays + 2, 4);
       }
 
       const tempDay = new Date(base);
@@ -1040,14 +1072,14 @@ function AppointmentContent() {
     });
 
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      `Afspraak Gent Bandenservice (${selectedServiceObj?.label || "Banden"})`
+      `Afspraak ${siteSettings.company_name || "Gent Bandenservice"} (${selectedServiceObj?.label || "Banden"})`
     )}&dates=${new Date(successData.dateTime).toISOString().replace(/-|:|\.\d\d\d/g, "")}/${new Date(
       new Date(successData.dateTime).getTime() + 45 * 60000
     )
       .toISOString()
       .replace(/-|:|\.\d\d\d/g, "")}&details=${encodeURIComponent(
-        `Afspraak bij Gent Bandenservice BV voor ${selectedServiceObj?.label || "Banden"}`
-      )}&location=${encodeURIComponent("Gent Bandenservice BV, Gent")}`;
+        `Afspraak bij ${siteSettings.company_name || "Gent Bandenservice BV"} voor ${selectedServiceObj?.label || "Banden"}`
+      )}&location=${encodeURIComponent(siteSettings.contact_address || "Dendermondsesteenweg 428, 9040 Gent")}`;
 
     return (
       <div className="appt-page-wrap appt-page-wrap--standalone">
@@ -1085,7 +1117,9 @@ function AppointmentContent() {
               )}
               <div className="appt-summary-row">
                 <span className="appt-summary-label">Locatie:</span>
-                <span className="appt-summary-val">Gent Bandenservice BV</span>
+                <span className="appt-summary-val">
+                  {siteSettings.company_name || "Gent Bandenservice BV"} • {siteSettings.contact_address || "Dendermondsesteenweg 428, 9040 Gent"}
+                </span>
               </div>
             </div>
 
@@ -1094,7 +1128,7 @@ function AppointmentContent() {
                 <LightbulbIcon size={20} />
               </span>
               <div className="appt-info-content">
-                <strong>Handig om te weten:</strong> We verzoeken u vriendelijk 5 tot 10 minuten voor aanvang aanwezig te zijn. Mocht u verhinderd zijn, laat het ons tijdig weten via telefoon of e-mail.
+                <strong>Handig om te weten:</strong> We verzoeken u vriendelijk 5 tot 10 minuten voor aanvang aanwezig te zijn. Mocht u verhinderd zijn, laat het ons tijdig weten via telefoon ({siteSettings.contact_phone || "+32 467871205"}) of e-mail ({siteSettings.contact_email || "info@gentbandenservice.be"}).
               </div>
             </div>
 
@@ -1380,6 +1414,19 @@ function AppointmentContent() {
             </div>
           )}
 
+          {/* Shop Closed Notice */}
+          {siteSettings.shop_open === "false" && (
+            <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", padding: "14px 18px", borderRadius: 10, marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+              <AlertTriangleIcon size={20} />
+              <div>
+                <strong style={{ display: "block", color: "#ffffff", fontSize: "0.95rem" }}>Werkplaats momenteel gesloten</strong>
+                <span style={{ fontSize: "0.85rem" }}>
+                  {siteSettings.shop_message || `Onze werkplaats is momenteel tijdelijk gesloten voor nieuwe online afspraken. Neem telefonisch contact op via ${siteSettings.contact_phone || "+32 467871205"} voor spoedgevallen.`}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {stepError && <div className="appt-alert-error" role="alert">{stepError}</div>}
 
@@ -1656,9 +1703,9 @@ function AppointmentContent() {
                                       )}
                                     </span>
                                     {t.stock > 0 ? (
-                                      <span className="appt-tyre-stock text-xs text-emerald-700 font-medium">● Direct op voorraad</span>
+                                      <span className="appt-tyre-stock text-xs text-emerald-700 font-medium">● {deliveryInfo.inStockText}</span>
                                     ) : (
-                                      <span className="appt-tyre-stock text-xs text-blue-700 font-medium">● Levertijd 2–3 werkdagen</span>
+                                      <span className="appt-tyre-stock text-xs text-blue-700 font-medium">● Levertijd {deliveryInfo.min}–{deliveryInfo.max} {deliveryInfo.unit}</span>
                                     )}
                                   </div>
                                 </div>
@@ -1820,7 +1867,7 @@ function AppointmentContent() {
                         <PackageIcon size={18} />
                       </span>
                       <div className="appt-leadtime-body">
-                        <strong>Levering via centrale voorraad (2–3 werkdagen)</strong>
+                        <strong>Levering via centrale voorraad ({deliveryInfo.min}–{deliveryInfo.max} {deliveryInfo.unit})</strong>
                         <p>
                           Voor <strong>{chosenShopTyre.brand} {chosenShopTyre.model} ({chosenShopTyre.size})</strong> worden uw banden tijdig klaargezet via onze leverancier. Uw vroegst mogelijke montagedatum is{" "}
                           <strong>
@@ -1914,8 +1961,7 @@ function AppointmentContent() {
 
                   <div className="appt-opening-box">
                     <strong><ClockIcon size={14} style={{ display: "inline-block", verticalAlign: "middle", marginRight: 6 }} />Openingsuren:</strong>
-                    <div>Maandag – Vrijdag: 08:00 – 18:00</div>
-                    <div>Zaterdag: 09:00 – 18:30</div>
+                    <div>{siteSettings.opening_hours || "Maandag – Zaterdag: 09:00 – 18:00"}</div>
                     <div>Zondag: Gesloten</div>
                   </div>
                 </div>

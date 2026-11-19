@@ -112,6 +112,11 @@ export type PageView = Prisma.PageViewModel
  */
 export type SecondhandSubmission = Prisma.SecondhandSubmissionModel
 /**
+ * Model SiteSetting
+ * 
+ */
+export type SiteSetting = Prisma.SiteSettingModel
+/**
  * Model Invoice
  * 
  */

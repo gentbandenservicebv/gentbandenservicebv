@@ -9,6 +9,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 import { UploadDropzone, useUploadThing } from "@/lib/uploadthing";
 import { compressImages } from "@/lib/image-compression";
 import AdminAnalyticsView from "./AdminAnalyticsView";
+import AdminSettingsView from "./AdminSettingsView";
 import "./admin.css";
 
 interface TyreImage {
@@ -346,7 +347,7 @@ export default function AdminPage() {
   const [imageActionLoading, setImageActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics" | "settings">("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   // Invoices state
   const [invoices, setInvoices] = useState<InvoiceEntry[]>([]);
@@ -1675,6 +1676,7 @@ export default function AdminPage() {
               {activeTab === "secondhand" && "2de hands"}
               {activeTab === "invoices" && "Facturen"}
               {activeTab === "analytics" && "Statistieken"}
+              {activeTab === "settings" && "Instellingen"}
             </span>
           </div>
         </div>
@@ -1793,6 +1795,16 @@ export default function AdminPage() {
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             Activiteit &amp; Cookies
+          </button>
+          <button
+            className={`admin-nav__item${activeTab === "settings" ? " admin-nav__item--active" : ""}`}
+            onClick={() => { setActiveTab("settings"); setIsMobileNavOpen(false); }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Instellingen
           </button>
         </nav>
 
@@ -7504,6 +7516,9 @@ export default function AdminPage() {
 
         {/* ── ANALYTICS & COOKIE TRACKING TAB ────────────── */}
         {activeTab === "analytics" && <AdminAnalyticsView />}
+
+        {/* ── SETTINGS TAB ─────────────────────────────────── */}
+        {activeTab === "settings" && <AdminSettingsView />}
       </main>
 
       {/* Secondhand / General Image Lightbox Modal */}

@@ -364,6 +364,18 @@ model SecondhandSubmission {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Site Settings (admin-controlled, stored as key-value pairs)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Facturen / Invoices
 // ─────────────────────────────────────────────────────────────────────────────
 

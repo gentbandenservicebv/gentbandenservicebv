@@ -40,6 +40,26 @@ function CheckoutContent() {
   const [checkoutMode, setCheckoutMode] = useState<"account" | "guest">("guest");
   const [createAccountAfter, setCreateAccountAfter] = useState(false);
 
+  // Dynamic shipping settings from admin
+  const [shippingSettings, setShippingSettings] = useState<{ minTyres: number; cost: number }>({
+    minTyres: 2,
+    cost: 9.95,
+  });
+
+  useEffect(() => {
+    fetch("/api/settings?public=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) {
+          setShippingSettings({
+            minTyres: parseInt(d.free_shipping_min_tyres, 10) || 2,
+            cost: parseFloat(d.shipping_cost) || 9.95,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Form details
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -137,7 +157,9 @@ function CheckoutContent() {
   const totalCount = cart.reduce((acc, it) => acc + it.quantity, 0);
   const tyreSubtotal = cart.reduce((acc, it) => acc + it.price * it.quantity, 0);
   const montageSubtotal = withMontage ? MONTAGE_PRICE * totalCount : 0;
-  const grandTotal = tyreSubtotal + montageSubtotal;
+  const isFreeShipping = totalCount >= shippingSettings.minTyres;
+  const shippingFee = (!withMontage && totalCount > 0 && !isFreeShipping) ? shippingSettings.cost : 0;
+  const grandTotal = tyreSubtotal + montageSubtotal + shippingFee;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -555,8 +577,12 @@ function CheckoutContent() {
                         <span className="checkout-service-name">
                           📦 Levering aan huis (Zonder montage)
                         </span>
-                        <span className="checkout-service-price" style={{ color: hasSecondhand ? "#dc2626" : "#16a34a" }}>
-                          {hasSecondhand ? "Niet leverbaar" : "Gratis bezorging"}
+                        <span className="checkout-service-price" style={{ color: hasSecondhand ? "#dc2626" : (shippingFee === 0 ? "#16a34a" : "#0284c7") }}>
+                          {hasSecondhand
+                            ? "Niet leverbaar"
+                            : isFreeShipping
+                            ? "Gratis bezorging"
+                            : `+€${shippingSettings.cost.toFixed(2)} verzendkosten`}
                         </span>
                       </div>
                       <p className="checkout-service-desc">
@@ -564,8 +590,10 @@ function CheckoutContent() {
                           <span style={{ color: "#b45309", fontWeight: 600 }}>
                             ⚠️ Tweedehands banden worden niet verzonden. Deze zijn uitsluitend beschikbaar voor montage of afhaling in onze werkplaats.
                           </span>
+                        ) : isFreeShipping ? (
+                          "Gratis bezorging vanaf 2 banden! Uw banden worden snel en zorgvuldig afgeleverd op uw woon- of bedrijfsadres."
                         ) : (
-                          "Uw banden worden snel en zorgvuldig afgeleverd op uw woon- of bedrijfsadres. Vul hieronder uw adres in."
+                          `Bij bestelling van 1 losse band wordt €${shippingSettings.cost.toFixed(2)} verzendkosten aangerekend. Bestel 2 of meer banden voor gratis verzending!`
                         )}
                       </p>
                     </div>
@@ -706,8 +734,12 @@ function CheckoutContent() {
                     </div>
                   ) : (
                     <div className="checkout-breakdown-row">
-                      <span>Levering aan huis</span>
-                      <span style={{ color: "#16a34a", fontWeight: 700 }}>Gratis</span>
+                      <span>
+                        Levering aan huis ({isFreeShipping ? `≥ ${shippingSettings.minTyres} banden` : "1 band"})
+                      </span>
+                      <span style={{ color: shippingFee === 0 ? "#16a34a" : "#ffffff", fontWeight: 700 }}>
+                        {shippingFee === 0 ? "Gratis" : `€${shippingFee.toFixed(2)}`}
+                      </span>
                     </div>
                   )}
                 </div>
