@@ -134,41 +134,83 @@ export default function OverOnsPage() {
               </div>
             </div>
 
-            {/* Visual Card */}
-            <div className="about-visual-card">
-              <span className="about-visual-badge">
-                ★ 4.9/5 Google Beoordeling
-              </span>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: 12 }}>
-                Gent Bandenservice in cijfers
-              </h3>
-              <p style={{ color: "#94a3b8", fontSize: "0.95rem", lineHeight: 1.5 }}>
-                Bewezen kwaliteit waar Gent en omstreken al jaren op kan rekenen.
+            {/* Workshop Experience Card */}
+            <div className="about-experience-card">
+              <span className="about-experience-badge">Werkplaats &amp; Service</span>
+              <h3 className="about-experience-title">Klaar terwijl u wacht in Gent</h3>
+              <p className="about-experience-text">
+                Onze moderne werkplaats aan de Dendermondsesteenweg is uitgerust met professionele hefbruggen en computergestuurde apparatuur. Geniet van een kop koffie in onze wachtruimte terwijl onze monteurs uw wielen verzorgen.
               </p>
-
-              <div className="about-stats-list">
-                <div className="about-stat-row">
-                  <span className="about-stat-row__label">Actieve jaren ervaring</span>
-                  <span className="about-stat-row__val">20+</span>
-                </div>
-                <div className="about-stat-row">
-                  <span className="about-stat-row__label">Tevreden klanten</span>
-                  <span className="about-stat-row__val">5.000+</span>
-                </div>
-                <div className="about-stat-row">
-                  <span className="about-stat-row__label">Gemonteerde banden</span>
-                  <span className="about-stat-row__val">25.000+</span>
-                </div>
-                <div className="about-stat-row">
-                  <span className="about-stat-row__label">Gemiddelde montagetijd</span>
-                  <span className="about-stat-row__val">&lt; 45 min</span>
-                </div>
+              <ul className="about-experience-list">
+                <li>
+                  <span className="about-check-icon">✓</span>
+                  <span><strong>Vlotte montage:</strong> In de meeste gevallen binnen 45 minuten weer veilig de weg op.</span>
+                </li>
+                <li>
+                  <span className="about-check-icon">✓</span>
+                  <span><strong>Altijd eerlijk advies:</strong> Wij vervangen of herstellen uitsluitend wat echt nodig is.</span>
+                </li>
+                <li>
+                  <span className="about-check-icon">✓</span>
+                  <span><strong>Ruime stock:</strong> Nieuwe A-merkbanden en streng geteste tweedehands banden.</span>
+                </li>
+                <li>
+                  <span className="about-check-icon">✓</span>
+                  <span><strong>Snelservice:</strong> Ook zonder afspraak welkom voor noodreparaties bij een lekke band.</span>
+                </li>
+              </ul>
+              <div style={{ marginTop: 24 }}>
+                <Link href="/contact" className="btn btn--outline-dark w-full" style={{ justifyContent: "center" }}>
+                  Route &amp; Contactgegevens →
+                </Link>
               </div>
-
-              <Link href="/contact" className="btn btn--primary w-full" style={{ justifyContent: "center" }}>
-                Kom vandaag nog langs
-              </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section: Gent Bandenservice in cijfers */}
+      <section className="about-stats-section">
+        <div className="container">
+          <div className="about-stats-header">
+            <span className="about-visual-badge">
+              ★ 4.9/5 Google Beoordeling
+            </span>
+            <h2 className="about-stats-title">
+              Gent Bandenservice in cijfers
+            </h2>
+            <p className="about-stats-sub">
+              Bewezen kwaliteit waar Gent en omstreken al jaren op kan rekenen.
+            </p>
+          </div>
+
+          <div className="about-stats-grid">
+            <div className="about-stat-card">
+              <span className="about-stat-card__val">20+</span>
+              <span className="about-stat-card__label">Actieve jaren ervaring</span>
+              <p className="about-stat-card__desc">Bandspecialist sinds 2004 met diepgaande vakkennis</p>
+            </div>
+            <div className="about-stat-card">
+              <span className="about-stat-card__val">5.000+</span>
+              <span className="about-stat-card__label">Tevreden klanten</span>
+              <p className="about-stat-card__desc">Particulieren, bedrijven en leaserijders in Oost-Vlaanderen</p>
+            </div>
+            <div className="about-stat-card">
+              <span className="about-stat-card__val">25.000+</span>
+              <span className="about-stat-card__label">Gemonteerde banden</span>
+              <p className="about-stat-card__desc">Veilig en trillingsvrij gemonteerd en gebalanceerd</p>
+            </div>
+            <div className="about-stat-card">
+              <span className="about-stat-card__val">&lt; 45 min</span>
+              <span className="about-stat-card__label">Gemiddelde montagetijd</span>
+              <p className="about-stat-card__desc">Snelle service met behoud van uiterste precisie</p>
+            </div>
+          </div>
+
+          <div className="about-stats-cta">
+            <Link href="/afspraak" className="btn btn--primary btn--lg">
+              Maak direct een afspraak →
+            </Link>
           </div>
         </div>
       </section>
