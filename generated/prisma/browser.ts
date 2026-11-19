@@ -87,3 +87,8 @@ export type PageView = Prisma.PageViewModel
  * 
  */
 export type SecondhandSubmission = Prisma.SecondhandSubmissionModel
+/**
+ * Model Invoice
+ * 
+ */
+export type Invoice = Prisma.InvoiceModel

@@ -32,6 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 function formatDT(dt: Date | string) {
   return new Date(dt).toLocaleString("nl-BE", {
+    timeZone: "Europe/Brussels",
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -1962,3 +1963,325 @@ export async function sendReturnRequestShopEmail(data: ReturnEmailData) {
     console.error("[Resend] Error sending shop return notification:", err);
   }
 }
+
+// ── Invoices / Facturen ───────────────────────────────────────────────────────
+
+export interface InvoiceEmailItem {
+  description: string;
+  quantity: number;
+  price: number;
+  vatRate?: number;
+}
+
+export interface InvoiceEmailData {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  companyName?: string | null;
+  vatNumber?: string | null;
+  issueDate: Date | string;
+  dueDate: Date | string;
+  items: InvoiceEmailItem[];
+  subtotal: number;
+  vatAmount: number;
+  totalAmount: number;
+  status: string;
+  paymentMethod?: string | null;
+  notes?: string | null;
+}
+
+/**
+ * Sends a clean, professional invoice email to the customer.
+ */
+import { generateInvoicePdfBuffer } from "@/lib/invoice-pdf";
+import { generateEpcQrDataUrl, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
+
+export async function sendInvoiceEmail(data: InvoiceEmailData) {
+  if (!data.customerEmail) return { success: false, error: "Geen e-mailadres" };
+
+  const safeName = escapeHtml(data.customerName);
+  const safeNumber = escapeHtml(data.invoiceNumber);
+  const safeCompany = data.companyName ? escapeHtml(data.companyName) : null;
+  const baseUrl = process.env.BETTER_AUTH_URL || "https://gentbandenservice.be";
+  const invoiceUrl = `${baseUrl}/factuur/${data.id}`;
+
+  const issueDateStr = new Date(data.issueDate).toLocaleDateString("nl-BE", {
+    timeZone: "Europe/Brussels",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const dueDateStr = new Date(data.dueDate).toLocaleDateString("nl-BE", {
+    timeZone: "Europe/Brussels",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const isPaid = data.status === "PAID";
+  const isOverschrijving = !data.paymentMethod || data.paymentMethod.toLowerCase().includes("overschrijving");
+
+  let qrDataUrl = "";
+  if (!isPaid && isOverschrijving) {
+    try {
+      qrDataUrl = await generateEpcQrDataUrl({
+        amount: data.totalAmount,
+        invoiceNumber: data.invoiceNumber,
+      });
+    } catch (err) {
+      console.error("[Resend] QR data url generation failed:", err);
+    }
+  }
+
+  const rowsHtml = data.items
+    .map((it) => {
+      const lineTotal = (it.quantity * it.price).toFixed(2);
+      return `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #262936;color:#ffffff;font-size:14px;">
+            ${escapeHtml(it.description)}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #262936;color:#ffffff;font-size:14px;text-align:center;">
+            ${it.quantity}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #262936;color:#ffffff;font-size:14px;text-align:right;">
+            €${it.price.toFixed(2)}
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #262936;color:#60c0ff;font-size:14px;font-weight:700;text-align:right;">
+            €${lineTotal}
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Factuur ${safeNumber} – Gent Bandenservice BV</title>
+</head>
+<body style="margin:0;padding:0;background:#0d0f15;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f15;padding:36px 16px;">
+    <tr>
+      <td align="center">
+        <table width="640" cellpadding="0" cellspacing="0" style="background:#161924;border-radius:18px;border:1px solid rgba(255,255,255,0.09);overflow:hidden;max-width:640px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#016eb9 0%,#0284c7 100%);padding:36px 40px;text-align:left;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="54" valign="middle" style="padding-right:16px;">
+                    <img src="${baseUrl}/logo-white-text.png" width="48" height="54" alt="Gent Bandenservice" style="display:block;border:none;" />
+                  </td>
+                  <td valign="middle">
+                    <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;">Gent Bandenservice BV</p>
+                    <h1 style="margin:0;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.02em;">Factuur #${safeNumber}</h1>
+                  </td>
+                  <td align="right" valign="top">
+                    <span style="display:inline-block;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;background:${isPaid ? "#10b981" : "#f59e0b"};color:#ffffff;">
+                      ${isPaid ? "✓ BETAALD" : "OPENSTAAND"}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Customer & Meta Section -->
+          <tr>
+            <td style="padding:28px 40px;background:#13151f;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+                <tr>
+                  <td width="55%" valign="top">
+                    <p style="margin:0 0 4px;color:rgba(255,255,255,0.45);text-transform:uppercase;font-size:11px;font-weight:700;">Gefactureerd aan</p>
+                    <p style="margin:0;color:#ffffff;font-weight:700;font-size:15px;">${safeName}</p>
+                    ${safeCompany ? `<p style="margin:2px 0 0;color:#60c0ff;font-weight:600;">${safeCompany}</p>` : ""}
+                    ${data.vatNumber ? `<p style="margin:2px 0 0;color:rgba(255,255,255,0.65);font-size:12px;">BTW: ${escapeHtml(data.vatNumber)}</p>` : ""}
+                    ${data.customerPhone ? `<p style="margin:2px 0 0;color:rgba(255,255,255,0.65);font-size:12px;">Tel: ${escapeHtml(data.customerPhone)}</p>` : ""}
+                  </td>
+                  <td width="45%" valign="top" style="text-align:right;">
+                    <p style="margin:0 0 3px;color:rgba(255,255,255,0.5);"><strong>Factuurdatum:</strong> ${issueDateStr}</p>
+                    <p style="margin:0 0 3px;color:rgba(255,255,255,0.5);"><strong>Vervaldatum:</strong> ${dueDateStr}</p>
+                    ${data.paymentMethod ? `<p style="margin:0;color:rgba(255,255,255,0.5);"><strong>Betaalmethode:</strong> ${escapeHtml(data.paymentMethod)}</p>` : ""}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Items Table -->
+          <tr>
+            <td style="padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                <thead>
+                  <tr style="background:#0f1118;">
+                    <th style="padding:10px 12px;border-bottom:2px solid #262936;color:rgba(255,255,255,0.6);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;text-align:left;">Omschrijving</th>
+                    <th style="padding:10px 12px;border-bottom:2px solid #262936;color:rgba(255,255,255,0.6);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;text-align:center;">Aantal</th>
+                    <th style="padding:10px 12px;border-bottom:2px solid #262936;color:rgba(255,255,255,0.6);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;text-align:right;">Stukprijs</th>
+                    <th style="padding:10px 12px;border-bottom:2px solid #262936;color:rgba(255,255,255,0.6);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;text-align:right;">Totaal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowsHtml}
+                </tbody>
+              </table>
+
+              <!-- Totals Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+                <tr>
+                  <td width="50%" valign="top">
+                    ${
+                      data.notes
+                        ? `
+                      <div style="background:#0f1118;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px 14px;margin-right:16px;">
+                        <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;">Opmerkingen</p>
+                        <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.75);line-height:1.4;">${escapeHtml(data.notes)}</p>
+                      </div>
+                    `
+                        : ""
+                    }
+                  </td>
+                  <td width="50%" valign="top">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+                      <tr>
+                        <td style="padding:6px 0;color:rgba(255,255,255,0.6);">Subtotaal (excl. BTW):</td>
+                        <td style="padding:6px 0;text-align:right;color:#ffffff;font-weight:600;">€${data.subtotal.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0;color:rgba(255,255,255,0.6);">BTW (21%):</td>
+                        <td style="padding:6px 0;text-align:right;color:#ffffff;font-weight:600;">€${data.vatAmount.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:12px 0 0;border-top:2px solid rgba(255,255,255,0.12);color:#ffffff;font-size:16px;font-weight:800;">Totaal incl. BTW:</td>
+                        <td style="padding:12px 0 0;border-top:2px solid rgba(255,255,255,0.12);text-align:right;color:#38bdf8;font-size:18px;font-weight:900;">€${data.totalAmount.toFixed(2)}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              ${
+                !isPaid && isOverschrijving
+                  ? `
+              <!-- Bank Transfer & EPC QR Code -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;background:#10131c;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;">
+                <tr>
+                  <td valign="middle" style="padding-right:16px;">
+                    <p style="margin:0 0 6px;font-size:11px;font-weight:800;color:#60c0ff;text-transform:uppercase;letter-spacing:1px;">Betaalinstructies Overschrijving</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#ffffff;"><strong>IBAN:</strong> <span style="font-family:monospace;letter-spacing:0.5px;color:#38bdf8;">${DEFAULT_COMPANY_IBAN.replace(/(.{4})/g, "$1 ").trim()}</span></p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#ffffff;"><strong>Begunstigde:</strong> Gent Bandenservice BV</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#ffffff;"><strong>Mededeling:</strong> <span style="font-family:monospace;color:#fbbf24;">#${safeNumber}</span></p>
+                    <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.5);">Of scan de QR-code direct met uw bank-app (KBC, Belfius, ING, Fortis).</p>
+                  </td>
+                  ${
+                    qrDataUrl
+                      ? `
+                  <td width="110" align="center" valign="middle">
+                    <img src="${qrDataUrl}" width="100" height="100" alt="Betaal QR Code" style="display:block;border-radius:8px;background:#ffffff;padding:4px;" />
+                  </td>
+                  `
+                      : ""
+                  }
+                </tr>
+              </table>
+              `
+                  : ""
+              }
+
+              <!-- Call to Action Button -->
+              <div style="text-align:center;margin-top:32px;padding-top:24px;border-top:1px dashed rgba(255,255,255,0.08);">
+                <a href="${invoiceUrl}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#016eb9,#0284c7);color:#ffffff;font-size:14px;font-weight:800;padding:14px 28px;border-radius:10px;text-decoration:none;box-shadow:0 4px 14px rgba(1,110,185,0.4);">
+                  📄 Bekijk &amp; Print Factuur Online
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Bank & Company Footer -->
+          <tr>
+            <td style="background:#0f1118;padding:24px 40px;border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:rgba(255,255,255,0.5);line-height:1.6;text-align:center;">
+              <p style="margin:0 0 6px;color:#ffffff;font-weight:700;">
+                Gent Bandenservice BV · Dendermondsesteenweg 428, 9040 Gent
+              </p>
+              <p style="margin:0 0 6px;">
+                BTW: BE 1041.093.575 · RPR Gent · Tel: 0467 87 12 05 · E-mail: info@gentbandenservice.be
+              </p>
+              ${
+                !isPaid
+                  ? `
+                <p style="margin:8px 0 0;padding:8px 12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;color:#fbbf24;font-size:12px;">
+                  ⚠️ Gelieve het openstaande bedrag van <strong>€${data.totalAmount.toFixed(2)}</strong> over te maken vóór ${dueDateStr} met vermelding van <strong>${safeNumber}</strong>.
+                </p>
+              `
+                  : ""
+              }
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
+  // Generate PDF attachment
+  let pdfBuffer: Buffer | undefined;
+  try {
+    pdfBuffer = await generateInvoicePdfBuffer({
+      invoiceNumber: data.invoiceNumber,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      companyName: data.companyName,
+      vatNumber: data.vatNumber,
+      status: data.status,
+      issueDate: data.issueDate,
+      dueDate: data.dueDate,
+      paymentMethod: data.paymentMethod,
+      items: data.items,
+      subtotal: data.subtotal,
+      vatAmount: data.vatAmount,
+      totalAmount: data.totalAmount,
+      notes: data.notes,
+    });
+  } catch (pdfErr: any) {
+    console.error("[Resend] PDF generation failed:", pdfErr);
+    // Continue sending email without PDF attachment if PDF fails
+  }
+
+  try {
+    const emailPayload: Parameters<typeof resend.emails.send>[0] = {
+      from: FROM,
+      to: [data.customerEmail],
+      replyTo: SHOP_EMAIL,
+      subject: `Factuur #${safeNumber} – Gent Bandenservice BV`,
+      html,
+    };
+    if (pdfBuffer) {
+      emailPayload.attachments = [
+        {
+          filename: `Factuur-${data.invoiceNumber}.pdf`,
+          content: pdfBuffer,
+        },
+      ];
+    }
+    const { error } = await resend.emails.send(emailPayload);
+    if (error) {
+      console.error("[Resend] Invoice email failed:", error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("[Resend] Error sending invoice email:", err);
+    return { success: false, error: err?.message || "E-mail verzenden mislukt" };
+  }
+}
+

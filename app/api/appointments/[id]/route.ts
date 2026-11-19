@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { sendAppointmentStatusChange, sendAppointmentRescheduled } from "@/lib/resend";
+import { parseBrusselsDateTime } from "@/lib/appointments";
 
 // Helper – verify admin
 async function getAuthUser() {
@@ -83,12 +84,85 @@ export async function PATCH(
     return NextResponse.json({ error: "Geen toegang tot deze afspraak" }, { status: 403 });
   }
 
+  // ── ADMIN PRIVILEGED UPDATES ────────────────────────────────────────────────
+  if (isAdmin) {
+    const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
+    if (body.status && !allowedStatuses.includes(body.status)) {
+      return NextResponse.json({ error: "Ongeldige status opgegeven" }, { status: 400 });
+    }
+
+    const allowedTypes = ["FITTING", "REPAIR", "INSPECTION", "OTHER"];
+    if (body.type && !allowedTypes.includes(body.type)) {
+      return NextResponse.json({ error: "Ongeldig type service opgegeven" }, { status: 400 });
+    }
+
+    const oldDateTime = appointment.dateTime;
+    let newDateTime: Date | null = null;
+    let dateTimeChanged = false;
+
+    if (body.dateTime) {
+      newDateTime = parseBrusselsDateTime(body.dateTime);
+      if (isNaN(newDateTime.getTime())) {
+        return NextResponse.json({ error: "Ongeldige datum of tijd" }, { status: 400 });
+      }
+      dateTimeChanged = newDateTime.getTime() !== new Date(oldDateTime).getTime();
+    }
+
+    // Determine updated notes if any
+    let updatedNotes = appointment.notes;
+    if (body.notes !== undefined) {
+      updatedNotes = body.notes ? String(body.notes).trim() : null;
+    }
+
+    // Status change
+    const newStatus = body.status || appointment.status;
+    const statusChanged = body.status && body.status !== appointment.status;
+
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: {
+        ...(body.status ? { status: body.status } : {}),
+        ...(body.type ? { type: body.type } : {}),
+        ...(body.guestName !== undefined ? { guestName: body.guestName ? String(body.guestName).trim() : null } : {}),
+        ...(body.guestPhone !== undefined ? { guestPhone: body.guestPhone ? String(body.guestPhone).trim() : null } : {}),
+        ...(body.guestEmail !== undefined ? { guestEmail: body.guestEmail ? String(body.guestEmail).trim() : null } : {}),
+        ...(dateTimeChanged && newDateTime ? { dateTime: newDateTime, reminderSentAt: null } : {}),
+        notes: updatedNotes,
+        ...(body.vehicleInfo !== undefined ? { vehicleInfo: body.vehicleInfo ? String(body.vehicleInfo).trim() : null } : {}),
+      },
+      include: { user: { select: { name: true, email: true } } },
+    });
+
+    const emailPayload = {
+      id: updated.id,
+      guestName: updated.guestName,
+      guestEmail: updated.guestEmail,
+      guestPhone: updated.guestPhone,
+      userName: updated.user?.name ?? null,
+      userEmail: updated.user?.email ?? null,
+      type: updated.type,
+      dateTime: updated.dateTime,
+      vehicleInfo: updated.vehicleInfo,
+      notes: updated.notes,
+    };
+
+    // If date changed by admin and appointment is confirmed, notify customer
+    if (dateTimeChanged && newDateTime && (newStatus === "CONFIRMED" || appointment.status === "CONFIRMED")) {
+      sendAppointmentRescheduled(emailPayload, oldDateTime, newDateTime).catch(console.error);
+    } else if (statusChanged && ["CONFIRMED", "CANCELLED", "COMPLETED"].includes(newStatus)) {
+      sendAppointmentStatusChange(emailPayload, newStatus).catch(console.error);
+    }
+
+    return NextResponse.json(updated);
+  }
+
+  // ── CUSTOMER / GUEST SELF-SERVICE ACTIONS ───────────────────────────────────
   const isExpired = new Date(appointment.dateTime).getTime() <= Date.now();
 
-  // If customer is cancelling
+  // 1. Customer cancellation
   const isCancelRequest = body.action === "cancel" || body.status === "CANCELLED";
   if (isCancelRequest) {
-    if (isExpired && !isAdmin) {
+    if (isExpired) {
       return NextResponse.json({ error: "Deze afspraak is reeds verlopen en kan niet meer worden geannuleerd." }, { status: 400 });
     }
     if (appointment.status === "CANCELLED") {
@@ -132,9 +206,9 @@ export async function PATCH(
     return NextResponse.json(updated);
   }
 
-  // If customer or admin is rescheduling (dateTime provided)
+  // 2. Customer rescheduling
   if (body.dateTime || body.action === "reschedule") {
-    if (isExpired && !isAdmin) {
+    if (isExpired) {
       return NextResponse.json({ error: "Deze afspraak is reeds verlopen en kan niet meer worden gewijzigd." }, { status: 400 });
     }
 
@@ -142,27 +216,20 @@ export async function PATCH(
       return NextResponse.json({ error: "Nieuwe datum en tijdstip zijn verplicht" }, { status: 400 });
     }
 
-    const newDateTime = new Date(body.dateTime);
+    const newDateTime = parseBrusselsDateTime(body.dateTime);
     if (isNaN(newDateTime.getTime())) {
       return NextResponse.json({ error: "Ongeldige datum" }, { status: 400 });
     }
 
     // Require date to be at least 1 hour in the future
-    const now = new Date();
-    if (newDateTime.getTime() < now.getTime() + 60 * 60 * 1000) {
+    const now = Date.now();
+    if (newDateTime.getTime() < now + 60 * 60 * 1000) {
       return NextResponse.json({ error: "Kies een tijdstip in de toekomst (minstens 1 uur vooruit)." }, { status: 400 });
     }
 
     // Check Sunday
     if (newDateTime.getDay() === 0) {
       return NextResponse.json({ error: "Wij zijn op zondag gesloten. Kies een andere dag (maandag t/m zaterdag)." }, { status: 400 });
-    }
-
-    // Check garage opening hours (09:00 - 18:00)
-    const hour = newDateTime.getHours();
-    const mins = newDateTime.getMinutes();
-    if (hour < 9 || (hour >= 18 && mins > 0)) {
-      return NextResponse.json({ error: "Onze werkplaats is geopend van 09:00 tot 18:00." }, { status: 400 });
     }
 
     // Check collision (+/- 25 minutes) against other active appointments
@@ -194,7 +261,6 @@ export async function PATCH(
       data: {
         dateTime: newDateTime,
         reminderSentAt: null,
-        // If it was cancelled or pending, set to PENDING or CONFIRMED
         status: appointment.status === "CANCELLED" ? "PENDING" : appointment.status,
         notes: updatedNotes,
         ...(body.vehicleInfo ? { vehicleInfo: body.vehicleInfo } : {}),
@@ -223,72 +289,7 @@ export async function PATCH(
     return NextResponse.json(updated);
   }
 
-  // Admin general update (all fields supported)
-  if (isAdmin) {
-    const allowed = ["PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
-    if (body.status && !allowed.includes(body.status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
-    }
-
-    const oldDateTime = appointment.dateTime;
-    const newDateTime = body.dateTime ? new Date(body.dateTime) : null;
-    const dateTimeChanged = newDateTime && !isNaN(newDateTime.getTime()) && newDateTime.getTime() !== new Date(oldDateTime).getTime();
-
-    const updated = await prisma.appointment.update({
-      where: { id },
-      data: {
-        ...(body.status ? { status: body.status } : {}),
-        ...(body.type ? { type: body.type } : {}),
-        ...(body.guestName !== undefined ? { guestName: body.guestName } : {}),
-        ...(body.guestPhone !== undefined ? { guestPhone: body.guestPhone } : {}),
-        ...(body.guestEmail !== undefined ? { guestEmail: body.guestEmail } : {}),
-        ...(dateTimeChanged ? { dateTime: newDateTime, reminderSentAt: null } : {}),
-        ...(body.notes !== undefined ? { notes: body.notes } : {}),
-        ...(body.vehicleInfo !== undefined ? { vehicleInfo: body.vehicleInfo } : {}),
-      },
-      include: { user: { select: { name: true, email: true } } },
-    });
-
-    // If date changed by admin, notify customer if confirmed
-    if (dateTimeChanged && (body.status === "CONFIRMED" || appointment.status === "CONFIRMED")) {
-      sendAppointmentRescheduled(
-        {
-          id: updated.id,
-          guestName: updated.guestName,
-          guestEmail: updated.guestEmail,
-          guestPhone: updated.guestPhone,
-          userName: updated.user?.name ?? null,
-          userEmail: updated.user?.email ?? null,
-          type: updated.type,
-          dateTime: updated.dateTime,
-          vehicleInfo: updated.vehicleInfo,
-          notes: updated.notes,
-        },
-        oldDateTime,
-        newDateTime
-      ).catch(console.error);
-    } else if (body.status && ["CONFIRMED", "CANCELLED", "COMPLETED"].includes(body.status) && body.status !== appointment.status) {
-      sendAppointmentStatusChange(
-        {
-          id: updated.id,
-          guestName: updated.guestName,
-          guestEmail: updated.guestEmail,
-          guestPhone: updated.guestPhone,
-          userName: updated.user?.name ?? null,
-          userEmail: updated.user?.email ?? null,
-          type: updated.type,
-          dateTime: updated.dateTime,
-          vehicleInfo: updated.vehicleInfo,
-          notes: updated.notes,
-        },
-        body.status
-      ).catch(console.error);
-    }
-
-    return NextResponse.json(updated);
-  }
-
-  // Customer updating notes or details
+  // 3. Customer updating notes or details
   if (body.notes !== undefined || body.vehicleInfo !== undefined) {
     const updated = await prisma.appointment.update({
       where: { id },

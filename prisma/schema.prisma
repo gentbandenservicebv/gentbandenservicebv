@@ -363,3 +363,45 @@ model SecondhandSubmission {
   @@map("secondhand_submission")
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Facturen / Invoices
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  invoiceNumber   String        @unique // e.g. "INV-2026-0001"
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerStreet  String?
+  customerCity    String?
+  customerPostal  String?
+  customerCountry String?       @default("België")
+  companyName     String?       // Bedrijfsnaam indien B2B
+  vatNumber       String?       // BTW-nummer e.g. BE 0123.456.789
+  status          InvoiceStatus @default(PENDING)
+  issueDate       DateTime      @default(now())
+  dueDate         DateTime
+  paymentMethod   String?       @default("Overschrijving")
+  items           String        // JSON array: [{ description, quantity, price, vatRate }]
+  subtotal        Float
+  vatAmount       Float
+  totalAmount     Float
+  notes           String?
+  sentAt          DateTime?
+  paidAt          DateTime?
+  orderId         String?
+  appointmentId   String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("invoice")
+}
+
+

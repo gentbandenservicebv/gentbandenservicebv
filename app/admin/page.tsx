@@ -61,6 +61,32 @@ interface Tyre {
   images: TyreImage[];
 }
 
+interface InvoiceEntry {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  customerStreet: string | null;
+  customerCity: string | null;
+  customerPostal: string | null;
+  customerCountry: string | null;
+  companyName: string | null;
+  vatNumber: string | null;
+  status: "PENDING" | "PAID" | "CANCELLED";
+  issueDate: string;
+  dueDate: string;
+  paymentMethod: string | null;
+  items: string; // JSON
+  subtotal: number;
+  vatAmount: number;
+  totalAmount: number;
+  notes: string | null;
+  sentAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
 interface AppointmentEntry {
   id: string;
   dateTime: string;
@@ -320,8 +346,89 @@ export default function AdminPage() {
   const [imageActionLoading, setImageActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "analytics">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics">("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  // Invoices state
+  const [invoices, setInvoices] = useState<InvoiceEntry[]>([]);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<"ALL" | "PENDING" | "PAID" | "CANCELLED">("ALL");
+  const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false);
+  const [savingInvoice, setSavingInvoice] = useState(false);
+  const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null);
+  const [deletingInvoiceId, setDeletingInvoiceId] = useState<string | null>(null);
+  const [newInvoiceForm, setNewInvoiceForm] = useState<{
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    customerStreet: string;
+    customerPostal: string;
+    customerCity: string;
+    customerCountry: string;
+    companyName: string;
+    vatNumber: string;
+    invoiceNumber: string;
+    issueDate: string;
+    dueDate: string;
+    paymentMethod: string;
+    status: "PENDING" | "PAID";
+    items: Array<{ description: string; quantity: number; price: number; vatRate: number }>;
+    notes: string;
+    sendDirectly: boolean;
+  }>({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    customerStreet: "",
+    customerPostal: "",
+    customerCity: "",
+    customerCountry: "België",
+    companyName: "",
+    vatNumber: "",
+    invoiceNumber: "",
+    issueDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    paymentMethod: "Overschrijving",
+    status: "PENDING",
+    items: [{ description: "Montage & balanceren banden", quantity: 4, price: 19.99, vatRate: 21 }],
+    notes: "Gelieve het openstaande bedrag over te maken binnen 14 dagen met vermelding van het factuurnummer.",
+    sendDirectly: true,
+  });
+
+  const [editingInvoice, setEditingInvoice] = useState<InvoiceEntry | null>(null);
+  const [editInvoiceForm, setEditInvoiceForm] = useState<{
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    customerStreet: string;
+    customerPostal: string;
+    customerCity: string;
+    customerCountry: string;
+    companyName: string;
+    vatNumber: string;
+    issueDate: string;
+    dueDate: string;
+    paymentMethod: string;
+    status: "PENDING" | "PAID" | "CANCELLED";
+    items: Array<{ description: string; quantity: number; price: number; vatRate: number }>;
+    notes: string;
+  }>({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    customerStreet: "",
+    customerPostal: "",
+    customerCity: "",
+    customerCountry: "België",
+    companyName: "",
+    vatNumber: "",
+    issueDate: "",
+    dueDate: "",
+    paymentMethod: "Overschrijving",
+    status: "PENDING",
+    items: [],
+    notes: "",
+  });
+
   const [secondhandSubmissions, setSecondhandSubmissions] = useState<SecondhandEntry[]>([]);
   const [secondhandStatusFilter, setSecondhandStatusFilter] = useState<"ALL" | "PENDING" | "ACCEPTED" | "REJECTED">("ALL");
   const [secondhandSearch, setSecondhandSearch] = useState("");
@@ -344,7 +451,10 @@ export default function AdminPage() {
 
   // Edit / Reschedule Modal state
   const [editingAppt, setEditingAppt] = useState<AppointmentEntry | null>(null);
+  const [editApptError, setEditApptError] = useState("");
   const [editApptForm, setEditApptForm] = useState<{
+    date: string;
+    time: string;
     dateTime: string;
     guestName: string;
     guestPhone: string;
@@ -357,6 +467,8 @@ export default function AdminPage() {
     vehicleInfo: string;
     notes: string;
   }>({
+    date: "",
+    time: "10:00",
     dateTime: "",
     guestName: "",
     guestPhone: "",
@@ -562,6 +674,12 @@ export default function AdminPage() {
         .then((data) => setAppointments(Array.isArray(data) ? data : []))
         .catch(console.error);
     }
+    if (activeTab === "invoices" || activeTab === "dashboard") {
+      fetch("/api/invoices")
+        .then((r) => r.json())
+        .then((data) => setInvoices(Array.isArray(data) ? data : []))
+        .catch(console.error);
+    }
     if (activeTab === "secondhand") {
       fetch("/api/secondhand")
         .then((r) => r.json())
@@ -569,6 +687,184 @@ export default function AdminPage() {
         .catch(console.error);
     }
   }, [activeTab, isAdmin]);
+
+  async function fetchInvoices() {
+    try {
+      const res = await fetch("/api/invoices");
+      const data = await res.json();
+      if (Array.isArray(data)) setInvoices(data);
+    } catch (e) {
+      console.error("fetchInvoices error:", e);
+    }
+  }
+
+  async function handleSendInvoiceEmail(invId: string) {
+    setSendingInvoiceId(invId);
+    try {
+      const res = await fetch(`/api/invoices/${invId}/send`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setInvoices((prev) =>
+          prev.map((i) => (i.id === invId ? { ...i, sentAt: data.sentAt || new Date().toISOString() } : i))
+        );
+        setMessage({ type: "success", text: "Factuur succesvol per e-mail verzonden naar de klant!" });
+      } else {
+        setMessage({ type: "error", text: data.error || "Fout bij verzenden van factuur." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Fout bij verzenden van factuur." });
+    } finally {
+      setSendingInvoiceId(null);
+    }
+  }
+
+  async function handleToggleInvoiceStatus(invId: string, currentStatus: string) {
+    const nextStatus = currentStatus === "PAID" ? "PENDING" : "PAID";
+    try {
+      const res = await fetch(`/api/invoices/${invId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (res.ok) {
+        setInvoices((prev) => prev.map((i) => (i.id === invId ? { ...i, status: nextStatus } : i)));
+        setMessage({
+          type: "success",
+          text: nextStatus === "PAID" ? "Factuur gemarkeerd als BETAALD!" : "Factuur gemarkeerd als OPENSTAAND.",
+        });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Fout bij wijzigen status." });
+    }
+  }
+
+  async function handleDeleteInvoice(invId: string, num: string) {
+    if (!confirm(`Weet u zeker dat u factuur #${num} wilt verwijderen?`)) return;
+    setDeletingInvoiceId(invId);
+    try {
+      const res = await fetch(`/api/invoices/${invId}`, { method: "DELETE" });
+      if (res.ok) {
+        setInvoices((prev) => prev.filter((i) => i.id !== invId));
+        setMessage({ type: "success", text: `Factuur #${num} succesvol verwijderd.` });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Fout bij verwijderen factuur." });
+    } finally {
+      setDeletingInvoiceId(null);
+    }
+  }
+
+  async function handleCreateInvoice(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newInvoiceForm.customerName.trim() || !newInvoiceForm.customerEmail.trim()) {
+      alert("Vul a.u.b. een klantnaam en e-mailadres in.");
+      return;
+    }
+    setSavingInvoice(true);
+    try {
+      const res = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newInvoiceForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setInvoices((prev) => [data, ...prev]);
+        setShowNewInvoiceModal(false);
+        setMessage({
+          type: "success",
+          text: newInvoiceForm.sendDirectly
+            ? `Factuur #${data.invoiceNumber} succesvol aangemaakt en verzonden naar ${data.customerEmail}!`
+            : `Factuur #${data.invoiceNumber} succesvol opgeslagen!`,
+        });
+        setNewInvoiceForm({
+          customerName: "",
+          customerEmail: "",
+          customerPhone: "",
+          customerStreet: "",
+          customerPostal: "",
+          customerCity: "",
+          customerCountry: "België",
+          companyName: "",
+          vatNumber: "",
+          invoiceNumber: "",
+          issueDate: new Date().toISOString().split("T")[0],
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          paymentMethod: "Overschrijving",
+          status: "PENDING",
+          items: [{ description: "Montage & balanceren banden", quantity: 4, price: 19.99, vatRate: 21 }],
+          notes: "Gelieve het openstaande bedrag over te maken binnen 14 dagen met vermelding van het factuurnummer.",
+          sendDirectly: true,
+        });
+      } else {
+        alert(data.error || "Fout bij aanmaken factuur.");
+      }
+    } catch {
+      alert("Fout bij aanmaken factuur.");
+    } finally {
+      setSavingInvoice(false);
+    }
+  }
+
+  function openEditInvoiceModal(inv: InvoiceEntry) {
+    let parsedItems: Array<{ description: string; quantity: number; price: number; vatRate: number }> = [];
+    try {
+      parsedItems = JSON.parse(inv.items);
+    } catch {
+      parsedItems = [{ description: "Diensten / Banden", quantity: 1, price: inv.totalAmount, vatRate: 21 }];
+    }
+
+    setEditingInvoice(inv);
+    setEditInvoiceForm({
+      customerName: inv.customerName || "",
+      customerEmail: inv.customerEmail || "",
+      customerPhone: inv.customerPhone || "",
+      customerStreet: inv.customerStreet || "",
+      customerPostal: inv.customerPostal || "",
+      customerCity: inv.customerCity || "",
+      customerCountry: inv.customerCountry || "België",
+      companyName: inv.companyName || "",
+      vatNumber: inv.vatNumber || "",
+      issueDate: new Date(inv.issueDate).toISOString().split("T")[0],
+      dueDate: new Date(inv.dueDate).toISOString().split("T")[0],
+      paymentMethod: inv.paymentMethod || "Overschrijving",
+      status: inv.status as any,
+      items: parsedItems.length > 0 ? parsedItems : [{ description: "Dienst / Band", quantity: 1, price: 0, vatRate: 21 }],
+      notes: inv.notes || "",
+    });
+  }
+
+  async function handleUpdateInvoice(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingInvoice) return;
+    if (!editInvoiceForm.customerName.trim() || !editInvoiceForm.customerEmail.trim()) {
+      alert("Vul a.u.b. een klantnaam en e-mailadres in.");
+      return;
+    }
+    setSavingInvoice(true);
+    try {
+      const res = await fetch(`/api/invoices/${editingInvoice.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editInvoiceForm),
+      });
+      const updated = await res.json();
+      if (res.ok) {
+        setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+        setEditingInvoice(null);
+        setMessage({
+          type: "success",
+          text: `Factuur #${updated.invoiceNumber} succesvol bijgewerkt!`,
+        });
+      } else {
+        setMessage({ type: "error", text: updated.error || "Fout bij bijwerken factuur." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Fout bij bijwerken factuur." });
+    } finally {
+      setSavingInvoice(false);
+    }
+  }
 
   async function updateOrderStatus(id: string, status: string) {
     setOrderActionLoading(id + status);
@@ -715,11 +1011,16 @@ export default function AdminPage() {
   function openEditApptModal(appt: AppointmentEntry) {
     const dt = new Date(appt.dateTime);
     const pad = (n: number) => String(n).padStart(2, "0");
-    const localIso = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    const datePart = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+    const timePart = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+    const localIso = `${datePart}T${timePart}`;
     const parsedVehicle = parseVehicleInfo(appt.vehicleInfo);
 
+    setEditApptError("");
     setEditingAppt(appt);
     setEditApptForm({
+      date: datePart,
+      time: timePart,
       dateTime: localIso,
       guestName: appt.user?.name ?? appt.guestName ?? "",
       guestPhone: appt.guestPhone ?? "",
@@ -738,6 +1039,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!editingAppt) return;
     setSavingApptEdit(true);
+    setEditApptError("");
     try {
       const plateClean = editApptForm.vehiclePlate.trim().toUpperCase();
       const modelClean = editApptForm.vehicleBrandModel.trim();
@@ -752,6 +1054,10 @@ export default function AdminPage() {
         compiledVehicleInfo = parts.join(" - ");
       }
 
+      const finalDateTime = editApptForm.date && editApptForm.time
+        ? `${editApptForm.date}T${editApptForm.time}:00`
+        : editApptForm.dateTime || undefined;
+
       const res = await fetch(`/api/appointments/${editingAppt.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -760,7 +1066,7 @@ export default function AdminPage() {
           guestPhone: editApptForm.guestPhone.trim() || undefined,
           guestEmail: editApptForm.guestEmail.trim() || undefined,
           type: editApptForm.type,
-          dateTime: editApptForm.dateTime ? new Date(editApptForm.dateTime).toISOString() : undefined,
+          dateTime: finalDateTime,
           status: editApptForm.status,
           vehicleInfo: compiledVehicleInfo || null,
           notes: editApptForm.notes.trim() || null,
@@ -770,13 +1076,18 @@ export default function AdminPage() {
         const updated: AppointmentEntry = await res.json();
         setAppointments((prev) => prev.map((a) => (a.id === editingAppt.id ? updated : a)));
         setEditingAppt(null);
+        setEditApptError("");
         setMessage({ type: "success", text: "Afspraak succesvol bijgewerkt en opgeslagen!" });
       } else {
         const err = await res.json().catch(() => null);
-        setMessage({ type: "error", text: err?.error || "Fout bij bijwerken van afspraak." });
+        const errMsg = err?.error || "Fout bij bijwerken van afspraak.";
+        setEditApptError(errMsg);
+        setMessage({ type: "error", text: errMsg });
       }
     } catch {
-      setMessage({ type: "error", text: "Netwerkfout bij bewerken van afspraak." });
+      const errMsg = "Netwerkfout bij bewerken van afspraak.";
+      setEditApptError(errMsg);
+      setMessage({ type: "error", text: errMsg });
     } finally {
       setSavingApptEdit(false);
     }
@@ -1362,6 +1673,7 @@ export default function AdminPage() {
               {activeTab === "orders" && "Bestellingen"}
               {activeTab === "appointments" && "Afspraken"}
               {activeTab === "secondhand" && "2de hands"}
+              {activeTab === "invoices" && "Facturen"}
               {activeTab === "analytics" && "Statistieken"}
             </span>
           </div>
@@ -1454,6 +1766,24 @@ export default function AdminPage() {
             {secondhandSubmissions.filter(s => s.status === "PENDING").length > 0 && (
               <span style={{ marginLeft: "auto", background: "#8b5cf6", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
                 {secondhandSubmissions.filter(s => s.status === "PENDING").length}
+              </span>
+            )}
+          </button>
+          <button
+            className={`admin-nav__item${activeTab === "invoices" ? " admin-nav__item--active" : ""}`}
+            onClick={() => { setActiveTab("invoices"); setIsMobileNavOpen(false); }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Facturen
+            {invoices.filter((i) => i.status === "PENDING").length > 0 && (
+              <span style={{ marginLeft: "auto", background: "#f59e0b", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
+                {invoices.filter((i) => i.status === "PENDING").length}
               </span>
             )}
           </button>
@@ -4005,40 +4335,43 @@ export default function AdminPage() {
                                     style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", flexShrink: 0 }}
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    {a.status === "PENDING" && (
+                                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                      <select
+                                        value={a.status}
+                                        disabled={apptActionLoading === a.id + a.status}
+                                        onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
+                                        style={{
+                                          background: sc.bg,
+                                          color: sc.color,
+                                          border: `1.5px solid ${sc.color}55`,
+                                          borderRadius: 8,
+                                          padding: "5px 10px",
+                                          fontSize: "0.8rem",
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                          outline: "none",
+                                        }}
+                                      >
+                                        <option value="PENDING" style={{ background: "#161922", color: "#f59e0b" }}>⏳ In afwachting</option>
+                                        <option value="CONFIRMED" style={{ background: "#161922", color: "#60c0ff" }}>🔵 Bevestigd</option>
+                                        <option value="COMPLETED" style={{ background: "#161922", color: "#10b981" }}>✅ Voltooid</option>
+                                        <option value="CANCELLED" style={{ background: "#161922", color: "#94a3b8" }}>❌ Geannuleerd</option>
+                                      </select>
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                                      {/* Edit button */}
                                       <button
                                         className="admin-btn admin-btn--sm admin-btn--primary"
-                                        disabled={apptActionLoading === a.id + "CONFIRMED"}
-                                        onClick={() => updateAppointmentStatus(a.id, "CONFIRMED")}
-                                        style={{ fontWeight: 700 }}
-                                      >
-                                        ✓ Bevestigen
-                                      </button>
-                                    )}
-                                    {(a.status === "PENDING" || a.status === "CONFIRMED") && (
-                                      <button
-                                        className="admin-btn admin-btn--sm"
-                                        style={{ background: "#10b981", color: "#fff", borderColor: "#059669", fontWeight: 600 }}
-                                        disabled={apptActionLoading === a.id + "COMPLETED"}
-                                        onClick={() => updateAppointmentStatus(a.id, "COMPLETED")}
-                                      >
-                                        ✓ Voltooien
-                                      </button>
-                                    )}
-
-                                    <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 2 }}>
-                                      {/* Edit / Reschedule button */}
-                                      <button
-                                        className="admin-btn admin-btn--sm admin-btn--secondary"
                                         onClick={() => openEditApptModal(a)}
                                         title="Afspraak wijzigen of verzetten"
-                                        style={{ padding: "5px 9px", fontSize: "0.78rem" }}
+                                        style={{ padding: "5px 11px", fontSize: "0.8rem", fontWeight: 700 }}
                                       >
-                                        ✏️ Wijzigen
+                                        ✏️ Bewerken
                                       </button>
 
                                       {/* Cancel button */}
-                                      {a.status !== "CANCELLED" && a.status !== "COMPLETED" && (
+                                      {a.status !== "CANCELLED" && (
                                         <button
                                           className="admin-btn admin-btn--sm admin-btn--danger"
                                           disabled={apptActionLoading === a.id + "CANCELLED"}
@@ -4047,10 +4380,10 @@ export default function AdminPage() {
                                               updateAppointmentStatus(a.id, "CANCELLED");
                                             }
                                           }}
-                                          style={{ padding: "5px 8px", fontSize: "0.78rem" }}
+                                          style={{ padding: "5px 9px", fontSize: "0.78rem" }}
                                           title="Afspraak annuleren"
                                         >
-                                          ✕ Annuleren
+                                          ✕
                                         </button>
                                       )}
 
@@ -4208,9 +4541,28 @@ export default function AdminPage() {
                               </td>
 
                               <td>
-                                <span className={`admin-badge ${sc.cls}`} style={{ fontSize: 11, padding: "2px 8px" }}>
-                                  {sc.label}
-                                </span>
+                                <select
+                                  value={a.status}
+                                  disabled={apptActionLoading === a.id + a.status}
+                                  onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    background: sc.bg || "rgba(255,255,255,0.06)",
+                                    color: sc.color || "#fff",
+                                    border: `1px solid ${sc.color || "#fff"}44`,
+                                    borderRadius: 6,
+                                    padding: "3px 6px",
+                                    fontSize: "0.74rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    outline: "none",
+                                  }}
+                                >
+                                  <option value="PENDING" style={{ background: "#161922", color: "#f59e0b" }}>⏳ In afwachting</option>
+                                  <option value="CONFIRMED" style={{ background: "#161922", color: "#60c0ff" }}>🔵 Bevestigd</option>
+                                  <option value="COMPLETED" style={{ background: "#161922", color: "#10b981" }}>✅ Voltooid</option>
+                                  <option value="CANCELLED" style={{ background: "#161922", color: "#94a3b8" }}>❌ Geannuleerd</option>
+                                </select>
                               </td>
 
                               <td style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.78rem", color: "rgba(255,255,255,0.6)" }}>
@@ -4297,373 +4649,437 @@ export default function AdminPage() {
             )}
 
               {/* ─── MODAL: AFSPRAAK WIJZIGEN / VERZETTEN ──────────────────── */}
-              {editingAppt && (
-                <div
-                  className="admin-modal-overlay"
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) setEditingAppt(null);
-                  }}
-                >
+              {editingAppt && (() => {
+                const statusOptions = [
+                  { key: "PENDING", label: "In afwachting", icon: "⏳", color: "#f59e0b", activeClass: "admin-appt-status-tab--active-pending" },
+                  { key: "CONFIRMED", label: "Bevestigd", icon: "🔵", color: "#016eb9", activeClass: "admin-appt-status-tab--active-confirmed" },
+                  { key: "COMPLETED", label: "Voltooid", icon: "✅", color: "#10b981", activeClass: "admin-appt-status-tab--active-completed" },
+                  { key: "CANCELLED", label: "Geannuleerd", icon: "❌", color: "#94a3b8", activeClass: "admin-appt-status-tab--active-cancelled" },
+                ];
+
+                const serviceOptions = [
+                  { value: "FITTING", icon: "🛞", label: "Montage & Balanceren", duration: "ca. 45 min" },
+                  { value: "REPAIR", icon: "🔧", label: "Bandenreparatie", duration: "ca. 30 min" },
+                  { value: "INSPECTION", icon: "🔍", label: "Inspectie & Wissel", duration: "ca. 30 min" },
+                  { value: "OTHER", icon: "💬", label: "Andere Service", duration: "ca. 30 min" },
+                ];
+
+                return (
                   <div
-                    className="admin-modal"
-                    style={{
-                      maxWidth: 720,
-                      background: "#161922",
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 18,
-                      boxShadow: "0 25px 60px -15px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)",
-                      overflow: "hidden",
+                    className="admin-modal-overlay"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) setEditingAppt(null);
                     }}
-                    onClick={(e) => e.stopPropagation()}
                   >
-                    {/* Header */}
                     <div
-                      style={{
-                        padding: "20px 24px",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        background: "linear-gradient(180deg, rgba(1,110,185,0.14) 0%, rgba(1,110,185,0.02) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
+                      className="admin-modal admin-modal--appt-clean"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <div
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 12,
-                            background: "linear-gradient(135deg, #016eb9, #0284c7)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#fff",
-                            fontSize: "1.2rem",
-                            boxShadow: "0 4px 12px rgba(1,110,185,0.35)",
-                            flexShrink: 0,
-                          }}
-                        >
-                          ✏️
-                        </div>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#fff" }}>
-                              Afspraak Wijzigen of Verzetten
-                            </h2>
-                            <code style={{ fontSize: "0.72rem", background: "rgba(255,255,255,0.08)", color: "#60c0ff", padding: "1px 6px", borderRadius: 4 }}>
-                              #{editingAppt.id.slice(-6).toUpperCase()}
-                            </code>
+                      {/* Header */}
+                      <div className="admin-modal__header">
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              background: "linear-gradient(135deg, #016eb9, #0284c7)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              fontSize: "1.15rem",
+                              flexShrink: 0,
+                            }}
+                          >
+                            ✏️
                           </div>
-                          <p style={{ margin: "3px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
-                            Klant: <strong style={{ color: "#fff" }}>{editingAppt.user?.name ?? editingAppt.guestName ?? "Gast"}</strong>
-                            {editingAppt.guestPhone && ` · 📞 ${editingAppt.guestPhone}`}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        className="admin-modal__close"
-                        onClick={() => setEditingAppt(null)}
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 8,
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          color: "rgba(255,255,255,0.6)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    <form onSubmit={handleSaveApptEdit}>
-                      <div
-                        className="admin-modal__body"
-                        style={{
-                          padding: "22px 26px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 16,
-                          maxHeight: "75vh",
-                          overflowY: "auto",
-                        }}
-                      >
-                        {/* ── SECTION 1: KLANTGEGEVENS ── */}
-                        <div className="admin-section-card">
-                          <div className="admin-section-title">
-                            <span>👤</span> 1. Klantgegevens
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
-                            <div className="admin-form-group" style={{ margin: 0 }}>
-                              <label className="admin-label" style={{ fontSize: "0.8rem" }}>Klantnaam</label>
-                              <input
-                                type="text"
-                                className="admin-input"
-                                value={editApptForm.guestName}
-                                onChange={(e) => setEditApptForm({ ...editApptForm, guestName: e.target.value })}
-                                style={{ background: "#10121a", margin: 0 }}
-                              />
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <h2 className="admin-modal__title" style={{ fontSize: "1.1rem" }}>
+                                Afspraak Bewerken
+                              </h2>
+                              <code style={{ fontSize: "0.72rem", background: "rgba(255,255,255,0.08)", color: "#60c0ff", padding: "2px 7px", borderRadius: 4, fontWeight: 700 }}>
+                                #{editingAppt.id.slice(-6).toUpperCase()}
+                              </code>
                             </div>
-                            <div className="admin-form-group" style={{ margin: 0 }}>
-                              <label className="admin-label" style={{ fontSize: "0.8rem" }}>Telefoonnummer</label>
-                              <input
-                                type="tel"
-                                className="admin-input"
-                                value={editApptForm.guestPhone}
-                                onChange={(e) => setEditApptForm({ ...editApptForm, guestPhone: e.target.value })}
-                                style={{ background: "#10121a", margin: 0 }}
-                              />
-                            </div>
-                          </div>
-                          <div className="admin-form-group" style={{ margin: 0 }}>
-                            <label className="admin-label" style={{ fontSize: "0.8rem" }}>E-mailadres</label>
-                            <input
-                              type="email"
-                              className="admin-input"
-                              value={editApptForm.guestEmail}
-                              onChange={(e) => setEditApptForm({ ...editApptForm, guestEmail: e.target.value })}
-                              style={{ background: "#10121a", margin: 0 }}
-                            />
+                            <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
+                              {editingAppt.user?.name ?? editingAppt.guestName ?? "Gastklant"}
+                              {editingAppt.guestPhone && ` · 📞 ${editingAppt.guestPhone}`}
+                            </p>
                           </div>
                         </div>
 
-                        {/* ── SECTION 2: VOERTUIG & BANDEN ── */}
-                        <div className="admin-section-card">
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                            <div className="admin-section-title" style={{ margin: 0 }}>
-                              <span>🚗</span> 2. Voertuig &amp; Bandenmaat
-                            </div>
-                            {editApptForm.vehiclePlate && (
-                              <LicensePlateBadge plate={editApptForm.vehiclePlate} />
-                            )}
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
-                            <div className="admin-form-group" style={{ margin: 0 }}>
-                              <label className="admin-label" style={{ fontSize: "0.8rem" }}>Nummerplaat</label>
-                              <input
-                                type="text"
-                                className="admin-input"
-                                placeholder="bijv. 1-ABC-123"
-                                value={editApptForm.vehiclePlate}
-                                onChange={(e) => setEditApptForm({ ...editApptForm, vehiclePlate: e.target.value.toUpperCase() })}
-                                style={{ background: "#10121a", textTransform: "uppercase", margin: 0 }}
-                              />
-                            </div>
-                            <div className="admin-form-group" style={{ margin: 0 }}>
-                              <label className="admin-label" style={{ fontSize: "0.8rem" }}>Merk &amp; Model</label>
-                              <input
-                                type="text"
-                                className="admin-input"
-                                placeholder="bijv. VW Golf 7"
-                                value={editApptForm.vehicleBrandModel}
-                                onChange={(e) => setEditApptForm({ ...editApptForm, vehicleBrandModel: e.target.value })}
-                                style={{ background: "#10121a", margin: 0 }}
-                              />
-                            </div>
-                          </div>
-                          <div className="admin-form-group" style={{ margin: 0 }}>
-                            <label className="admin-label" style={{ fontSize: "0.8rem" }}>Bandenmaat</label>
-                            <input
-                              type="text"
-                              className="admin-input"
-                              placeholder="bijv. 205/55 R16"
-                              value={editApptForm.tyreSize}
-                              onChange={(e) => setEditApptForm({ ...editApptForm, tyreSize: e.target.value })}
-                              style={{ background: "#10121a", margin: 0 }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* ── SECTION 3: SERVICE TYPE ── */}
-                        <div className="admin-section-card">
-                          <div className="admin-section-title">
-                            <span>🔧</span> 3. Type Service
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                            {[
-                              { value: "FITTING", icon: "🛞", label: "Montage & Balanceren", duration: "ca. 45 min" },
-                              { value: "REPAIR", icon: "🔧", label: "Bandenreparatie", duration: "ca. 30 min" },
-                              { value: "INSPECTION", icon: "🔍", label: "Inspectie & Wissel", duration: "ca. 30 min" },
-                              { value: "OTHER", icon: "💬", label: "Andere Service", duration: "ca. 30 min" },
-                            ].map((s) => {
-                              const isSelected = editApptForm.type === s.value;
-                              return (
-                                <div
-                                  key={s.value}
-                                  className={`admin-service-option${isSelected ? " admin-service-option--selected" : ""}`}
-                                  onClick={() => setEditApptForm({ ...editApptForm, type: s.value })}
-                                >
-                                  <div style={{ fontSize: "1.3rem" }}>{s.icon}</div>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontWeight: 700, fontSize: "0.8rem", color: isSelected ? "#fff" : "rgba(255,255,255,0.85)" }}>
-                                      {s.label}
-                                    </div>
-                                    <div style={{ fontSize: "0.68rem", color: isSelected ? "#60c0ff" : "rgba(255,255,255,0.4)" }}>
-                                      {s.duration}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* ── SECTION 4: DATUM & TIJDSTIP ── */}
-                        <div className="admin-section-card">
-                          <div className="admin-section-title">
-                            <span>📅</span> 4. Datum &amp; Tijdstip *
-                          </div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, alignItems: "center" }}>
-                            <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>Datum:</span>
-                            {[
-                              { label: "Vandaag", days: 0 },
-                              { label: "Morgen", days: 1 },
-                              { label: "Overmorgen", days: 2 },
-                              { label: "+3 Dagen", days: 3 },
-                            ].map((preset) => (
-                              <button
-                                key={preset.label}
-                                type="button"
-                                className="admin-quick-chip"
-                                onClick={() => setEditApptForm({ ...editApptForm, dateTime: setQuickDate(editApptForm.dateTime, preset.days) })}
-                              >
-                                {preset.label}
-                              </button>
-                            ))}
-                          </div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
-                            <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>Tijdslot:</span>
-                            {["09:00", "09:30", "10:00", "10:30", "11:00", "13:30", "14:30", "15:30", "16:30"].map((t) => (
-                              <button
-                                key={t}
-                                type="button"
-                                className="admin-quick-chip"
-                                onClick={() => setEditApptForm({ ...editApptForm, dateTime: setQuickTime(editApptForm.dateTime, t) })}
-                              >
-                                {t}
-                              </button>
-                            ))}
-                          </div>
-                          <input
-                            type="datetime-local"
-                            className="admin-input"
-                            value={editApptForm.dateTime}
-                            onChange={(e) => setEditApptForm({ ...editApptForm, dateTime: e.target.value })}
-                            required
-                            style={{ background: "#10121a", borderColor: "rgba(255,255,255,0.14)", fontSize: "0.95rem", color: "#fff", margin: 0 }}
-                          />
-                        </div>
-
-                        {/* ── SECTION 5: STATUS SELECTOR ── */}
-                        <div className="admin-section-card">
-                          <div className="admin-section-title">
-                            <span>🚦</span> 5. Status van de Afspraak
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
-                            {[
-                              { key: "PENDING", label: "Te bevestigen", color: "#f59e0b" },
-                              { key: "CONFIRMED", label: "Bevestigd", color: "#016eb9" },
-                              { key: "COMPLETED", label: "Voltooid", color: "#10b981" },
-                              { key: "CANCELLED", label: "Geannuleerd", color: "#94a3b8" },
-                            ].map((st) => {
-                              const isSelected = editApptForm.status === st.key;
-                              return (
-                                <button
-                                  key={st.key}
-                                  type="button"
-                                  onClick={() => setEditApptForm({ ...editApptForm, status: st.key })}
-                                  style={{
-                                    padding: "8px 12px",
-                                    borderRadius: 8,
-                                    border: `1.5px solid ${isSelected ? st.color : "rgba(255,255,255,0.08)"}`,
-                                    background: isSelected ? `${st.color}22` : "rgba(255,255,255,0.03)",
-                                    color: isSelected ? "#fff" : "rgba(255,255,255,0.6)",
-                                    fontWeight: isSelected ? 700 : 500,
-                                    fontSize: "0.78rem",
-                                    cursor: "pointer",
-                                    transition: "all 0.15s",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {st.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* ── SECTION 6: WERKPLAATSNOTITIES ── */}
-                        <div className="admin-section-card">
-                          <div className="admin-section-title">
-                            <span>📝</span> 6. Werkplaatsnotities &amp; Instructies
-                          </div>
-                          <div className="admin-form-group" style={{ margin: 0 }}>
-                            <textarea
-                              className="admin-textarea"
-                              rows={3}
-                              placeholder="Notities voor monteurs of details die de klant telefonisch meedeelde..."
-                              value={editApptForm.notes}
-                              onChange={(e) => setEditApptForm({ ...editApptForm, notes: e.target.value })}
-                              style={{ background: "#10121a", borderColor: "rgba(255,255,255,0.12)", margin: 0, fontSize: "0.82rem" }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Footer */}
-                      <div
-                        style={{
-                          padding: "16px 26px",
-                          borderTop: "1px solid rgba(255,255,255,0.08)",
-                          background: "#10121a",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
                         <button
                           type="button"
-                          className="admin-btn admin-btn--secondary"
+                          className="admin-modal__close"
                           onClick={() => setEditingAppt(null)}
-                          disabled={savingApptEdit}
-                          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.12)" }}
+                          title="Sluiten"
                         >
-                          Annuleren
-                        </button>
-                        <button
-                          type="submit"
-                          className="admin-btn admin-btn--primary"
-                          disabled={savingApptEdit}
-                          style={{ fontWeight: 800, padding: "10px 22px" }}
-                        >
-                          {savingApptEdit ? "Bezig met opslaan..." : "Wijzigingen Opslaan"}
+                          ✕
                         </button>
                       </div>
-                    </form>
-                  </div>
-                </div>
-              )}
 
-              {/* ─── MODAL: NIEUWE AFSPRAAK WORKBENCH (SPLIT VIEW) ─────────── */}
+                      {/* Form Body */}
+                      <form onSubmit={handleSaveApptEdit} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: 0 }}>
+                        <div className="admin-modal__body">
+                          {/* Error alert */}
+                          {editApptError && (
+                            <div
+                              style={{
+                                padding: "12px 16px",
+                                borderRadius: 10,
+                                background: "rgba(239, 68, 68, 0.15)",
+                                border: "1px solid rgba(239, 68, 68, 0.4)",
+                                color: "#fca5a5",
+                                fontSize: "0.85rem",
+                                fontWeight: 600,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                              }}
+                            >
+                              <span>⚠️</span>
+                              <span style={{ flex: 1 }}>{editApptError}</span>
+                              <button
+                                type="button"
+                                onClick={() => setEditApptError("")}
+                                style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer", fontSize: "1rem" }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 1. Status Selector */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>🚦 1. Status van de Afspraak</span>
+                            </div>
+                            <div className="admin-appt-status-grid">
+                              {statusOptions.map((st) => {
+                                const isSelected = editApptForm.status === st.key;
+                                return (
+                                  <button
+                                    key={st.key}
+                                    type="button"
+                                    onClick={() => setEditApptForm({ ...editApptForm, status: st.key })}
+                                    className={`admin-appt-status-tab${isSelected ? ` ${st.activeClass}` : ""}`}
+                                  >
+                                    <span>{st.icon}</span>
+                                    <span>{st.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* 2. Planning (Datum & Tijdstip) */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>📅 2. Datum &amp; Tijdstip</span>
+                              {editApptForm.date && (
+                                <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", textTransform: "none", fontWeight: 500 }}>
+                                  {(() => {
+                                    try {
+                                      const d = new Date(`${editApptForm.date}T${editApptForm.time || "10:00"}:00`);
+                                      return d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "long" });
+                                    } catch {
+                                      return editApptForm.date;
+                                    }
+                                  })()}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Datum *</label>
+                                <input
+                                  type="date"
+                                  className="admin-input"
+                                  value={editApptForm.date}
+                                  onChange={(e) => setEditApptForm((prev) => ({ ...prev, date: e.target.value }))}
+                                  required
+                                  style={{ fontSize: "0.92rem", padding: "10px 12px" }}
+                                />
+                                {/* Quick date shortcuts */}
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                                  {[
+                                    { label: "Vandaag", days: 0 },
+                                    { label: "Morgen", days: 1 },
+                                    { label: "+2d", days: 2 },
+                                    { label: "+1w", days: 7 },
+                                  ].map((p) => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() + p.days);
+                                    const pad = (n: number) => String(n).padStart(2, "0");
+                                    const pDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                                    const isPicked = editApptForm.date === pDate;
+                                    return (
+                                      <button
+                                        key={p.label}
+                                        type="button"
+                                        onClick={() => setEditApptForm((prev) => ({ ...prev, date: pDate }))}
+                                        className={`admin-quick-time-pill${isPicked ? " admin-quick-time-pill--active" : ""}`}
+                                      >
+                                        {p.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Tijdstip *</label>
+                                <input
+                                  type="time"
+                                  className="admin-input"
+                                  value={editApptForm.time}
+                                  onChange={(e) => setEditApptForm((prev) => ({ ...prev, time: e.target.value }))}
+                                  required
+                                  style={{ fontSize: "0.92rem", padding: "10px 12px" }}
+                                />
+                                {/* Quick time shortcuts */}
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                                  {["09:00", "10:30", "12:00", "14:00", "16:00"].map((t) => {
+                                    const isPicked = editApptForm.time === t;
+                                    return (
+                                      <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setEditApptForm((prev) => ({ ...prev, time: t }))}
+                                        className={`admin-quick-time-pill${isPicked ? " admin-quick-time-pill--active" : ""}`}
+                                      >
+                                        {t}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 3. Type Service */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>🔧 3. Type Service</span>
+                            </div>
+                            <div className="admin-appt-services-grid">
+                              {serviceOptions.map((s) => {
+                                const isSelected = editApptForm.type === s.value;
+                                return (
+                                  <div
+                                    key={s.value}
+                                    onClick={() => setEditApptForm({ ...editApptForm, type: s.value })}
+                                    className={`admin-appt-service-card${isSelected ? " admin-appt-service-card--selected" : ""}`}
+                                  >
+                                    <span style={{ fontSize: "1.3rem" }}>{s.icon}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontWeight: 700, fontSize: "0.82rem", color: isSelected ? "#fff" : "rgba(255,255,255,0.85)" }}>
+                                        {s.label}
+                                      </div>
+                                      <div style={{ fontSize: "0.7rem", color: isSelected ? "#60c0ff" : "rgba(255,255,255,0.4)" }}>
+                                        {s.duration}
+                                      </div>
+                                    </div>
+                                    <div style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${isSelected ? "#016eb9" : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", background: isSelected ? "#016eb9" : "transparent" }}>
+                                      {isSelected && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* 4. Klantgegevens */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>👤 4. Klantgegevens</span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Klantnaam</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. Jan Jansen"
+                                  value={editApptForm.guestName}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, guestName: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                  <label className="admin-label">Telefoonnummer</label>
+                                  {editApptForm.guestPhone && (
+                                    <a
+                                      href={`https://wa.me/${editApptForm.guestPhone.replace(/[^0-9]/g, "")}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{ color: "#22c55e", display: "inline-flex", alignItems: "center", gap: 4, textDecoration: "none", fontSize: "0.72rem", fontWeight: 700 }}
+                                      title="Open WhatsApp chat"
+                                    >
+                                      <WhatsAppIcon size={11} /> WhatsApp
+                                    </a>
+                                  )}
+                                </div>
+                                <input
+                                  type="tel"
+                                  className="admin-input"
+                                  placeholder="bijv. 0488 12 34 56"
+                                  value={editApptForm.guestPhone}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, guestPhone: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field" style={{ gridColumn: "1 / -1" }}>
+                                <label className="admin-label">E-mailadres</label>
+                                <input
+                                  type="email"
+                                  className="admin-input"
+                                  placeholder="bijv. klant@email.be"
+                                  value={editApptForm.guestEmail}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, guestEmail: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 5. Voertuig & Banden */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>🚗 5. Voertuig &amp; Banden</span>
+                              {editApptForm.vehiclePlate && (
+                                <LicensePlateBadge plate={editApptForm.vehiclePlate} />
+                              )}
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Nummerplaat</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. 1-ABC-123"
+                                  value={editApptForm.vehiclePlate}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, vehiclePlate: e.target.value.toUpperCase() })}
+                                  style={{ textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Merk &amp; Model</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. Volkswagen Golf 7"
+                                  value={editApptForm.vehicleBrandModel}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, vehicleBrandModel: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field" style={{ gridColumn: "1 / -1" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                  <label className="admin-label" style={{ margin: 0 }}>Bandenmaat</label>
+                                  <div style={{ display: "flex", gap: 5 }}>
+                                    {["205/55 R16", "225/45 R17", "225/40 R18", "195/65 R15"].map((sz) => (
+                                      <button
+                                        key={sz}
+                                        type="button"
+                                        onClick={() => setEditApptForm({ ...editApptForm, tyreSize: sz })}
+                                        className="admin-quick-time-pill"
+                                        style={{ fontSize: "0.68rem", padding: "2px 6px" }}
+                                      >
+                                        {sz}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. 205/55 R16 91V"
+                                  value={editApptForm.tyreSize}
+                                  onChange={(e) => setEditApptForm({ ...editApptForm, tyreSize: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 6. Werkplaatsnotities */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>📝 6. Werkplaatsnotities</span>
+                            </div>
+                            <div className="admin-field">
+                              <textarea
+                                className="admin-textarea"
+                                rows={2}
+                                placeholder="Notities voor monteurs of details die de klant meedeelde..."
+                                value={editApptForm.notes}
+                                onChange={(e) => setEditApptForm({ ...editApptForm, notes: e.target.value })}
+                                style={{ minHeight: 65, fontSize: "0.84rem" }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sticky Footer */}
+                        <div className="admin-modal__footer">
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            onClick={() => setEditingAppt(null)}
+                            disabled={savingApptEdit}
+                          >
+                            Annuleren
+                          </button>
+
+                          <button
+                            type="submit"
+                            className="admin-btn admin-btn--primary"
+                            disabled={savingApptEdit}
+                            style={{ fontWeight: 800, padding: "10px 24px", minWidth: 170 }}
+                          >
+                            {savingApptEdit ? "Bezig met opslaan..." : "✓ Wijzigingen Opslaan"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ─── MODAL: NIEUWE AFSPRAAK (USER-FRIENDLY CLEAN MODAL) ─────────── */}
               {showNewApptModal && (() => {
                 const selectedTyre = newApptForm.selectedTyreId ? tyres.find((t) => t.id === newApptForm.selectedTyreId) : null;
                 const tyreTotal = selectedTyre ? (selectedTyre.price * newApptForm.tyreQuantity).toFixed(2) : null;
-                const currentTypeConf = APPT_TYPE_CONFIG[newApptForm.type] ?? { label: newApptForm.type, duration: "ca. 45 min", icon: "🛞" };
 
-                let previewDateStr = "Kies datum";
-                let previewTimeStr = "--:--";
+                // Split dateTime into date and time
+                let datePart = "";
+                let timePart = "10:00";
                 if (newApptForm.dateTime) {
-                  const d = new Date(newApptForm.dateTime);
-                  if (!isNaN(d.getTime())) {
-                    previewDateStr = d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "short" });
-                    const pad = (n: number) => String(n).padStart(2, "0");
-                    previewTimeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-                  }
+                  const parts = newApptForm.dateTime.split("T");
+                  if (parts[0]) datePart = parts[0];
+                  if (parts[1]) timePart = parts[1].slice(0, 5);
                 }
+
+                const handleDateChange = (newDate: string) => {
+                  const currentT = timePart || "10:00";
+                  setNewApptForm({ ...newApptForm, dateTime: `${newDate}T${currentT}` });
+                };
+
+                const handleTimeChange = (newTime: string) => {
+                  const currentD = datePart || new Date().toISOString().split("T")[0];
+                  setNewApptForm({ ...newApptForm, dateTime: `${currentD}T${newTime}` });
+                };
+
+                const serviceOptions = [
+                  { value: "FITTING", icon: "🛞", label: "Montage & Balanceren", duration: "ca. 45 min", desc: "Nieuwe of eigen banden" },
+                  { value: "REPAIR", icon: "🔧", label: "Bandenreparatie", duration: "ca. 30 min", desc: "Spijker, schroef of ventiel" },
+                  { value: "INSPECTION", icon: "🔍", label: "Inspectie & Wissel", duration: "ca. 30 min", desc: "Wielset wissel of controle" },
+                  { value: "OTHER", icon: "💬", label: "Andere Service / Advies", duration: "ca. 30 min", desc: "TPMS sensoren of diagnose" },
+                ];
 
                 return (
                   <div
@@ -4673,202 +5089,354 @@ export default function AdminPage() {
                     }}
                   >
                     <div
-                      className="admin-modal admin-modal--appt-workbench"
+                      className="admin-modal admin-modal--appt-clean"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {/* Header */}
-                      <div
-                        style={{
-                          padding: "18px 26px",
-                          borderBottom: "1px solid rgba(255,255,255,0.08)",
-                          background: "linear-gradient(180deg, rgba(1,110,185,0.14) 0%, rgba(1,110,185,0.02) 100%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div className="admin-modal__header">
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <div
                             style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 12,
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
                               background: "linear-gradient(135deg, #016eb9, #0284c7)",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               color: "#fff",
-                              fontSize: "1.25rem",
-                              boxShadow: "0 4px 14px rgba(1,110,185,0.35)",
+                              fontSize: "1.15rem",
                               flexShrink: 0,
                             }}
                           >
                             📅
                           </div>
                           <div>
-                            <h2 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+                            <h2 className="admin-modal__title" style={{ fontSize: "1.1rem" }}>
                               Nieuwe Afspraak Inplannen
                             </h2>
                             <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
-                              Gent Bandenservice BV · Werkplaatsbeheer &amp; Klantenplanning
+                              Gent Bandenservice BV · Klantenplanning
                             </p>
                           </div>
                         </div>
 
                         <button
+                          type="button"
                           className="admin-modal__close"
                           onClick={() => setShowNewApptModal(false)}
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 8,
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "rgba(255,255,255,0.6)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                          }}
+                          title="Sluiten"
                         >
                           ✕
                         </button>
                       </div>
 
-                      {/* Split Grid: Left = Form, Right = Live Workshop Ticket */}
-                      <form onSubmit={handleCreateNewAppt} style={{ display: "contents" }}>
-                        <div className="admin-appt-workbench-grid">
-                          {/* ── LEFT COLUMN: INPUT SECTIONS ── */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                            {/* SECTION 1: KLANTGEGEVENS */}
-                            <div className="admin-section-card">
-                              <div className="admin-section-title">
-                                <span>👤</span> 1. Klantgegevens
+                      {/* Form Body */}
+                      <form onSubmit={handleCreateNewAppt} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: 0 }}>
+                        <div className="admin-modal__body">
+
+                          {/* 1. Klantgegevens */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>👤 1. Klantgegevens</span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Klantnaam *</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. Jan Jansen"
+                                  value={newApptForm.guestName}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, guestName: e.target.value })}
+                                  required
+                                />
                               </div>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.9)" }}>
-                                    Klantnaam *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="admin-input"
-                                    placeholder="bijv. Jan Jansen"
-                                    value={newApptForm.guestName}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, guestName: e.target.value })}
-                                    required
-                                    style={{ background: "#0e1017", margin: 0 }}
-                                  />
-                                </div>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.9)" }}>
-                                    Telefoonnummer *
-                                  </label>
-                                  <input
-                                    type="tel"
-                                    className="admin-input"
-                                    placeholder="bijv. 0488 12 34 56"
-                                    value={newApptForm.guestPhone}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, guestPhone: e.target.value })}
-                                    required
-                                    style={{ background: "#0e1017", margin: 0 }}
-                                  />
+
+                              <div className="admin-field">
+                                <label className="admin-label">Telefoonnummer *</label>
+                                <input
+                                  type="tel"
+                                  className="admin-input"
+                                  placeholder="bijv. 0488 12 34 56"
+                                  value={newApptForm.guestPhone}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, guestPhone: e.target.value })}
+                                  required
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">E-mailadres (optioneel)</label>
+                                <input
+                                  type="email"
+                                  className="admin-input"
+                                  placeholder="klant@email.be"
+                                  value={newApptForm.guestEmail}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, guestEmail: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Werkplek / Brug</label>
+                                <select
+                                  className="admin-select"
+                                  value={newApptForm.bay}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, bay: e.target.value })}
+                                >
+                                  <option value="Geen voorkeur">Geen voorkeur</option>
+                                  <option value="Brug 1 (Montage)">Brug 1 (Montage)</option>
+                                  <option value="Brug 2 (Uitlijning)">Brug 2 (Uitlijning)</option>
+                                  <option value="Snelservice">Snelservice</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2. Planning (Datum & Tijd) */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>📅 2. Datum &amp; Tijdstip *</span>
+                              {datePart && (
+                                <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", textTransform: "none", fontWeight: 500 }}>
+                                  {(() => {
+                                    try {
+                                      const d = new Date(`${datePart}T${timePart || "10:00"}:00`);
+                                      return d.toLocaleDateString("nl-BE", { weekday: "short", day: "numeric", month: "long" });
+                                    } catch {
+                                      return datePart;
+                                    }
+                                  })()}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Datum *</label>
+                                <input
+                                  type="date"
+                                  className="admin-input"
+                                  value={datePart}
+                                  onChange={(e) => handleDateChange(e.target.value)}
+                                  required
+                                  style={{ fontSize: "0.92rem", padding: "10px 12px" }}
+                                />
+                                {/* Quick date shortcuts */}
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                                  {[
+                                    { label: "Vandaag", days: 0 },
+                                    { label: "Morgen", days: 1 },
+                                    { label: "+2d", days: 2 },
+                                    { label: "+1w", days: 7 },
+                                  ].map((p) => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() + p.days);
+                                    const pad = (n: number) => String(n).padStart(2, "0");
+                                    const pDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                                    const isPicked = datePart === pDate;
+                                    return (
+                                      <button
+                                        key={p.label}
+                                        type="button"
+                                        onClick={() => handleDateChange(pDate)}
+                                        className={`admin-quick-time-pill${isPicked ? " admin-quick-time-pill--active" : ""}`}
+                                      >
+                                        {p.label}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
 
-                              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem" }}>
-                                    E-mailadres (optioneel)
-                                  </label>
-                                  <input
-                                    type="email"
-                                    className="admin-input"
-                                    placeholder="klant@bedrijf.be"
-                                    value={newApptForm.guestEmail}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, guestEmail: e.target.value })}
-                                    style={{ background: "#0e1017", margin: 0 }}
-                                  />
-                                </div>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem" }}>
-                                    Werkplek / Brug
-                                  </label>
-                                  <select
-                                    className="admin-input"
-                                    value={newApptForm.bay}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, bay: e.target.value })}
-                                    style={{ background: "#0e1017", margin: 0, cursor: "pointer" }}
-                                  >
-                                    <option value="Geen voorkeur">Geen voorkeur</option>
-                                    <option value="Brug 1 (Montage)">Brug 1 (Montage)</option>
-                                    <option value="Brug 2 (Uitlijning)">Brug 2 (Uitlijning)</option>
-                                    <option value="Snelservice">Snelservice</option>
-                                  </select>
+                              <div className="admin-field">
+                                <label className="admin-label">Tijdstip *</label>
+                                <input
+                                  type="time"
+                                  className="admin-input"
+                                  value={timePart}
+                                  onChange={(e) => handleTimeChange(e.target.value)}
+                                  required
+                                  style={{ fontSize: "0.92rem", padding: "10px 12px" }}
+                                />
+                                {/* Quick time shortcuts */}
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+                                  {["09:00", "10:30", "12:00", "14:00", "16:00"].map((t) => {
+                                    const isPicked = timePart === t;
+                                    return (
+                                      <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => handleTimeChange(t)}
+                                        className={`admin-quick-time-pill${isPicked ? " admin-quick-time-pill--active" : ""}`}
+                                      >
+                                        {t}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </div>
+                          </div>
 
-                            {/* SECTION 2: VOERTUIG & KENTAKEN */}
-                            <div className="admin-section-card">
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                                <div className="admin-section-title" style={{ margin: 0 }}>
-                                  <span>🚗</span> 2. Voertuig &amp; Bandenspecificaties
-                                </div>
-                                {newApptForm.vehiclePlate && (
-                                  <LicensePlateBadge plate={newApptForm.vehiclePlate} />
-                                )}
+                          {/* 3. Type Service */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>🔧 3. Type Service *</span>
+                            </div>
+                            <div className="admin-appt-services-grid">
+                              {serviceOptions.map((s) => {
+                                const isSelected = newApptForm.type === s.value;
+                                return (
+                                  <div
+                                    key={s.value}
+                                    onClick={() => setNewApptForm({ ...newApptForm, type: s.value as any })}
+                                    className={`admin-appt-service-card${isSelected ? " admin-appt-service-card--selected" : ""}`}
+                                  >
+                                    <span style={{ fontSize: "1.3rem" }}>{s.icon}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontWeight: 700, fontSize: "0.82rem", color: isSelected ? "#fff" : "rgba(255,255,255,0.85)" }}>
+                                        {s.label}
+                                      </div>
+                                      <div style={{ fontSize: "0.7rem", color: isSelected ? "#60c0ff" : "rgba(255,255,255,0.4)" }}>
+                                        {s.duration} · {s.desc}
+                                      </div>
+                                    </div>
+                                    <div style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${isSelected ? "#016eb9" : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", background: isSelected ? "#016eb9" : "transparent" }}>
+                                      {isSelected && <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* 4. Bandenbron & Aantal (bij FITTING) */}
+                          {newApptForm.type === "FITTING" && (
+                            <div className="admin-appt-section">
+                              <div className="admin-appt-section-header">
+                                <span>🛞 4. Bandenbron &amp; Aantal</span>
+                              </div>
+                              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                                <button
+                                  type="button"
+                                  className={`admin-segmented-btn${newApptForm.tyreSource === "own" ? " admin-segmented-btn--active-confirmed" : ""}`}
+                                  onClick={() => setNewApptForm({ ...newApptForm, tyreSource: "own" })}
+                                  style={{ padding: "10px 14px" }}
+                                >
+                                  📦 Eigen banden meebrengen
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`admin-segmented-btn${newApptForm.tyreSource === "shop" ? " admin-segmented-btn--active-confirmed" : ""}`}
+                                  onClick={() => setNewApptForm({ ...newApptForm, tyreSource: "shop" })}
+                                  style={{ padding: "10px 14px" }}
+                                >
+                                  🏪 Kopen uit stock / voorraad
+                                </button>
                               </div>
 
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 12, marginBottom: 12 }}>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem" }}>
-                                    Nummerplaat (België)
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="admin-input"
-                                    placeholder="bijv. 1-ABC-123"
-                                    value={newApptForm.vehiclePlate}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, vehiclePlate: e.target.value.toUpperCase() })}
-                                    style={{ background: "#0e1017", textTransform: "uppercase", margin: 0, fontWeight: 700 }}
-                                  />
-                                </div>
-                                <div className="admin-form-group" style={{ margin: 0 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem" }}>
-                                    Merk &amp; Model van het Voertuig
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="admin-input"
-                                    placeholder="bijv. Volkswagen Golf 7"
-                                    value={newApptForm.vehicleBrandModel}
-                                    onChange={(e) => setNewApptForm({ ...newApptForm, vehicleBrandModel: e.target.value })}
-                                    style={{ background: "#0e1017", margin: 0 }}
-                                  />
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                                <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>
+                                  Aantal banden:
+                                </span>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  {[1, 2, 4].map((qty) => (
+                                    <button
+                                      key={qty}
+                                      type="button"
+                                      className={`admin-count-chip${newApptForm.tyreQuantity === qty ? " admin-count-chip--active" : ""}`}
+                                      onClick={() => setNewApptForm({ ...newApptForm, tyreQuantity: qty })}
+                                    >
+                                      {qty} {qty === 1 ? "band" : "banden"}
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
 
-                              <div className="admin-form-group" style={{ margin: 0 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                  <label className="admin-label" style={{ fontSize: "0.8rem", margin: 0 }}>
-                                    Bandenmaat
+                              {newApptForm.tyreSource === "shop" && (
+                                <div style={{ marginTop: 10, padding: "12px 14px", background: "rgba(1,110,185,0.06)", borderRadius: 10, border: "1px solid rgba(1,110,185,0.2)" }}>
+                                  <label className="admin-label" style={{ fontSize: "0.78rem", color: "#60c0ff", marginBottom: 6 }}>
+                                    Selecteer Band uit Stock ({tyres.length} banden beschikbaar)
                                   </label>
-                                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                                  <select
+                                    className="admin-select"
+                                    value={newApptForm.selectedTyreId}
+                                    onChange={(e) => {
+                                      const tyreId = e.target.value;
+                                      const found = tyres.find((t) => t.id === tyreId);
+                                      setNewApptForm({
+                                        ...newApptForm,
+                                        selectedTyreId: tyreId,
+                                        ...(found ? { tyreSize: found.size } : {}),
+                                      });
+                                    }}
+                                  >
+                                    <option value="">-- Kies een band uit voorraad --</option>
+                                    {tyres.map((t) => (
+                                      <option key={t.id} value={t.id}>
+                                        {t.brand} {t.model ? `${t.model} ` : ""}({t.size}) · €{t.price} · Stock: {t.stock}st
+                                      </option>
+                                    ))}
+                                  </select>
+
+                                  {selectedTyre && (
+                                    <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
+                                      <span style={{ color: "rgba(255,255,255,0.7)" }}>
+                                        Bandenkost ({newApptForm.tyreQuantity}x €{selectedTyre.price.toFixed(2)}):
+                                      </span>
+                                      <span style={{ color: "#38bdf8", fontWeight: 800, fontSize: "0.95rem" }}>
+                                        €{tyreTotal} incl. BTW
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 5. Voertuig & Bandenspecificaties */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>🚗 5. Voertuig &amp; Bandenspecificaties</span>
+                              {newApptForm.vehiclePlate && (
+                                <LicensePlateBadge plate={newApptForm.vehiclePlate} />
+                              )}
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Nummerplaat</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. 1-ABC-123"
+                                  value={newApptForm.vehiclePlate}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, vehiclePlate: e.target.value.toUpperCase() })}
+                                  style={{ textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Merk &amp; Model</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="bijv. Volkswagen Golf 7"
+                                  value={newApptForm.vehicleBrandModel}
+                                  onChange={(e) => setNewApptForm({ ...newApptForm, vehicleBrandModel: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field" style={{ gridColumn: "1 / -1" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                  <label className="admin-label" style={{ margin: 0 }}>Bandenmaat</label>
+                                  <div style={{ display: "flex", gap: 5 }}>
                                     {["205/55 R16", "225/45 R17", "225/40 R18", "195/65 R15"].map((sz) => (
                                       <button
                                         key={sz}
                                         type="button"
                                         onClick={() => setNewApptForm({ ...newApptForm, tyreSize: sz })}
-                                        style={{
-                                          background: "rgba(255,255,255,0.05)",
-                                          border: "1px solid rgba(255,255,255,0.08)",
-                                          color: "rgba(255,255,255,0.7)",
-                                          padding: "2px 6px",
-                                          borderRadius: 4,
-                                          fontSize: "0.7rem",
-                                          cursor: "pointer",
-                                        }}
+                                        className="admin-quick-time-pill"
+                                        style={{ fontSize: "0.68rem", padding: "2px 6px" }}
                                       >
                                         {sz}
                                       </button>
@@ -4881,408 +5449,68 @@ export default function AdminPage() {
                                   placeholder="bijv. 205/55 R16 91V"
                                   value={newApptForm.tyreSize}
                                   onChange={(e) => setNewApptForm({ ...newApptForm, tyreSize: e.target.value })}
-                                  style={{ background: "#0e1017", margin: 0 }}
-                                />
-                              </div>
-                            </div>
-
-                            {/* SECTION 3: TYPE SERVICE */}
-                            <div className="admin-section-card">
-                              <div className="admin-section-title">
-                                <span>🔧</span> 3. Type Werkzaamheden (Service) *
-                              </div>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                                {[
-                                  { value: "FITTING", icon: "🛞", label: "Montage & Balanceren", duration: "ca. 45 min", desc: "Nieuwe of eigen banden monteren" },
-                                  { value: "REPAIR", icon: "🔧", label: "Bandenreparatie", duration: "ca. 30 min", desc: "Spijker, schroef of ventiel herstellen" },
-                                  { value: "INSPECTION", icon: "🔍", label: "Inspectie & Seizoenswissel", duration: "ca. 30 min", desc: "Wielset wissel of controle" },
-                                  { value: "OTHER", icon: "💬", label: "Andere Service / Advies", duration: "ca. 30 min", desc: "TPMS sensoren of bandenadvies" },
-                                ].map((s) => {
-                                  const isSelected = newApptForm.type === s.value;
-                                  return (
-                                    <div
-                                      key={s.value}
-                                      className={`admin-service-option${isSelected ? " admin-service-option--selected" : ""}`}
-                                      onClick={() => setNewApptForm({ ...newApptForm, type: s.value as any })}
-                                    >
-                                      <div style={{ fontSize: "1.4rem", lineHeight: 1 }}>{s.icon}</div>
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontWeight: 700, fontSize: "0.82rem", color: isSelected ? "#fff" : "rgba(255,255,255,0.85)" }}>
-                                          {s.label}
-                                        </div>
-                                        <div style={{ fontSize: "0.7rem", color: isSelected ? "#60c0ff" : "rgba(255,255,255,0.4)", marginTop: 2 }}>
-                                          {s.duration} · {s.desc}
-                                        </div>
-                                      </div>
-                                      <div style={{ width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${isSelected ? "#016eb9" : "rgba(255,255,255,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", background: isSelected ? "#016eb9" : "transparent" }}>
-                                        {isSelected && <span style={{ fontSize: 10, color: "#fff", fontWeight: 900 }}>✓</span>}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* SECTION 4: BANDENBRON & VOORRAAD */}
-                            {newApptForm.type === "FITTING" && (
-                              <div className="admin-section-card">
-                                <div className="admin-section-title">
-                                  <span>🛞</span> 4. Bandenbron &amp; Aantal
-                                </div>
-
-                                <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                                  <button
-                                    type="button"
-                                    className={`admin-segmented-btn${newApptForm.tyreSource === "own" ? " admin-segmented-btn--active-confirmed" : ""}`}
-                                    onClick={() => setNewApptForm({ ...newApptForm, tyreSource: "own" })}
-                                  >
-                                    📦 Klant brengt eigen banden mee
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={`admin-segmented-btn${newApptForm.tyreSource === "shop" ? " admin-segmented-btn--active-confirmed" : ""}`}
-                                    onClick={() => setNewApptForm({ ...newApptForm, tyreSource: "shop" })}
-                                  >
-                                    🏪 Kopen uit stock / voorraad
-                                  </button>
-                                </div>
-
-                                {/* Aantal Banden */}
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: newApptForm.tyreSource === "shop" ? 14 : 0 }}>
-                                  <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>
-                                    Aantal banden:
-                                  </span>
-                                  <div style={{ display: "flex", gap: 8 }}>
-                                    {[1, 2, 4].map((qty) => (
-                                      <button
-                                        key={qty}
-                                        type="button"
-                                        className={`admin-count-chip${newApptForm.tyreQuantity === qty ? " admin-count-chip--active" : ""}`}
-                                        onClick={() => setNewApptForm({ ...newApptForm, tyreQuantity: qty })}
-                                      >
-                                        {qty} {qty === 1 ? "band" : "banden"}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {/* Stock tyre selector if shop source */}
-                                {newApptForm.tyreSource === "shop" && (
-                                  <div style={{ marginTop: 12, padding: "12px 14px", background: "rgba(1,110,185,0.06)", borderRadius: 10, border: "1px solid rgba(1,110,185,0.2)" }}>
-                                    <label className="admin-label" style={{ fontSize: "0.78rem", color: "#60c0ff", marginBottom: 6 }}>
-                                      Selecteer Band uit Stock ({tyres.length} banden beschikbaar in magazijn)
-                                    </label>
-                                    <select
-                                      className="admin-tyre-select"
-                                      value={newApptForm.selectedTyreId}
-                                      onChange={(e) => {
-                                        const tyreId = e.target.value;
-                                        const found = tyres.find((t) => t.id === tyreId);
-                                        setNewApptForm({
-                                          ...newApptForm,
-                                          selectedTyreId: tyreId,
-                                          ...(found ? { tyreSize: found.size } : {}),
-                                        });
-                                      }}
-                                    >
-                                      <option value="">-- Kies een band uit voorraad --</option>
-                                      {tyres.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                          {t.brand} {t.model ? `${t.model} ` : ""}({t.size}) · €{t.price} · Stock: {t.stock}st
-                                        </option>
-                                      ))}
-                                    </select>
-
-                                    {selectedTyre && (
-                                      <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem" }}>
-                                        <span style={{ color: "rgba(255,255,255,0.7)" }}>
-                                          Bandenkost ({newApptForm.tyreQuantity}x €{selectedTyre.price.toFixed(2)}):
-                                        </span>
-                                        <span style={{ color: "#38bdf8", fontWeight: 800, fontSize: "0.95rem" }}>
-                                          €{tyreTotal} incl. BTW
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* SECTION 5: PLANNING & TIJD */}
-                            <div className="admin-section-card">
-                              <div className="admin-section-title">
-                                <span>📅</span> 5. Werkplaatsplanning (Datum &amp; Tijd) *
-                              </div>
-
-                              {/* Snelle Datum Knoppen */}
-                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
-                                <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>Snelkeuze Dag:</span>
-                                {[
-                                  { label: "Vandaag", days: 0 },
-                                  { label: "Morgen", days: 1 },
-                                  { label: "Overmorgen", days: 2 },
-                                  { label: "+3 Dagen", days: 3 },
-                                  { label: "+1 Week", days: 7 },
-                                ].map((preset) => (
-                                  <button
-                                    key={preset.label}
-                                    type="button"
-                                    className="admin-quick-chip"
-                                    onClick={() => setNewApptForm({ ...newApptForm, dateTime: setQuickDate(newApptForm.dateTime, preset.days) })}
-                                  >
-                                    {preset.label}
-                                  </button>
-                                ))}
-                              </div>
-
-                              {/* Snelle Tijdslot Chips (Ochtend & Namiddag) */}
-                              <div style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 600, marginBottom: 6 }}>
-                                  🌅 Ochtendslots:
-                                </div>
-                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                  {["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"].map((t) => {
-                                    const isActive = newApptForm.dateTime?.includes(`T${t}`);
-                                    return (
-                                      <button
-                                        key={t}
-                                        type="button"
-                                        className={`admin-time-slot-chip${isActive ? " admin-time-slot-chip--active" : ""}`}
-                                        onClick={() => setNewApptForm({ ...newApptForm, dateTime: setQuickTime(newApptForm.dateTime, t) })}
-                                      >
-                                        {t}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              <div style={{ marginBottom: 14 }}>
-                                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontWeight: 600, marginBottom: 6 }}>
-                                  ☀️ Namiddagslots:
-                                </div>
-                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                  {["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"].map((t) => {
-                                    const isActive = newApptForm.dateTime?.includes(`T${t}`);
-                                    return (
-                                      <button
-                                        key={t}
-                                        type="button"
-                                        className={`admin-time-slot-chip${isActive ? " admin-time-slot-chip--active" : ""}`}
-                                        onClick={() => setNewApptForm({ ...newApptForm, dateTime: setQuickTime(newApptForm.dateTime, t) })}
-                                      >
-                                        {t}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              <div className="admin-form-group" style={{ margin: 0 }}>
-                                <label className="admin-label" style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)" }}>
-                                  Exacte datum &amp; starttijd:
-                                </label>
-                                <input
-                                  type="datetime-local"
-                                  className="admin-input"
-                                  value={newApptForm.dateTime}
-                                  onChange={(e) => setNewApptForm({ ...newApptForm, dateTime: e.target.value })}
-                                  required
-                                  style={{
-                                    background: "#0e1017",
-                                    borderColor: "rgba(255,255,255,0.14)",
-                                    fontSize: "0.95rem",
-                                    padding: "10px 14px",
-                                    color: "#fff",
-                                    margin: 0,
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            {/* SECTION 6: STATUS & NOTITIES */}
-                            <div className="admin-section-card">
-                              <div className="admin-section-title">
-                                <span>📌</span> 6. Status &amp; Werkplaatsnotities
-                              </div>
-
-                              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                                <button
-                                  type="button"
-                                  className={`admin-segmented-btn${newApptForm.status === "CONFIRMED" ? " admin-segmented-btn--active-confirmed" : ""}`}
-                                  onClick={() => setNewApptForm({ ...newApptForm, status: "CONFIRMED" })}
-                                >
-                                  ✓ Direct Bevestigd (Ingepland)
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`admin-segmented-btn${newApptForm.status === "PENDING" ? " admin-segmented-btn--active-pending" : ""}`}
-                                  onClick={() => setNewApptForm({ ...newApptForm, status: "PENDING" })}
-                                >
-                                  ⏳ In Afwachting (Te Bevestigen)
-                                </button>
-                              </div>
-
-                              <div className="admin-form-group" style={{ margin: 0 }}>
-                                <textarea
-                                  className="admin-textarea"
-                                  rows={2}
-                                  placeholder="Werkplaatsnotities: slotbouten in handschoenkastje, velgen behoedzaam behandelen, klant wacht ter plaatse..."
-                                  value={newApptForm.notes}
-                                  onChange={(e) => setNewApptForm({ ...newApptForm, notes: e.target.value })}
-                                  style={{ background: "#0e1017", margin: 0, fontSize: "0.82rem" }}
                                 />
                               </div>
                             </div>
                           </div>
 
-                          {/* ── RIGHT COLUMN: LIVE TICKET PREVIEW ── */}
-                          <div>
-                            <div className="admin-appt-ticket" style={{ position: "sticky", top: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <span style={{ fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "#60c0ff", display: "flex", alignItems: "center", gap: 6 }}>
-                                  <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 8px #22c55e" }} />
-                                  Werkplaatsfiche
-                                </span>
-                                <span className={`admin-badge ${newApptForm.status === "CONFIRMED" ? "admin-badge--completed" : "admin-badge--new"}`} style={{ fontSize: 10 }}>
-                                  {newApptForm.status === "CONFIRMED" ? "Bevestigd" : "In Afwachting"}
-                                </span>
-                              </div>
+                          {/* 6. Status & Werkplaatsnotities */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header">
+                              <span>📝 6. Status &amp; Werkplaatsnotities</span>
+                            </div>
 
-                              {/* Time banner */}
-                              <div style={{ background: "rgba(1,110,185,0.15)", border: "1px solid rgba(1,110,185,0.3)", borderRadius: 12, padding: "12px 14px", textAlign: "center" }}>
-                                <div style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "#60c0ff", fontWeight: 700 }}>
-                                  {previewDateStr}
-                                </div>
-                                <div style={{ fontSize: "1.6rem", fontWeight: 900, color: "#ffffff", letterSpacing: "0.02em", margin: "2px 0" }}>
-                                  {previewTimeStr}
-                                </div>
-                                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.5)" }}>
-                                  Geschatte duur: {currentTypeConf.duration}
-                                </div>
-                              </div>
-
-                              {/* License plate graphic */}
-                              <div style={{ display: "flex", justifyContent: "center", padding: "6px 0" }}>
-                                {newApptForm.vehiclePlate ? (
-                                  <LicensePlateBadge plate={newApptForm.vehiclePlate} />
-                                ) : (
-                                  <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.3)", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 6, padding: "6px 12px" }}>
-                                    Kentekenplaat nog niet ingevoerd
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Details summary */}
-                              <div style={{ display: "flex", flexDirection: "column" }}>
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Voertuig</span>
-                                  <span className="admin-ticket-val">
-                                    {newApptForm.vehicleBrandModel || <span style={{ opacity: 0.3 }}>Niet opgegeven</span>}
-                                  </span>
-                                </div>
-
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Bandenmaat</span>
-                                  <span className="admin-ticket-val">
-                                    {newApptForm.tyreSize || <span style={{ opacity: 0.3 }}>Niet opgegeven</span>}
-                                  </span>
-                                </div>
-
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Service</span>
-                                  <span className="admin-ticket-val" style={{ color: "#38bdf8" }}>
-                                    {currentTypeConf.icon} {currentTypeConf.label}
-                                  </span>
-                                </div>
-
-                                {newApptForm.type === "FITTING" && (
-                                  <div className="admin-ticket-row">
-                                    <span className="admin-ticket-label">Banden</span>
-                                    <span className="admin-ticket-val">
-                                      {newApptForm.tyreQuantity}x {newApptForm.tyreSource === "shop" ? "Uit stock" : "Eigen banden"}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {selectedTyre && (
-                                  <div className="admin-ticket-row">
-                                    <span className="admin-ticket-label">Gekozen band</span>
-                                    <span className="admin-ticket-val" style={{ fontSize: "0.75rem" }}>
-                                      {selectedTyre.brand} · €{tyreTotal}
-                                    </span>
-                                  </div>
-                                )}
-
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Klant</span>
-                                  <span className="admin-ticket-val">
-                                    {newApptForm.guestName || <span style={{ opacity: 0.3 }}>Naam vereist</span>}
-                                  </span>
-                                </div>
-
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Telefoon</span>
-                                  <span className="admin-ticket-val" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    {newApptForm.guestPhone ? (
-                                      <>
-                                        <span>{newApptForm.guestPhone}</span>
-                                        <a
-                                          href={`https://wa.me/${newApptForm.guestPhone.replace(/[^0-9]/g, "")}`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          style={{ color: "#22c55e", display: "inline-flex" }}
-                                          title="WhatsApp"
-                                        >
-                                          <WhatsAppIcon size={12} />
-                                        </a>
-                                      </>
-                                    ) : (
-                                      <span style={{ opacity: 0.3 }}>Telefoon vereist</span>
-                                    )}
-                                  </span>
-                                </div>
-
-                                <div className="admin-ticket-row">
-                                  <span className="admin-ticket-label">Werkplek</span>
-                                  <span className="admin-ticket-val">
-                                    {newApptForm.bay}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Notes preview if any */}
-                              {newApptForm.notes && (
-                                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "8px 10px", fontSize: "0.75rem", color: "rgba(255,255,255,0.7)", borderLeft: "3px solid #016eb9" }}>
-                                  <strong>Notitie:</strong> {newApptForm.notes}
-                                </div>
-                              )}
-
-                              {/* Primary Action Button */}
+                            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
                               <button
-                                type="submit"
-                                className="admin-btn admin-btn--primary"
-                                disabled={savingNewAppt || !newApptForm.guestName.trim() || !newApptForm.guestPhone.trim() || !newApptForm.dateTime}
-                                style={{
-                                  width: "100%",
-                                  fontWeight: 800,
-                                  padding: "12px 18px",
-                                  marginTop: 8,
-                                  fontSize: "0.95rem",
-                                  boxShadow: "0 4px 16px rgba(1,110,185,0.4)",
-                                }}
+                                type="button"
+                                className={`admin-segmented-btn${newApptForm.status === "CONFIRMED" ? " admin-segmented-btn--active-confirmed" : ""}`}
+                                onClick={() => setNewApptForm({ ...newApptForm, status: "CONFIRMED" })}
+                                style={{ padding: "10px 14px" }}
                               >
-                                {savingNewAppt ? (
-                                  <span>Bezig met vastleggen...</span>
-                                ) : (
-                                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                    Afspraak Definitief Inplannen
-                                  </span>
-                                )}
+                                ✓ Direct Bevestigd (Ingepland)
+                              </button>
+                              <button
+                                type="button"
+                                className={`admin-segmented-btn${newApptForm.status === "PENDING" ? " admin-segmented-btn--active-pending" : ""}`}
+                                onClick={() => setNewApptForm({ ...newApptForm, status: "PENDING" })}
+                                style={{ padding: "10px 14px" }}
+                              >
+                                ⏳ In Afwachting (Te Bevestigen)
                               </button>
                             </div>
+
+                            <div className="admin-field">
+                              <textarea
+                                className="admin-textarea"
+                                rows={2}
+                                placeholder="Werkplaatsnotities: slotbouten in handschoenkastje, velgen behoedzaam behandelen, klant wacht ter plaatse..."
+                                value={newApptForm.notes}
+                                onChange={(e) => setNewApptForm({ ...newApptForm, notes: e.target.value })}
+                                style={{ minHeight: 65, fontSize: "0.84rem" }}
+                              />
+                            </div>
                           </div>
+                        </div>
+
+                        {/* Sticky Footer */}
+                        <div className="admin-modal__footer">
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            onClick={() => setShowNewApptModal(false)}
+                            disabled={savingNewAppt}
+                          >
+                            Annuleren
+                          </button>
+
+                          <button
+                            type="submit"
+                            className="admin-btn admin-btn--primary"
+                            disabled={savingNewAppt || !newApptForm.guestName.trim() || !newApptForm.guestPhone.trim() || !newApptForm.dateTime}
+                            style={{ fontWeight: 800, padding: "10px 24px", minWidth: 200 }}
+                          >
+                            {savingNewAppt ? "Bezig met inplannen..." : "✓ Afspraak Definitief Inplannen"}
+                          </button>
                         </div>
                       </form>
                     </div>
@@ -5863,6 +6091,1413 @@ export default function AdminPage() {
                   })}
                 </div>
               )}
+            </>
+          );
+        })()}
+
+        {/* ── FACTUREN / INVOICES TAB ───────────────────────── */}
+        {activeTab === "invoices" && (() => {
+          const filteredInvoices = invoices.filter((inv) => {
+            if (invoiceStatusFilter !== "ALL" && inv.status !== invoiceStatusFilter) return false;
+            if (invoiceSearch.trim()) {
+              const q = invoiceSearch.toLowerCase().trim();
+              const matchNum = inv.invoiceNumber.toLowerCase().includes(q);
+              const matchName = inv.customerName.toLowerCase().includes(q);
+              const matchEmail = inv.customerEmail.toLowerCase().includes(q);
+              const matchCompany = inv.companyName ? inv.companyName.toLowerCase().includes(q) : false;
+              if (!matchNum && !matchName && !matchEmail && !matchCompany) return false;
+            }
+            return true;
+          });
+
+          const totalBilled = invoices.reduce((sum, i) => sum + (i.status !== "CANCELLED" ? i.totalAmount : 0), 0);
+          const totalPending = invoices.reduce((sum, i) => sum + (i.status === "PENDING" ? i.totalAmount : 0), 0);
+          const countPaid = invoices.filter((i) => i.status === "PAID").length;
+          const countPending = invoices.filter((i) => i.status === "PENDING").length;
+
+          // Helper to calculate preview total for modal
+          const modalSubtotal = newInvoiceForm.items.reduce((acc, it) => acc + (it.price / (1 + (it.vatRate || 21) / 100)) * it.quantity, 0);
+          const modalTotal = newInvoiceForm.items.reduce((acc, it) => acc + it.price * it.quantity, 0);
+          const modalVat = modalTotal - modalSubtotal;
+
+          return (
+            <>
+              {/* Header */}
+              <div className="admin-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: "linear-gradient(135deg, rgba(1, 110, 185, 0.25) 0%, rgba(2, 132, 199, 0.15) 100%)",
+                      border: "1px solid rgba(56, 189, 248, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#38bdf8",
+                      boxShadow: "0 0 20px rgba(1, 110, 185, 0.2)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="admin-page-title" style={{ margin: 0 }}>Facturen &amp; Facturatie</h1>
+                    <p className="admin-page-sub" style={{ margin: "4px 0 0" }}>
+                      {invoices.length} facturen totaal · €{totalBilled.toFixed(2)} gefactureerd · <strong style={{ color: countPending > 0 ? "#f59e0b" : "#fff" }}>{countPending} openstaand</strong>
+                    </p>
+                  </div>
+                </div>
+                <div className="admin-header-actions">
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--outline"
+                    onClick={fetchInvoices}
+                    title="Facturenlijst vernieuwen"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 7 }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    <span>Vernieuwen</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--primary"
+                    onClick={() => setShowNewInvoiceModal(true)}
+                    style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 7 }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Nieuwe Factuur Maken</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Stat Cards (Interactive SVG-Driven Filters) */}
+              <div className="admin-stats-grid" style={{ marginBottom: 20 }}>
+                {/* Total */}
+                <div
+                  onClick={() => setInvoiceStatusFilter("ALL")}
+                  style={{
+                    background: invoiceStatusFilter === "ALL" ? "rgba(1, 110, 185, 0.12)" : "#1a1d27",
+                    border: `1.5px solid ${invoiceStatusFilter === "ALL" ? "#016eb9" : "rgba(255, 255, 255, 0.07)"}`,
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: "rgba(1, 110, 185, 0.15)",
+                      border: "1px solid rgba(1, 110, 185, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#38bdf8",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <line x1="6" y1="12" x2="18" y2="12" />
+                      <line x1="10" y1="8" x2="14" y2="8" />
+                      <line x1="10" y1="16" x2="14" y2="16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Totaal Gefactureerd
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#fff", marginTop: 2, lineHeight: 1.1 }}>
+                      €{totalBilled.toFixed(2)}
+                    </div>
+                    <div style={{ fontSize: "0.74rem", color: "rgba(255, 255, 255, 0.4)", marginTop: 4 }}>
+                      {invoices.length} facturen
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pending */}
+                <div
+                  onClick={() => setInvoiceStatusFilter(invoiceStatusFilter === "PENDING" ? "ALL" : "PENDING")}
+                  style={{
+                    background: invoiceStatusFilter === "PENDING" ? "rgba(245, 158, 11, 0.12)" : "#1a1d27",
+                    border: `1.5px solid ${invoiceStatusFilter === "PENDING" ? "#f59e0b" : countPending > 0 ? "rgba(245, 158, 11, 0.4)" : "rgba(255, 255, 255, 0.07)"}`,
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: "rgba(245, 158, 11, 0.15)",
+                      border: "1px solid rgba(245, 158, 11, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#f59e0b",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: "#f59e0b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Openstaand
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#fbbf24", marginTop: 2, lineHeight: 1.1 }}>
+                      €{totalPending.toFixed(2)}
+                    </div>
+                    <div style={{ fontSize: "0.74rem", color: "rgba(255, 255, 255, 0.5)", marginTop: 4 }}>
+                      {countPending} wacht op betaling
+                    </div>
+                  </div>
+                </div>
+
+                {/* Paid */}
+                <div
+                  onClick={() => setInvoiceStatusFilter(invoiceStatusFilter === "PAID" ? "ALL" : "PAID")}
+                  style={{
+                    background: invoiceStatusFilter === "PAID" ? "rgba(16, 185, 129, 0.12)" : "#1a1d27",
+                    border: `1.5px solid ${invoiceStatusFilter === "PAID" ? "#10b981" : "rgba(255, 255, 255, 0.07)"}`,
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: "rgba(16, 185, 129, 0.15)",
+                      border: "1px solid rgba(16, 185, 129, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#10b981",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: "#34d399", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Voldaan / Betaald
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#34d399", marginTop: 2, lineHeight: 1.1 }}>
+                      {countPaid} facturen
+                    </div>
+                    <div style={{ fontSize: "0.74rem", color: "rgba(255, 255, 255, 0.4)", marginTop: 4 }}>
+                      Succesvol ontvangen
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Created */}
+                <div
+                  onClick={() => setInvoiceStatusFilter(invoiceStatusFilter === "CANCELLED" ? "ALL" : "CANCELLED")}
+                  style={{
+                    background: invoiceStatusFilter === "CANCELLED" ? "rgba(139, 92, 246, 0.12)" : "#1a1d27",
+                    border: `1.5px solid ${invoiceStatusFilter === "CANCELLED" ? "#8b5cf6" : "rgba(255, 255, 255, 0.07)"}`,
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: "rgba(139, 92, 246, 0.15)",
+                      border: "1px solid rgba(139, 92, 246, 0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#a78bfa",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.72rem", color: "#a78bfa", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Totaal Aangemaakt
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#fff", marginTop: 2, lineHeight: 1.1 }}>
+                      {invoices.length}
+                    </div>
+                    <div style={{ fontSize: "0.74rem", color: "rgba(255, 255, 255, 0.4)", marginTop: 4 }}>
+                      Alle factuurnummers
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="admin-filter-bar">
+                <div className="admin-filter-bar__top">
+                  <div className="admin-search-wrap">
+                    <svg className="admin-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                    <input
+                      type="text"
+                      className="admin-input admin-search-input"
+                      placeholder="Zoek op factuurnr, klantnaam, e-mailadres of bedrijf..."
+                      value={invoiceSearch}
+                      onChange={(e) => setInvoiceSearch(e.target.value)}
+                    />
+                    {invoiceSearch && (
+                      <button
+                        type="button"
+                        className="admin-search-clear"
+                        onClick={() => setInvoiceSearch("")}
+                        title="Zoekopdracht wissen"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                    {[
+                      { key: "ALL", label: "Alle facturen", count: invoices.length },
+                      { key: "PENDING", label: "Openstaand", count: countPending, color: "#f59e0b" },
+                      { key: "PAID", label: "Betaald", count: countPaid, color: "#10b981" },
+                    ].map((flt) => (
+                      <button
+                        key={flt.key}
+                        type="button"
+                        className={`admin-quick-time-pill${invoiceStatusFilter === flt.key ? " admin-quick-time-pill--active" : ""}`}
+                        onClick={() => setInvoiceStatusFilter(flt.key as any)}
+                        style={{ padding: "8px 14px", fontSize: "0.825rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+                      >
+                        {flt.color && (
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: flt.color, display: "inline-block" }} />
+                        )}
+                        <span>{flt.label}</span>
+                        <span style={{ background: "rgba(255, 255, 255, 0.12)", borderRadius: 10, padding: "1px 6px", fontSize: "0.72rem", fontWeight: 700 }}>
+                          {flt.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoices List / Table */}
+              <div className="admin-table-wrap">
+                {filteredInvoices.length === 0 ? (
+                  <div style={{ padding: "48px 20px", textAlign: "center", color: "rgba(255,255,255,0.5)" }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: "rgba(255,255,255,0.35)" }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </svg>
+                    </div>
+                    <div style={{ fontSize: "1rem", fontWeight: 700, color: "#fff" }}>Geen facturen gevonden</div>
+                    <p style={{ margin: "6px 0 16px", fontSize: "0.85rem" }}>
+                      {invoiceSearch ? "Geen facturen voldoen aan uw zoekopdracht." : "Maak een nieuwe factuur aan om deze direct per e-mail met PDF naar de klant te sturen."}
+                    </p>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary"
+                      onClick={() => setShowNewInvoiceModal(true)}
+                      style={{ fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      <span>Factuur Aanmaken</span>
+                    </button>
+                  </div>
+                ) : (
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 140 }}>Factuurnr</th>
+                        <th style={{ width: 160 }}>Datum &amp; Vervaldatum</th>
+                        <th>Klant / Bedrijf</th>
+                        <th style={{ textAlign: "right", width: 140 }}>Totaal (incl. BTW)</th>
+                        <th style={{ textAlign: "center", width: 120 }}>Status</th>
+                        <th style={{ textAlign: "center", width: 130 }}>Verzending</th>
+                        <th style={{ textAlign: "right", width: 230 }}>Acties</th>
+                      </tr>
+                    </thead>
+                      <tbody>
+                        {filteredInvoices.map((inv) => {
+                          const isPaid = inv.status === "PAID";
+                          const isCancelled = inv.status === "CANCELLED";
+                          const issueFormatted = new Date(inv.issueDate).toLocaleDateString("nl-BE", { day: "numeric", month: "short", year: "numeric" });
+                          const dueFormatted = new Date(inv.dueDate).toLocaleDateString("nl-BE", { day: "numeric", month: "short" });
+
+                          return (
+                            <tr
+                              key={inv.id}
+                              style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", transition: "background 0.15s" }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                            >
+                              {/* Invoice Number */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <a
+                                    href={`/factuur/${inv.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: "#38bdf8", fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}
+                                    title="Bekijk online factuur"
+                                  >
+                                    #{inv.invoiceNumber}
+                                  </a>
+                                </div>
+                              </td>
+
+                              {/* Dates */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div style={{ color: "#ffffff", fontWeight: 600 }}>{issueFormatted}</div>
+                                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
+                                  Vervalt: {dueFormatted}
+                                </div>
+                              </td>
+
+                              {/* Customer */}
+                              <td style={{ padding: "14px 18px" }}>
+                                <div style={{ fontWeight: 700, color: "#ffffff" }}>{inv.customerName}</div>
+                                {inv.companyName && (
+                                  <div style={{ fontSize: "0.75rem", color: "#60c0ff", fontWeight: 600 }}>{inv.companyName}</div>
+                                )}
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginTop: 2 }}>
+                                  <span>{inv.customerEmail}</span>
+                                  {inv.customerPhone && (
+                                    <a
+                                      href={`https://wa.me/${inv.customerPhone.replace(/[^0-9]/g, "")}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{ color: "#22c55e", display: "inline-flex" }}
+                                      title="WhatsApp"
+                                    >
+                                      <WhatsAppIcon size={11} />
+                                    </a>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* Total Amount */}
+                              <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                                <div style={{ fontWeight: 800, color: "#ffffff", fontSize: "1rem" }}>
+                                  €{inv.totalAmount.toFixed(2)}
+                                </div>
+                                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.4)" }}>
+                                  excl: €{inv.subtotal.toFixed(2)}
+                                </div>
+                              </td>
+
+                              {/* Status Badge & Toggle */}
+                              <td style={{ padding: "14px 18px", textAlign: "center" }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleInvoiceStatus(inv.id, inv.status)}
+                                  title="Klik om status te wijzigen"
+                                  style={{
+                                    border: "none",
+                                    background: "none",
+                                    cursor: "pointer",
+                                    padding: 0,
+                                  }}
+                                >
+                                  <span
+                                    className={`admin-badge ${isPaid ? "admin-badge--completed" : isCancelled ? "admin-badge--cancelled" : "admin-badge--new"}`}
+                                    style={{ padding: "4px 10px", fontSize: "0.75rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+                                  >
+                                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: isPaid ? "#10b981" : isCancelled ? "#ef4444" : "#f59e0b", display: "inline-block" }} />
+                                    <span>{isPaid ? "Betaald" : isCancelled ? "Geannuleerd" : "Openstaand"}</span>
+                                  </span>
+                                </button>
+                              </td>
+
+                              {/* E-mail status */}
+                              <td style={{ padding: "14px 18px", textAlign: "center" }}>
+                                {inv.sentAt ? (
+                                  <span style={{ fontSize: "0.75rem", color: "#38bdf8", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                    Verzonden ({new Date(inv.sentAt).toLocaleDateString("nl-BE", { day: "numeric", month: "short" })})
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
+                                    Nog niet verstuurd
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Actions */}
+                              <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                                <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                                  {/* Edit invoice button */}
+                                  <button
+                                    type="button"
+                                    className="admin-btn admin-btn--sm admin-btn--secondary"
+                                    style={{ padding: "6px 10px", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                                    onClick={() => openEditInvoiceModal(inv)}
+                                    title="Factuur bewerken"
+                                  >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                    <span>Bewerken</span>
+                                  </button>
+
+                                  {/* Send email button */}
+                                  <button
+                                    type="button"
+                                    className="admin-btn admin-btn--sm"
+                                    style={{
+                                      background: "rgba(1,110,185,0.15)",
+                                      borderColor: "rgba(1,110,185,0.3)",
+                                      color: "#60c0ff",
+                                      padding: "6px 10px",
+                                      fontSize: "0.78rem",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                    }}
+                                    disabled={sendingInvoiceId === inv.id}
+                                    onClick={() => handleSendInvoiceEmail(inv.id)}
+                                    title="Factuur met PDF verzenden via e-mail naar klant"
+                                  >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                      <polyline points="22,6 12,13 2,6" />
+                                    </svg>
+                                    <span>{sendingInvoiceId === inv.id ? "Bezig…" : "Verstuur"}</span>
+                                  </button>
+
+                                  {/* View / Print button */}
+                                  <a
+                                    href={`/factuur/${inv.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="admin-btn admin-btn--sm admin-btn--secondary"
+                                    style={{ padding: "6px 10px", fontSize: "0.78rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                                    title="Bekijk of print factuur online"
+                                  >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="6 9 6 2 18 2 18 9" />
+                                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                                      <rect x="6" y="14" width="12" height="8" />
+                                    </svg>
+                                    <span>Print</span>
+                                  </a>
+
+                                  {/* Download PDF button */}
+                                  <a
+                                    href={`/api/invoices/${inv.id}/pdf`}
+                                    className="admin-btn admin-btn--sm admin-btn--secondary"
+                                    style={{ padding: "6px 10px", fontSize: "0.78rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                                    title="Download officiële PDF"
+                                  >
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                      <polyline points="7 10 12 15 17 10" />
+                                      <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    <span>PDF</span>
+                                  </a>
+
+                                  {/* Delete button */}
+                                  <button
+                                    type="button"
+                                    className="admin-btn admin-btn--sm admin-btn--danger"
+                                    style={{ padding: "5px 8px", fontSize: "0.78rem" }}
+                                    disabled={deletingInvoiceId === inv.id}
+                                    onClick={() => handleDeleteInvoice(inv.id, inv.invoiceNumber)}
+                                    title="Factuur verwijderen"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                )}
+              </div>
+
+              {/* ─── MODAL: NIEUWE FACTUUR MAKEN ──────────────────────────── */}
+              {showNewInvoiceModal && (
+                <div
+                  className="admin-modal-overlay"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setShowNewInvoiceModal(false);
+                  }}
+                >
+                  <div className="admin-modal admin-modal--appt-clean" onClick={(e) => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="admin-modal__header">
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div
+                          style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: 12,
+                            background: "linear-gradient(135deg, #016eb9, #0284c7)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#fff",
+                            flexShrink: 0,
+                            boxShadow: "0 4px 12px rgba(1, 110, 185, 0.35)",
+                          }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="admin-modal__title" style={{ fontSize: "1.1rem" }}>
+                            Nieuwe Factuur Aanmaken
+                          </h2>
+                          <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
+                            Direct opmaken en optioneel verzenden naar de klant
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="admin-modal__close"
+                        onClick={() => setShowNewInvoiceModal(false)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Form Body */}
+                    <form onSubmit={handleCreateInvoice} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: 0 }}>
+                      <div className="admin-modal__body">
+                        {/* 1. Klant- & Factuurgegevens */}
+                        <div className="admin-appt-section">
+                          <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            <span>1. Klant- &amp; Bedrijfsgegevens</span>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div className="admin-field">
+                              <label className="admin-label">Klantnaam *</label>
+                              <input
+                                type="text"
+                                className="admin-input"
+                                placeholder="bijv. Jan Jansen"
+                                value={newInvoiceForm.customerName}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerName: e.target.value })}
+                                required
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">E-mailadres *</label>
+                              <input
+                                type="email"
+                                className="admin-input"
+                                placeholder="klant@bedrijf.be"
+                                value={newInvoiceForm.customerEmail}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerEmail: e.target.value })}
+                                required
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Telefoonnummer</label>
+                              <input
+                                type="tel"
+                                className="admin-input"
+                                placeholder="bijv. 0488 12 34 56"
+                                value={newInvoiceForm.customerPhone}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerPhone: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Bedrijfsnaam (optioneel voor B2B)</label>
+                              <input
+                                type="text"
+                                className="admin-input"
+                                placeholder="bijv. Transport BV"
+                                value={newInvoiceForm.companyName}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, companyName: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">BTW-nummer (B2B)</label>
+                              <input
+                                type="text"
+                                className="admin-input"
+                                placeholder="bijv. BE 0123.456.789"
+                                value={newInvoiceForm.vatNumber}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, vatNumber: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Straat en huisnummer</label>
+                              <input
+                                type="text"
+                                className="admin-input"
+                                placeholder="bijv. Kerkstraat 12"
+                                value={newInvoiceForm.customerStreet}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerStreet: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Postcode &amp; Gemeente</label>
+                              <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 8 }}>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="9000"
+                                  value={newInvoiceForm.customerPostal}
+                                  onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerPostal: e.target.value })}
+                                />
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="Gent"
+                                  value={newInvoiceForm.customerCity}
+                                  onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, customerCity: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2. Factuurinstellingen */}
+                        <div className="admin-appt-section">
+                          <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                              <line x1="16" y1="2" x2="16" y2="6" />
+                              <line x1="8" y1="2" x2="8" y2="6" />
+                              <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            <span>2. Factuurdetails &amp; Datums</span>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                            <div className="admin-field">
+                              <label className="admin-label">Factuurdatum</label>
+                              <input
+                                type="date"
+                                className="admin-input"
+                                value={newInvoiceForm.issueDate}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, issueDate: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Vervaldatum</label>
+                              <input
+                                type="date"
+                                className="admin-input"
+                                value={newInvoiceForm.dueDate}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, dueDate: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Betaalmethode</label>
+                              <select
+                                className="admin-select"
+                                value={newInvoiceForm.paymentMethod}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, paymentMethod: e.target.value })}
+                              >
+                                <option value="Overschrijving">Overschrijving (met SEPA QR-code)</option>
+                                <option value="Bancontact / Kaart">Bancontact / Betaalterminal</option>
+                                <option value="Contant">Contant in werkplaats</option>
+                                <option value="Online betaald">Online voldaan</option>
+                              </select>
+                            </div>
+
+                            <div className="admin-field">
+                              <label className="admin-label">Initiële Status</label>
+                              <select
+                                className="admin-select"
+                                value={newInvoiceForm.status}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, status: e.target.value as any })}
+                              >
+                                <option value="PENDING">Openstaand (Klant moet nog betalen)</option>
+                                <option value="PAID">Betaald (Reeds voldaan)</option>
+                              </select>
+                            </div>
+
+                            {newInvoiceForm.paymentMethod.includes("Overschrijving") && (
+                              <div style={{ gridColumn: "1 / -1", padding: "10px 14px", background: "rgba(1, 110, 185, 0.08)", border: "1px solid rgba(1, 110, 185, 0.25)", borderRadius: 8, fontSize: "0.78rem", color: "#60c0ff", display: "flex", alignItems: "center", gap: 10 }}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                                  <rect x="3" y="3" width="7" height="7" />
+                                  <rect x="14" y="3" width="7" height="7" />
+                                  <rect x="3" y="14" width="7" height="7" />
+                                  <rect x="14" y="14" width="3" height="3" />
+                                  <line x1="20" y1="14" x2="20" y2="14.01" />
+                                  <line x1="14" y1="20" x2="14" y2="20.01" />
+                                  <line x1="20" y1="20" x2="20" y2="20.01" />
+                                </svg>
+                                <span>Er wordt automatisch een officiële <strong>SEPA EPC QR-code</strong> gegenereerd zodat de klant direct kan scannen en betalen via bank-apps (KBC, Belfius, ING, Fortis).</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 3. Factuurregels */}
+                        <div className="admin-appt-section">
+                          <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                <line x1="12" y1="22.08" x2="12" y2="12" />
+                              </svg>
+                              <span>3. Factuurregels (Artikelen &amp; Diensten)</span>
+                            </div>
+                            <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", textTransform: "none" }}>
+                              Prijzen incl. 21% BTW
+                            </span>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {newInvoiceForm.items.map((it, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "1fr 80px 110px 100px 36px",
+                                  gap: 8,
+                                  alignItems: "center",
+                                  background: "rgba(255,255,255,0.02)",
+                                  padding: "8px 10px",
+                                  borderRadius: 8,
+                                  border: "1px solid rgba(255,255,255,0.06)",
+                                }}
+                              >
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="Omschrijving dienst of band..."
+                                  value={it.description}
+                                  onChange={(e) => {
+                                    const next = [...newInvoiceForm.items];
+                                    next[idx].description = e.target.value;
+                                    setNewInvoiceForm({ ...newInvoiceForm, items: next });
+                                  }}
+                                  style={{ margin: 0 }}
+                                />
+                                <input
+                                  type="number"
+                                  min={1}
+                                  className="admin-input"
+                                  placeholder="Aantal"
+                                  value={it.quantity}
+                                  onChange={(e) => {
+                                    const next = [...newInvoiceForm.items];
+                                    next[idx].quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                    setNewInvoiceForm({ ...newInvoiceForm, items: next });
+                                  }}
+                                  style={{ margin: 0, textAlign: "center" }}
+                                />
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min={0}
+                                  className="admin-input"
+                                  placeholder="Prijs (€)"
+                                  value={it.price}
+                                  onChange={(e) => {
+                                    const next = [...newInvoiceForm.items];
+                                    next[idx].price = parseFloat(e.target.value) || 0;
+                                    setNewInvoiceForm({ ...newInvoiceForm, items: next });
+                                  }}
+                                  style={{ margin: 0, textAlign: "right" }}
+                                />
+                                <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#60c0ff", textAlign: "right" }}>
+                                  €{(it.quantity * it.price).toFixed(2)}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (newInvoiceForm.items.length <= 1) return;
+                                    setNewInvoiceForm({
+                                      ...newInvoiceForm,
+                                      items: newInvoiceForm.items.filter((_, i) => i !== idx),
+                                    });
+                                  }}
+                                  disabled={newInvoiceForm.items.length <= 1}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: newInvoiceForm.items.length <= 1 ? "rgba(255,255,255,0.15)" : "#f87171",
+                                    cursor: newInvoiceForm.items.length <= 1 ? "default" : "pointer",
+                                    fontSize: "1rem",
+                                  }}
+                                  title="Verwijder regel"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Quick add buttons */}
+                          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
+                            <button
+                              type="button"
+                              className="admin-quick-time-pill"
+                              onClick={() => {
+                                setNewInvoiceForm({
+                                  ...newInvoiceForm,
+                                  items: [...newInvoiceForm.items, { description: "", quantity: 1, price: 0, vatRate: 21 }],
+                                });
+                              }}
+                              style={{ padding: "6px 12px" }}
+                            >
+                              + Regel toevoegen
+                            </button>
+
+                            {/* Quick add common tyre services */}
+                            <button
+                              type="button"
+                              className="admin-quick-time-pill"
+                              onClick={() => {
+                                setNewInvoiceForm({
+                                  ...newInvoiceForm,
+                                  items: [...newInvoiceForm.items, { description: "Bandenmontage & balanceren (per band)", quantity: 4, price: 19.99, vatRate: 21 }],
+                                });
+                              }}
+                              style={{ padding: "6px 12px" }}
+                            >
+                              + Montage 4x toevoegen
+                            </button>
+
+                            <button
+                              type="button"
+                              className="admin-quick-time-pill"
+                              onClick={() => {
+                                setNewInvoiceForm({
+                                  ...newInvoiceForm,
+                                  items: [...newInvoiceForm.items, { description: "Bandenreparatie (wiek / plug)", quantity: 1, price: 25.0, vatRate: 21 }],
+                                });
+                              }}
+                              style={{ padding: "6px 12px" }}
+                            >
+                              + Reparatie toevoegen
+                            </button>
+                          </div>
+
+                          {/* Subtotal & Total Preview */}
+                          <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(1,110,185,0.06)", borderRadius: 10, border: "1px solid rgba(1,110,185,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.7)" }}>
+                              Subtotaal: €{modalSubtotal.toFixed(2)} · BTW 21%: €{modalVat.toFixed(2)}
+                            </span>
+                            <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#38bdf8" }}>
+                              Totaal: €{modalTotal.toFixed(2)} incl. BTW
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 4. Notities & Verzendoptie */}
+                        <div className="admin-appt-section">
+                          <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                              <line x1="16" y1="13" x2="8" y2="13" />
+                              <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            <span>4. Notities &amp; Verzending</span>
+                          </div>
+                          <div className="admin-field">
+                            <label className="admin-label">Factuurnotities (verschijnen op factuur)</label>
+                            <textarea
+                              className="admin-textarea"
+                              rows={2}
+                              value={newInvoiceForm.notes}
+                              onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, notes: e.target.value })}
+                              style={{ minHeight: 50, fontSize: "0.82rem" }}
+                            />
+                          </div>
+
+                          {/* Send email checkbox */}
+                          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 4, fontSize: "0.875rem", color: "#60c0ff", fontWeight: 600 }}>
+                            <input
+                              type="checkbox"
+                              checked={newInvoiceForm.sendDirectly}
+                              onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, sendDirectly: e.target.checked })}
+                              style={{ width: 18, height: 18, accentColor: "#016eb9" }}
+                            />
+                            <span>✉️ Direct na opslaan per e-mail versturen naar {newInvoiceForm.customerEmail || "de klant"}</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Modal Footer */}
+                      <div className="admin-modal__footer">
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--secondary"
+                          onClick={() => setShowNewInvoiceModal(false)}
+                          disabled={savingInvoice}
+                        >
+                          Annuleren
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="admin-btn admin-btn--primary"
+                          disabled={savingInvoice || !newInvoiceForm.customerName.trim() || !newInvoiceForm.customerEmail.trim()}
+                          style={{ fontWeight: 800, padding: "10px 24px" }}
+                        >
+                          {savingInvoice ? "Bezig met verwerken..." : newInvoiceForm.sendDirectly ? "✓ Factuur Aanmaken & Verzenden" : "✓ Factuur Opslaan"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── MODAL: FACTUUR BEWERKEN ──────────────────────────────── */}
+              {editingInvoice && (() => {
+                const editSubtotal = editInvoiceForm.items.reduce((acc, it) => acc + (it.price / (1 + (it.vatRate || 21) / 100)) * it.quantity, 0);
+                const editTotal = editInvoiceForm.items.reduce((acc, it) => acc + it.price * it.quantity, 0);
+                const editVat = editTotal - editSubtotal;
+
+                return (
+                  <div
+                    className="admin-modal-overlay"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) setEditingInvoice(null);
+                    }}
+                  >
+                    <div className="admin-modal admin-modal--appt-clean" onClick={(e) => e.stopPropagation()}>
+                      {/* Header */}
+                      <div className="admin-modal__header">
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div
+                            style={{
+                              width: 42,
+                              height: 42,
+                              borderRadius: 12,
+                              background: "linear-gradient(135deg, #016eb9, #0284c7)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              flexShrink: 0,
+                              boxShadow: "0 4px 12px rgba(1, 110, 185, 0.35)",
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h2 className="admin-modal__title" style={{ fontSize: "1.1rem" }}>
+                              Factuur #{editingInvoice.invoiceNumber} Bewerken
+                            </h2>
+                            <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "rgba(255,255,255,0.5)" }}>
+                              Pas klantgegevens, bedragen, status of regels direct aan
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="admin-modal__close"
+                          onClick={() => setEditingInvoice(null)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Form Body */}
+                      <form onSubmit={handleUpdateInvoice} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, margin: 0 }}>
+                        <div className="admin-modal__body">
+                          {/* 1. Klant- & Factuurgegevens */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                              </svg>
+                              <span>1. Klant- &amp; Bedrijfsgegevens</span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Klantnaam *</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  value={editInvoiceForm.customerName}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerName: e.target.value })}
+                                  required
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">E-mailadres *</label>
+                                <input
+                                  type="email"
+                                  className="admin-input"
+                                  value={editInvoiceForm.customerEmail}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerEmail: e.target.value })}
+                                  required
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Telefoonnummer</label>
+                                <input
+                                  type="tel"
+                                  className="admin-input"
+                                  value={editInvoiceForm.customerPhone}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerPhone: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Bedrijfsnaam</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  value={editInvoiceForm.companyName}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, companyName: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">BTW-nummer</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  value={editInvoiceForm.vatNumber}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, vatNumber: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Straat en huisnummer</label>
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  value={editInvoiceForm.customerStreet}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerStreet: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Postcode &amp; Gemeente</label>
+                                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 8 }}>
+                                  <input
+                                    type="text"
+                                    className="admin-input"
+                                    value={editInvoiceForm.customerPostal}
+                                    onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerPostal: e.target.value })}
+                                  />
+                                  <input
+                                    type="text"
+                                    className="admin-input"
+                                    value={editInvoiceForm.customerCity}
+                                    onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, customerCity: e.target.value })}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 2. Factuurdetails */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                              </svg>
+                              <span>2. Factuurdetails &amp; Datums</span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                              <div className="admin-field">
+                                <label className="admin-label">Factuurdatum</label>
+                                <input
+                                  type="date"
+                                  className="admin-input"
+                                  value={editInvoiceForm.issueDate}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, issueDate: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Vervaldatum</label>
+                                <input
+                                  type="date"
+                                  className="admin-input"
+                                  value={editInvoiceForm.dueDate}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, dueDate: e.target.value })}
+                                />
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Betaalmethode</label>
+                                <select
+                                  className="admin-select"
+                                  value={editInvoiceForm.paymentMethod}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, paymentMethod: e.target.value })}
+                                >
+                                  <option value="Overschrijving">Overschrijving (met SEPA QR-code)</option>
+                                  <option value="Bancontact / Kaart">Bancontact / Betaalterminal</option>
+                                  <option value="Contant">Contant in werkplaats</option>
+                                  <option value="Online betaald">Online voldaan</option>
+                                </select>
+                              </div>
+
+                              <div className="admin-field">
+                                <label className="admin-label">Status</label>
+                                <select
+                                  className="admin-select"
+                                  value={editInvoiceForm.status}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, status: e.target.value as any })}
+                                >
+                                  <option value="PENDING">Openstaand (Nog te betalen)</option>
+                                  <option value="PAID">Betaald (Voldaan)</option>
+                                  <option value="CANCELLED">Geannuleerd</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 3. Factuurregels */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                                </svg>
+                                <span>3. Factuurregels (Artikelen &amp; Diensten)</span>
+                              </div>
+                              <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", textTransform: "none" }}>
+                                Prijzen incl. 21% BTW
+                              </span>
+                            </div>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                              {editInvoiceForm.items.map((it, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 80px 110px 100px 36px",
+                                    gap: 8,
+                                    alignItems: "center",
+                                    background: "rgba(255,255,255,0.02)",
+                                    padding: "8px 10px",
+                                    borderRadius: 8,
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    className="admin-input"
+                                    placeholder="Omschrijving..."
+                                    value={it.description}
+                                    onChange={(e) => {
+                                      const next = [...editInvoiceForm.items];
+                                      next[idx].description = e.target.value;
+                                      setEditInvoiceForm({ ...editInvoiceForm, items: next });
+                                    }}
+                                    style={{ margin: 0 }}
+                                  />
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    className="admin-input"
+                                    placeholder="Aantal"
+                                    value={it.quantity}
+                                    onChange={(e) => {
+                                      const next = [...editInvoiceForm.items];
+                                      next[idx].quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                      setEditInvoiceForm({ ...editInvoiceForm, items: next });
+                                    }}
+                                    style={{ margin: 0, textAlign: "center" }}
+                                  />
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    className="admin-input"
+                                    placeholder="Prijs (€)"
+                                    value={it.price}
+                                    onChange={(e) => {
+                                      const next = [...editInvoiceForm.items];
+                                      next[idx].price = parseFloat(e.target.value) || 0;
+                                      setEditInvoiceForm({ ...editInvoiceForm, items: next });
+                                    }}
+                                    style={{ margin: 0, textAlign: "right" }}
+                                  />
+                                  <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#60c0ff", textAlign: "right" }}>
+                                    €{(it.quantity * it.price).toFixed(2)}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (editInvoiceForm.items.length <= 1) return;
+                                      setEditInvoiceForm({
+                                        ...editInvoiceForm,
+                                        items: editInvoiceForm.items.filter((_, i) => i !== idx),
+                                      });
+                                    }}
+                                    disabled={editInvoiceForm.items.length <= 1}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      color: editInvoiceForm.items.length <= 1 ? "rgba(255,255,255,0.15)" : "#f87171",
+                                      cursor: editInvoiceForm.items.length <= 1 ? "default" : "pointer",
+                                      fontSize: "1rem",
+                                    }}
+                                    title="Verwijder regel"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Add row button */}
+                            <div style={{ marginTop: 8 }}>
+                              <button
+                                type="button"
+                                className="admin-quick-time-pill"
+                                onClick={() => {
+                                  setEditInvoiceForm({
+                                    ...editInvoiceForm,
+                                    items: [...editInvoiceForm.items, { description: "", quantity: 1, price: 0, vatRate: 21 }],
+                                  });
+                                }}
+                                style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+                              >
+                                + Regel toevoegen
+                              </button>
+                            </div>
+
+                            {/* Totals Preview */}
+                            <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(1,110,185,0.06)", borderRadius: 10, border: "1px solid rgba(1,110,185,0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.7)" }}>
+                                Subtotaal: €{editSubtotal.toFixed(2)} · BTW 21%: €{editVat.toFixed(2)}
+                              </span>
+                              <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#38bdf8" }}>
+                                Totaal: €{editTotal.toFixed(2)} incl. BTW
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 4. Notities */}
+                          <div className="admin-appt-section">
+                            <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                              </svg>
+                              <span>4. Factuurnotities</span>
+                            </div>
+                            <div className="admin-field">
+                              <textarea
+                                className="admin-textarea"
+                                rows={2}
+                                value={editInvoiceForm.notes}
+                                onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, notes: e.target.value })}
+                                style={{ minHeight: 60, fontSize: "0.82rem" }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="admin-modal__footer">
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--secondary"
+                            onClick={() => setEditingInvoice(null)}
+                            disabled={savingInvoice}
+                          >
+                            Annuleren
+                          </button>
+
+                          <button
+                            type="submit"
+                            className="admin-btn admin-btn--primary"
+                            disabled={savingInvoice || !editInvoiceForm.customerName.trim() || !editInvoiceForm.customerEmail.trim()}
+                            style={{ fontWeight: 800, padding: "10px 24px" }}
+                          >
+                            {savingInvoice ? "Bezig met opslaan..." : "✓ Wijzigingen Opslaan"}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           );
         })()}

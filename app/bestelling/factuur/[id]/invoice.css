@@ -416,7 +416,8 @@
   header,
   footer,
   nav,
-  .cart-overlay {
+  .cart-overlay,
+  .no-print {
     display: none !important;
   }
 

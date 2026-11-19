@@ -64,7 +64,8 @@ export const ModelName = {
   PendingAppointmentOtp: 'PendingAppointmentOtp',
   VisitorSession: 'VisitorSession',
   PageView: 'PageView',
-  SecondhandSubmission: 'SecondhandSubmission'
+  SecondhandSubmission: 'SecondhandSubmission',
+  Invoice: 'Invoice'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -349,6 +350,38 @@ export const SecondhandSubmissionScalarFieldEnum = {
 } as const
 
 export type SecondhandSubmissionScalarFieldEnum = (typeof SecondhandSubmissionScalarFieldEnum)[keyof typeof SecondhandSubmissionScalarFieldEnum]
+
+
+export const InvoiceScalarFieldEnum = {
+  id: 'id',
+  invoiceNumber: 'invoiceNumber',
+  customerName: 'customerName',
+  customerEmail: 'customerEmail',
+  customerPhone: 'customerPhone',
+  customerStreet: 'customerStreet',
+  customerCity: 'customerCity',
+  customerPostal: 'customerPostal',
+  customerCountry: 'customerCountry',
+  companyName: 'companyName',
+  vatNumber: 'vatNumber',
+  status: 'status',
+  issueDate: 'issueDate',
+  dueDate: 'dueDate',
+  paymentMethod: 'paymentMethod',
+  items: 'items',
+  subtotal: 'subtotal',
+  vatAmount: 'vatAmount',
+  totalAmount: 'totalAmount',
+  notes: 'notes',
+  sentAt: 'sentAt',
+  paidAt: 'paidAt',
+  orderId: 'orderId',
+  appointmentId: 'appointmentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type InvoiceScalarFieldEnum = (typeof InvoiceScalarFieldEnum)[keyof typeof InvoiceScalarFieldEnum]
 
 
 export const SortOrder = {

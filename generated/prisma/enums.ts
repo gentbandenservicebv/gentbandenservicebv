@@ -82,3 +82,12 @@ export const SecondhandStatus = {
 } as const
 
 export type SecondhandStatus = (typeof SecondhandStatus)[keyof typeof SecondhandStatus]
+
+
+export const InvoiceStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus]

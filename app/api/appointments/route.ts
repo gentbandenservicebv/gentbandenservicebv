@@ -13,6 +13,7 @@ import {
   sanitizePhone,
   checkRateLimit,
 } from "@/lib/security";
+import { parseBrusselsDateTime } from "@/lib/appointments";
 
 // POST /api/appointments - book an appointment
 export async function POST(req: NextRequest) {
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Datum en tijd zijn verplicht" }, { status: 400 });
   }
 
-  const dateTime = new Date(String(body.dateTime));
+  const dateTime = parseBrusselsDateTime(String(body.dateTime));
   if (isNaN(dateTime.getTime())) {
     return NextResponse.json({ error: "Ongeldige datum" }, { status: 400 });
   }

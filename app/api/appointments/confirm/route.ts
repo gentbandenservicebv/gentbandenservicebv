@@ -4,6 +4,7 @@ import {
   sendAppointmentConfirmation,
   sendAppointmentNotification,
 } from "@/lib/resend";
+import { parseBrusselsDateTime } from "@/lib/appointments";
 
 const MAX_ATTEMPTS = 5;
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ongeldige afspraakgegevens" }, { status: 400 });
   }
 
-  const dateTime = new Date(apptData.dateTime);
+  const dateTime = parseBrusselsDateTime(apptData.dateTime);
 
   // Check collision before final creation
   const slotStart = new Date(dateTime.getTime() - 25 * 60 * 1000);

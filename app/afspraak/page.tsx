@@ -1773,6 +1773,12 @@ function AppointmentContent() {
                 </div>
               )}
 
+              {stepError && (
+                <div className="appt-alert-error" role="alert" style={{ marginTop: 20 }}>
+                  {stepError}
+                </div>
+              )}
+
               <div className="appt-nav-actions">
                 <div />
                 <button
@@ -2025,6 +2031,12 @@ function AppointmentContent() {
                 </div>
               )}
 
+              {stepError && (
+                <div className="appt-alert-error" role="alert" style={{ marginTop: 20 }}>
+                  {stepError}
+                </div>
+              )}
+
               <div className="appt-nav-actions">
                 <button
                   type="button"
@@ -2157,6 +2169,12 @@ function AppointmentContent() {
                   />
                 </div>
               </div>
+
+              {stepError && (
+                <div className="appt-alert-error" role="alert" style={{ marginTop: 20 }}>
+                  {stepError}
+                </div>
+              )}
 
               <div className="appt-nav-actions">
                 <button
@@ -2437,6 +2455,12 @@ function AppointmentContent() {
                     </div>
                   </div>
                 </div>
+
+                {stepError && (
+                  <div className="appt-alert-error" role="alert" style={{ marginTop: 20, marginBottom: 8 }}>
+                    {stepError}
+                  </div>
+                )}
 
                 <div className="appt-nav-actions" style={{ marginTop: 24 }}>
                   <button

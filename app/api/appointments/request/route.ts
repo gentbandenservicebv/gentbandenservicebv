@@ -7,6 +7,7 @@ import {
   sendAppointmentNotification,
   sendOtpEmail,
 } from "@/lib/resend";
+import { parseBrusselsDateTime, getBrusselsParts } from "@/lib/appointments";
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -23,13 +24,27 @@ export async function POST(req: NextRequest) {
   if (!body.dateTime) {
     return NextResponse.json({ error: "Datum en tijd zijn verplicht" }, { status: 400 });
   }
-  const dateTime = new Date(body.dateTime);
+  const dateTime = parseBrusselsDateTime(body.dateTime);
   if (isNaN(dateTime.getTime())) {
     return NextResponse.json({ error: "Ongeldige datum" }, { status: 400 });
   }
-  const minDate = new Date(Date.now() + 23 * 60 * 60 * 1000); // at least ~24h in future
-  if (dateTime < minDate) {
-    return NextResponse.json({ error: "Kies een datum van morgen of later." }, { status: 400 });
+
+  // Must be in the future (at least 30 minutes in advance)
+  const now = Date.now();
+  if (dateTime.getTime() < now + 30 * 60 * 1000) {
+    return NextResponse.json(
+      { error: "Kies een tijdstip in de toekomst (minimaal 30 minuten van tevoren)." },
+      { status: 400 }
+    );
+  }
+
+  // Cannot book on Sunday (closed)
+  const { dayOfWeek } = getBrusselsParts(dateTime);
+  if (dayOfWeek === 0) {
+    return NextResponse.json(
+      { error: "Wij zijn gesloten op zondag. Kies een andere openingsdag." },
+      { status: 400 }
+    );
   }
 
   // Check for slot collision (+/- 25 minutes)
@@ -125,7 +140,7 @@ export async function POST(req: NextRequest) {
         guestEmail: body.guestEmail,
         guestPhone: body.guestPhone,
         type: body.type ?? "FITTING",
-        dateTime: body.dateTime,
+        dateTime: dateTime.toISOString(),
         notes: body.notes ?? null,
         vehicleInfo: body.vehicleInfo ?? null,
       }),
@@ -136,7 +151,8 @@ export async function POST(req: NextRequest) {
   // Send OTP email
   try {
     await sendOtpEmail(body.guestEmail, body.guestName, otp);
-  } catch {
+  } catch (err) {
+    console.error("[Appointment Request] sendOtpEmail error:", err);
     // Clean up the pending record if email failed
     await prisma.pendingAppointmentOtp.delete({ where: { id: pending.id } }).catch(() => {});
     return NextResponse.json(

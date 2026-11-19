@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
+import { parseBrusselsDateTime, getBrusselsParts } from "@/lib/appointments";
 
 const WEEKDAY_MORNING_SLOTS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30"];
 const WEEKDAY_AFTERNOON_SLOTS = ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"];
@@ -19,12 +19,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Ongeldige datum parameter (gebruik YYYY-MM-DD)" }, { status: 400 });
   }
 
-  const requestedDate = new Date(`${dateStr}T12:00:00`);
+  const requestedDate = parseBrusselsDateTime(`${dateStr}T12:00:00`);
   if (isNaN(requestedDate.getTime())) {
     return NextResponse.json({ error: "Ongeldige datum" }, { status: 400 });
   }
 
-  const dayOfWeek = requestedDate.getDay(); // 0 = Sunday, 6 = Saturday
+  const { dayOfWeek } = getBrusselsParts(requestedDate);
 
   // Sunday is closed
   if (dayOfWeek === 0) {
@@ -42,9 +42,9 @@ export async function GET(req: NextRequest) {
   const morningList = isSaturday ? SATURDAY_MORNING_SLOTS : WEEKDAY_MORNING_SLOTS;
   const afternoonList = isSaturday ? SATURDAY_AFTERNOON_SLOTS : WEEKDAY_AFTERNOON_SLOTS;
 
-  // Search window around the requested date
-  const windowStart = new Date(requestedDate.getTime() - 24 * 60 * 60 * 1000);
-  const windowEnd = new Date(requestedDate.getTime() + 24 * 60 * 60 * 1000);
+  // Search window around the requested date (+/- 36 hours buffer)
+  const windowStart = new Date(requestedDate.getTime() - 36 * 60 * 60 * 1000);
+  const windowEnd = new Date(requestedDate.getTime() + 36 * 60 * 60 * 1000);
 
   // 1. Fetch confirmed/pending appointments from DB
   const existingAppointments = await prisma.appointment.findMany({
@@ -74,49 +74,36 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Extract booked slot times for this date
+  // Extract booked slot times specifically for dateStr
   const bookedCounts: Record<string, number> = {};
 
   for (const appt of existingAppointments) {
-    // Format to local date and HH:MM
-    const apptDateIso = appt.dateTime.toISOString();
-    // Compare YYYY-MM-DD
-    const apptDate = apptDateIso.slice(0, 10);
-    const localStr = new Intl.DateTimeFormat("nl-BE", {
-      timeZone: "Europe/Brussels",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(appt.dateTime);
-
-    // Also match direct date/time string if within range
-    const apptHours = String(appt.dateTime.getHours()).padStart(2, "0");
-    const apptMins = String(appt.dateTime.getMinutes()).padStart(2, "0");
-    const rawTime = `${apptHours}:${apptMins}`;
-
-    const matchedTime = [localStr, rawTime];
-    for (const t of matchedTime) {
-      bookedCounts[t] = (bookedCounts[t] || 0) + 1;
+    const { date, time } = getBrusselsParts(appt.dateTime);
+    if (date === dateStr) {
+      bookedCounts[time] = (bookedCounts[time] || 0) + 1;
     }
   }
 
   for (const item of pendingOtps) {
     try {
       const data = JSON.parse(item.appointmentData);
-      if (data.dateTime && data.dateTime.startsWith(dateStr)) {
-        const timePart = data.dateTime.slice(11, 16);
-        bookedCounts[timePart] = (bookedCounts[timePart] || 0) + 1;
+      if (data.dateTime) {
+        const itemDate = parseBrusselsDateTime(data.dateTime);
+        const { date, time } = getBrusselsParts(itemDate);
+        if (date === dateStr) {
+          bookedCounts[time] = (bookedCounts[time] || 0) + 1;
+        }
       }
     } catch {
-      // ignore
+      // ignore JSON parse error
     }
   }
 
-  const now = new Date();
+  const now = Date.now();
 
   function evaluateSlot(time: string, period: "morning" | "afternoon") {
-    const slotDateTime = new Date(`${dateStr}T${time}:00`);
-    const isPast = slotDateTime <= now;
+    const slotDateTime = parseBrusselsDateTime(`${dateStr}T${time}:00`);
+    const isPast = slotDateTime.getTime() <= now;
     const count = bookedCounts[time] || 0;
     const isBooked = count >= MAX_PER_SLOT;
     const available = !isPast && !isBooked;
