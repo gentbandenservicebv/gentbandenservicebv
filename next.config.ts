@@ -6,10 +6,12 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "utfs.io" },
       { protocol: "https", hostname: "**.ufs.sh" },
       { protocol: "https", hostname: "cdn.tiresleader.com" },
+      { protocol: "http", hostname: "cdn.tiresleader.com" },
       // Google Places API profile photos
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],

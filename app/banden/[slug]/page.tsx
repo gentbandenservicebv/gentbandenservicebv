@@ -174,6 +174,7 @@ interface TyreCardProps {
 
 function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inStockText }: TyreCardProps) {
   const [added, setAdded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const primaryImg = tyre.images.find((i) => i.isPrimary) ?? tyre.images[0];
   const isNew = tyre.condition === "NEW";
   const speedLoad = [tyre.loadIndex, tyre.speedIndex].filter(Boolean).join("");
@@ -196,13 +197,15 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inS
   return (
     <article className="tyre-card">
       <Link href={productHref} className="tyre-card__img-wrap" tabIndex={-1}>
-        {primaryImg ? (
+        {primaryImg && !imgError ? (
           <Image
             src={primaryImg.url}
             alt={`${tyre.brand} ${tyre.model}`}
             fill
+            unoptimized
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             style={{ objectFit: "cover" }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="tyre-card__img-placeholder">
@@ -820,6 +823,7 @@ function TyreDetailContent() {
                   src={currentImg.url}
                   alt={`${tyre.brand} ${tyre.model}`}
                   fill
+                  unoptimized
                   sizes="(max-width: 768px) 100vw, 50vw"
                   style={{ objectFit: "contain" }}
                   priority
@@ -894,7 +898,7 @@ function TyreDetailContent() {
                     type="button"
                     aria-label={`Foto ${idx + 1}`}
                   >
-                    <Image src={img.url} alt={`foto ${idx + 1}`} width={72} height={72} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+                    <Image src={img.url} alt={`foto ${idx + 1}`} width={72} height={72} unoptimized style={{ objectFit: "cover", width: "100%", height: "100%" }} />
                   </button>
                 ))}
               </div>

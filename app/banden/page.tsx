@@ -171,6 +171,7 @@ interface TyreCardProps {
 
 function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inStockText }: TyreCardProps) {
   const [added, setAdded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const primaryImg = tyre.images.find((i) => i.isPrimary) ?? tyre.images[0];
   const isNew = tyre.condition === "NEW";
   const speedLoad = [tyre.loadIndex, tyre.speedIndex].filter(Boolean).join("");
@@ -193,13 +194,15 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inS
   return (
     <article className="tyre-card">
       <Link href={productHref} className="tyre-card__img-wrap" tabIndex={-1}>
-        {primaryImg ? (
+        {primaryImg && !imgError ? (
           <Image
             src={primaryImg.url}
             alt={`${tyre.brand} ${tyre.model}`}
             fill
+            unoptimized
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             style={{ objectFit: "cover" }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <div className="tyre-card__img-placeholder">
@@ -1720,7 +1723,7 @@ function BandenCatalogContent() {
                     >
                       <div className="bc-feat-card__img">
                         {primaryImg ? (
-                          <Image src={primaryImg.url} alt={`${tyre.brand} ${tyre.model}`} fill sizes="180px" style={{ objectFit: "cover" }} />
+                          <Image src={primaryImg.url} alt={`${tyre.brand} ${tyre.model}`} fill unoptimized sizes="180px" style={{ objectFit: "cover" }} />
                         ) : (
                           <div className="bc-feat-card__img-placeholder">
                             <svg width="40" height="40" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="46" fill="#1e293b" stroke="#334155" strokeWidth="1.5" /><circle cx="50" cy="50" r="30" stroke="#475569" strokeWidth="10" fill="none" /><circle cx="50" cy="50" r="12" fill="#1e293b" stroke="#475569" strokeWidth="1.5" /></svg>
