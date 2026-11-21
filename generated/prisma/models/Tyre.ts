@@ -530,6 +530,7 @@ export type TyreWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Tyre"> | Date | string
   images?: Prisma.TyreImageListRelationFilter
   orderItems?: Prisma.OrderItemListRelationFilter
+  collectionItems?: Prisma.TyreCollectionItemListRelationFilter
 }
 
 export type TyreOrderByWithRelationInput = {
@@ -576,6 +577,7 @@ export type TyreOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   images?: Prisma.TyreImageOrderByRelationAggregateInput
   orderItems?: Prisma.OrderItemOrderByRelationAggregateInput
+  collectionItems?: Prisma.TyreCollectionItemOrderByRelationAggregateInput
 }
 
 export type TyreWhereUniqueInput = Prisma.AtLeast<{
@@ -625,6 +627,7 @@ export type TyreWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Tyre"> | Date | string
   images?: Prisma.TyreImageListRelationFilter
   orderItems?: Prisma.OrderItemListRelationFilter
+  collectionItems?: Prisma.TyreCollectionItemListRelationFilter
 }, "id">
 
 export type TyreOrderByWithAggregationInput = {
@@ -767,6 +770,7 @@ export type TyreCreateInput = {
   updatedAt?: Date | string
   images?: Prisma.TyreImageCreateNestedManyWithoutTyreInput
   orderItems?: Prisma.OrderItemCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemCreateNestedManyWithoutTyreInput
 }
 
 export type TyreUncheckedCreateInput = {
@@ -813,6 +817,7 @@ export type TyreUncheckedCreateInput = {
   updatedAt?: Date | string
   images?: Prisma.TyreImageUncheckedCreateNestedManyWithoutTyreInput
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedCreateNestedManyWithoutTyreInput
 }
 
 export type TyreUpdateInput = {
@@ -859,6 +864,7 @@ export type TyreUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   images?: Prisma.TyreImageUpdateManyWithoutTyreNestedInput
   orderItems?: Prisma.OrderItemUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUpdateManyWithoutTyreNestedInput
 }
 
 export type TyreUncheckedUpdateInput = {
@@ -905,6 +911,7 @@ export type TyreUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   images?: Prisma.TyreImageUncheckedUpdateManyWithoutTyreNestedInput
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedUpdateManyWithoutTyreNestedInput
 }
 
 export type TyreCreateManyInput = {
@@ -1264,6 +1271,20 @@ export type TyreUpdateOneRequiredWithoutOrderItemsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TyreUpdateToOneWithWhereWithoutOrderItemsInput, Prisma.TyreUpdateWithoutOrderItemsInput>, Prisma.TyreUncheckedUpdateWithoutOrderItemsInput>
 }
 
+export type TyreCreateNestedOneWithoutCollectionItemsInput = {
+  create?: Prisma.XOR<Prisma.TyreCreateWithoutCollectionItemsInput, Prisma.TyreUncheckedCreateWithoutCollectionItemsInput>
+  connectOrCreate?: Prisma.TyreCreateOrConnectWithoutCollectionItemsInput
+  connect?: Prisma.TyreWhereUniqueInput
+}
+
+export type TyreUpdateOneRequiredWithoutCollectionItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.TyreCreateWithoutCollectionItemsInput, Prisma.TyreUncheckedCreateWithoutCollectionItemsInput>
+  connectOrCreate?: Prisma.TyreCreateOrConnectWithoutCollectionItemsInput
+  upsert?: Prisma.TyreUpsertWithoutCollectionItemsInput
+  connect?: Prisma.TyreWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TyreUpdateToOneWithWhereWithoutCollectionItemsInput, Prisma.TyreUpdateWithoutCollectionItemsInput>, Prisma.TyreUncheckedUpdateWithoutCollectionItemsInput>
+}
+
 export type TyreCreateWithoutImagesInput = {
   id?: string
   slug?: string | null
@@ -1307,6 +1328,7 @@ export type TyreCreateWithoutImagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemCreateNestedManyWithoutTyreInput
 }
 
 export type TyreUncheckedCreateWithoutImagesInput = {
@@ -1352,6 +1374,7 @@ export type TyreUncheckedCreateWithoutImagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedCreateNestedManyWithoutTyreInput
 }
 
 export type TyreCreateOrConnectWithoutImagesInput = {
@@ -1413,6 +1436,7 @@ export type TyreUpdateWithoutImagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUpdateManyWithoutTyreNestedInput
 }
 
 export type TyreUncheckedUpdateWithoutImagesInput = {
@@ -1458,6 +1482,7 @@ export type TyreUncheckedUpdateWithoutImagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedUpdateManyWithoutTyreNestedInput
 }
 
 export type TyreCreateWithoutOrderItemsInput = {
@@ -1503,6 +1528,7 @@ export type TyreCreateWithoutOrderItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   images?: Prisma.TyreImageCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemCreateNestedManyWithoutTyreInput
 }
 
 export type TyreUncheckedCreateWithoutOrderItemsInput = {
@@ -1548,6 +1574,7 @@ export type TyreUncheckedCreateWithoutOrderItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   images?: Prisma.TyreImageUncheckedCreateNestedManyWithoutTyreInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedCreateNestedManyWithoutTyreInput
 }
 
 export type TyreCreateOrConnectWithoutOrderItemsInput = {
@@ -1609,6 +1636,7 @@ export type TyreUpdateWithoutOrderItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   images?: Prisma.TyreImageUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUpdateManyWithoutTyreNestedInput
 }
 
 export type TyreUncheckedUpdateWithoutOrderItemsInput = {
@@ -1654,6 +1682,207 @@ export type TyreUncheckedUpdateWithoutOrderItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   images?: Prisma.TyreImageUncheckedUpdateManyWithoutTyreNestedInput
+  collectionItems?: Prisma.TyreCollectionItemUncheckedUpdateManyWithoutTyreNestedInput
+}
+
+export type TyreCreateWithoutCollectionItemsInput = {
+  id?: string
+  slug?: string | null
+  brand: string
+  model: string
+  size: string
+  width?: number | null
+  aspectRatio?: number | null
+  diameter?: number | null
+  speedIndex?: string | null
+  loadIndex?: string | null
+  season: $Enums.Season
+  condition: $Enums.TyreCondition
+  price: number
+  stock?: number
+  treadDepth?: number | null
+  dotYear?: string | null
+  runflat?: boolean
+  reinforced?: boolean
+  threepmsfRated?: boolean
+  msMarking?: boolean
+  selfSealing?: boolean
+  acoustic?: boolean
+  electric?: boolean
+  rimProtection?: boolean
+  iceGrip?: boolean
+  highLoad?: boolean
+  demo?: boolean
+  oeMarking?: string | null
+  tyreClass?: string | null
+  plyRating?: string | null
+  loadRange?: string | null
+  structureType?: string | null
+  tubeless?: boolean
+  fuelEfficiency?: string | null
+  wetGrip?: string | null
+  noiseLevel?: number | null
+  description?: string | null
+  featured?: boolean
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  images?: Prisma.TyreImageCreateNestedManyWithoutTyreInput
+  orderItems?: Prisma.OrderItemCreateNestedManyWithoutTyreInput
+}
+
+export type TyreUncheckedCreateWithoutCollectionItemsInput = {
+  id?: string
+  slug?: string | null
+  brand: string
+  model: string
+  size: string
+  width?: number | null
+  aspectRatio?: number | null
+  diameter?: number | null
+  speedIndex?: string | null
+  loadIndex?: string | null
+  season: $Enums.Season
+  condition: $Enums.TyreCondition
+  price: number
+  stock?: number
+  treadDepth?: number | null
+  dotYear?: string | null
+  runflat?: boolean
+  reinforced?: boolean
+  threepmsfRated?: boolean
+  msMarking?: boolean
+  selfSealing?: boolean
+  acoustic?: boolean
+  electric?: boolean
+  rimProtection?: boolean
+  iceGrip?: boolean
+  highLoad?: boolean
+  demo?: boolean
+  oeMarking?: string | null
+  tyreClass?: string | null
+  plyRating?: string | null
+  loadRange?: string | null
+  structureType?: string | null
+  tubeless?: boolean
+  fuelEfficiency?: string | null
+  wetGrip?: string | null
+  noiseLevel?: number | null
+  description?: string | null
+  featured?: boolean
+  active?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  images?: Prisma.TyreImageUncheckedCreateNestedManyWithoutTyreInput
+  orderItems?: Prisma.OrderItemUncheckedCreateNestedManyWithoutTyreInput
+}
+
+export type TyreCreateOrConnectWithoutCollectionItemsInput = {
+  where: Prisma.TyreWhereUniqueInput
+  create: Prisma.XOR<Prisma.TyreCreateWithoutCollectionItemsInput, Prisma.TyreUncheckedCreateWithoutCollectionItemsInput>
+}
+
+export type TyreUpsertWithoutCollectionItemsInput = {
+  update: Prisma.XOR<Prisma.TyreUpdateWithoutCollectionItemsInput, Prisma.TyreUncheckedUpdateWithoutCollectionItemsInput>
+  create: Prisma.XOR<Prisma.TyreCreateWithoutCollectionItemsInput, Prisma.TyreUncheckedCreateWithoutCollectionItemsInput>
+  where?: Prisma.TyreWhereInput
+}
+
+export type TyreUpdateToOneWithWhereWithoutCollectionItemsInput = {
+  where?: Prisma.TyreWhereInput
+  data: Prisma.XOR<Prisma.TyreUpdateWithoutCollectionItemsInput, Prisma.TyreUncheckedUpdateWithoutCollectionItemsInput>
+}
+
+export type TyreUpdateWithoutCollectionItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  brand?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  width?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  aspectRatio?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  diameter?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  speedIndex?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loadIndex?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  season?: Prisma.EnumSeasonFieldUpdateOperationsInput | $Enums.Season
+  condition?: Prisma.EnumTyreConditionFieldUpdateOperationsInput | $Enums.TyreCondition
+  price?: Prisma.FloatFieldUpdateOperationsInput | number
+  stock?: Prisma.IntFieldUpdateOperationsInput | number
+  treadDepth?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  dotYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  runflat?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  reinforced?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  threepmsfRated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  msMarking?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  selfSealing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acoustic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  electric?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rimProtection?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  iceGrip?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  highLoad?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  demo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  oeMarking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tyreClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plyRating?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loadRange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  structureType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tubeless?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fuelEfficiency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wetGrip?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  noiseLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.TyreImageUpdateManyWithoutTyreNestedInput
+  orderItems?: Prisma.OrderItemUpdateManyWithoutTyreNestedInput
+}
+
+export type TyreUncheckedUpdateWithoutCollectionItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  brand?: Prisma.StringFieldUpdateOperationsInput | string
+  model?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.StringFieldUpdateOperationsInput | string
+  width?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  aspectRatio?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  diameter?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  speedIndex?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loadIndex?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  season?: Prisma.EnumSeasonFieldUpdateOperationsInput | $Enums.Season
+  condition?: Prisma.EnumTyreConditionFieldUpdateOperationsInput | $Enums.TyreCondition
+  price?: Prisma.FloatFieldUpdateOperationsInput | number
+  stock?: Prisma.IntFieldUpdateOperationsInput | number
+  treadDepth?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  dotYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  runflat?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  reinforced?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  threepmsfRated?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  msMarking?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  selfSealing?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acoustic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  electric?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  rimProtection?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  iceGrip?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  highLoad?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  demo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  oeMarking?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tyreClass?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plyRating?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loadRange?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  structureType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tubeless?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  fuelEfficiency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wetGrip?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  noiseLevel?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  active?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  images?: Prisma.TyreImageUncheckedUpdateManyWithoutTyreNestedInput
+  orderItems?: Prisma.OrderItemUncheckedUpdateManyWithoutTyreNestedInput
 }
 
 
@@ -1664,11 +1893,13 @@ export type TyreUncheckedUpdateWithoutOrderItemsInput = {
 export type TyreCountOutputType = {
   images: number
   orderItems: number
+  collectionItems: number
 }
 
 export type TyreCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   images?: boolean | TyreCountOutputTypeCountImagesArgs
   orderItems?: boolean | TyreCountOutputTypeCountOrderItemsArgs
+  collectionItems?: boolean | TyreCountOutputTypeCountCollectionItemsArgs
 }
 
 /**
@@ -1693,6 +1924,13 @@ export type TyreCountOutputTypeCountImagesArgs<ExtArgs extends runtime.Types.Ext
  */
 export type TyreCountOutputTypeCountOrderItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.OrderItemWhereInput
+}
+
+/**
+ * TyreCountOutputType without action
+ */
+export type TyreCountOutputTypeCountCollectionItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TyreCollectionItemWhereInput
 }
 
 
@@ -1740,6 +1978,7 @@ export type TyreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   images?: boolean | Prisma.Tyre$imagesArgs<ExtArgs>
   orderItems?: boolean | Prisma.Tyre$orderItemsArgs<ExtArgs>
+  collectionItems?: boolean | Prisma.Tyre$collectionItemsArgs<ExtArgs>
   _count?: boolean | Prisma.TyreCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tyre"]>
 
@@ -1879,6 +2118,7 @@ export type TyreOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type TyreInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   images?: boolean | Prisma.Tyre$imagesArgs<ExtArgs>
   orderItems?: boolean | Prisma.Tyre$orderItemsArgs<ExtArgs>
+  collectionItems?: boolean | Prisma.Tyre$collectionItemsArgs<ExtArgs>
   _count?: boolean | Prisma.TyreCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TyreIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1889,6 +2129,7 @@ export type $TyrePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     images: Prisma.$TyreImagePayload<ExtArgs>[]
     orderItems: Prisma.$OrderItemPayload<ExtArgs>[]
+    collectionItems: Prisma.$TyreCollectionItemPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2328,6 +2569,7 @@ export interface Prisma__TyreClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   images<T extends Prisma.Tyre$imagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tyre$imagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TyreImagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   orderItems<T extends Prisma.Tyre$orderItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tyre$orderItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  collectionItems<T extends Prisma.Tyre$collectionItemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tyre$collectionItemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TyreCollectionItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2836,6 +3078,30 @@ export type Tyre$orderItemsArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.OrderItemScalarFieldEnum | Prisma.OrderItemScalarFieldEnum[]
+}
+
+/**
+ * Tyre.collectionItems
+ */
+export type Tyre$collectionItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TyreCollectionItem
+   */
+  select?: Prisma.TyreCollectionItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TyreCollectionItem
+   */
+  omit?: Prisma.TyreCollectionItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TyreCollectionItemInclude<ExtArgs> | null
+  where?: Prisma.TyreCollectionItemWhereInput
+  orderBy?: Prisma.TyreCollectionItemOrderByWithRelationInput | Prisma.TyreCollectionItemOrderByWithRelationInput[]
+  cursor?: Prisma.TyreCollectionItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TyreCollectionItemScalarFieldEnum | Prisma.TyreCollectionItemScalarFieldEnum[]
 }
 
 /**

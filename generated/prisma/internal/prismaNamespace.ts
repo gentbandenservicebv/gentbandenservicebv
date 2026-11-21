@@ -412,6 +412,8 @@ export const ModelName = {
   PageView: 'PageView',
   SecondhandSubmission: 'SecondhandSubmission',
   SiteSetting: 'SiteSetting',
+  TyreCollection: 'TyreCollection',
+  TyreCollectionItem: 'TyreCollectionItem',
   Invoice: 'Invoice'
 } as const
 
@@ -428,7 +430,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "tyre" | "tyreImage" | "order" | "orderItem" | "returnRequest" | "appointment" | "pendingAppointmentOtp" | "visitorSession" | "pageView" | "secondhandSubmission" | "siteSetting" | "invoice"
+    modelProps: "user" | "session" | "account" | "verification" | "tyre" | "tyreImage" | "order" | "orderItem" | "returnRequest" | "appointment" | "pendingAppointmentOtp" | "visitorSession" | "pageView" | "secondhandSubmission" | "siteSetting" | "tyreCollection" | "tyreCollectionItem" | "invoice"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1542,6 +1544,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TyreCollection: {
+      payload: Prisma.$TyreCollectionPayload<ExtArgs>
+      fields: Prisma.TyreCollectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TyreCollectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TyreCollectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        findFirst: {
+          args: Prisma.TyreCollectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TyreCollectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        findMany: {
+          args: Prisma.TyreCollectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>[]
+        }
+        create: {
+          args: Prisma.TyreCollectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        createMany: {
+          args: Prisma.TyreCollectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TyreCollectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>[]
+        }
+        delete: {
+          args: Prisma.TyreCollectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        update: {
+          args: Prisma.TyreCollectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.TyreCollectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TyreCollectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TyreCollectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.TyreCollectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionPayload>
+        }
+        aggregate: {
+          args: Prisma.TyreCollectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTyreCollection>
+        }
+        groupBy: {
+          args: Prisma.TyreCollectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TyreCollectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TyreCollectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TyreCollectionCountAggregateOutputType> | number
+        }
+      }
+    }
+    TyreCollectionItem: {
+      payload: Prisma.$TyreCollectionItemPayload<ExtArgs>
+      fields: Prisma.TyreCollectionItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TyreCollectionItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TyreCollectionItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        findFirst: {
+          args: Prisma.TyreCollectionItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TyreCollectionItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        findMany: {
+          args: Prisma.TyreCollectionItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>[]
+        }
+        create: {
+          args: Prisma.TyreCollectionItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        createMany: {
+          args: Prisma.TyreCollectionItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TyreCollectionItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>[]
+        }
+        delete: {
+          args: Prisma.TyreCollectionItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        update: {
+          args: Prisma.TyreCollectionItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.TyreCollectionItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TyreCollectionItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TyreCollectionItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.TyreCollectionItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TyreCollectionItemPayload>
+        }
+        aggregate: {
+          args: Prisma.TyreCollectionItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTyreCollectionItem>
+        }
+        groupBy: {
+          args: Prisma.TyreCollectionItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TyreCollectionItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TyreCollectionItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TyreCollectionItemCountAggregateOutputType> | number
+        }
+      }
+    }
     Invoice: {
       payload: Prisma.$InvoicePayload<ExtArgs>
       fields: Prisma.InvoiceFieldRefs
@@ -1932,6 +2082,37 @@ export const SiteSettingScalarFieldEnum = {
 export type SiteSettingScalarFieldEnum = (typeof SiteSettingScalarFieldEnum)[keyof typeof SiteSettingScalarFieldEnum]
 
 
+export const TyreCollectionScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  description: 'description',
+  vehicleBrand: 'vehicleBrand',
+  vehicleModel: 'vehicleModel',
+  vehicleYear: 'vehicleYear',
+  season: 'season',
+  featured: 'featured',
+  active: 'active',
+  imageUrl: 'imageUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TyreCollectionScalarFieldEnum = (typeof TyreCollectionScalarFieldEnum)[keyof typeof TyreCollectionScalarFieldEnum]
+
+
+export const TyreCollectionItemScalarFieldEnum = {
+  id: 'id',
+  collectionId: 'collectionId',
+  tyreId: 'tyreId',
+  axle: 'axle',
+  quantity: 'quantity',
+  sortOrder: 'sortOrder'
+} as const
+
+export type TyreCollectionItemScalarFieldEnum = (typeof TyreCollectionItemScalarFieldEnum)[keyof typeof TyreCollectionItemScalarFieldEnum]
+
+
 export const InvoiceScalarFieldEnum = {
   id: 'id',
   invoiceNumber: 'invoiceNumber',
@@ -2170,6 +2351,20 @@ export type ListEnumSecondhandStatusFieldRefInput<$PrismaModel> = FieldRefInputT
 
 
 /**
+ * Reference to a field of type 'Axle'
+ */
+export type EnumAxleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Axle'>
+    
+
+
+/**
+ * Reference to a field of type 'Axle[]'
+ */
+export type ListEnumAxleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Axle[]'>
+    
+
+
+/**
  * Reference to a field of type 'InvoiceStatus'
  */
 export type EnumInvoiceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'InvoiceStatus'>
@@ -2348,6 +2543,8 @@ export type GlobalOmitConfig = {
   pageView?: Prisma.PageViewOmit
   secondhandSubmission?: Prisma.SecondhandSubmissionOmit
   siteSetting?: Prisma.SiteSettingOmit
+  tyreCollection?: Prisma.TyreCollectionOmit
+  tyreCollectionItem?: Prisma.TyreCollectionItemOmit
   invoice?: Prisma.InvoiceOmit
 }
 

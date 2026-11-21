@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Hero from "./sections/Hero";
 import TrustBar from "./sections/TrustBar";
 import ServicesSection from "./sections/ServicesSection";
 import TiresSection from "./sections/TiresSection";
+import FeaturedCollectionsSection from "./sections/FeaturedCollectionsSection";
 import BrandsSection from "./sections/BrandsSection";
 import TestimonialsSection from "./sections/TestimonialsSection";
 
@@ -43,6 +45,9 @@ export default function HomePage() {
       <TrustBar />
       <ServicesSection />
       <TiresSection />
+      <Suspense fallback={null}>
+        <FeaturedCollectionsSection />
+      </Suspense>
       <BrandsSection />
       <TestimonialsSection />
     </>

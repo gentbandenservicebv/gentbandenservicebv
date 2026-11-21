@@ -392,6 +392,23 @@ export type EnumSecondhandStatusWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumSecondhandStatusFilter<$PrismaModel>
 }
 
+export type EnumAxleFilter<$PrismaModel = never> = {
+  equals?: $Enums.Axle | Prisma.EnumAxleFieldRefInput<$PrismaModel>
+  in?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAxleFilter<$PrismaModel> | $Enums.Axle
+}
+
+export type EnumAxleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Axle | Prisma.EnumAxleFieldRefInput<$PrismaModel>
+  in?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAxleWithAggregatesFilter<$PrismaModel> | $Enums.Axle
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAxleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAxleFilter<$PrismaModel>
+}
+
 export type EnumInvoiceStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.InvoiceStatus | Prisma.EnumInvoiceStatusFieldRefInput<$PrismaModel>
   in?: $Enums.InvoiceStatus[] | Prisma.ListEnumInvoiceStatusFieldRefInput<$PrismaModel>
@@ -776,6 +793,23 @@ export type NestedEnumSecondhandStatusWithAggregatesFilter<$PrismaModel = never>
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumSecondhandStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumSecondhandStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumAxleFilter<$PrismaModel = never> = {
+  equals?: $Enums.Axle | Prisma.EnumAxleFieldRefInput<$PrismaModel>
+  in?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAxleFilter<$PrismaModel> | $Enums.Axle
+}
+
+export type NestedEnumAxleWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Axle | Prisma.EnumAxleFieldRefInput<$PrismaModel>
+  in?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Axle[] | Prisma.ListEnumAxleFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumAxleWithAggregatesFilter<$PrismaModel> | $Enums.Axle
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAxleFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAxleFilter<$PrismaModel>
 }
 
 export type NestedEnumInvoiceStatusFilter<$PrismaModel = never> = {

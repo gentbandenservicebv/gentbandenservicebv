@@ -300,6 +300,7 @@ export default async function BrandsPage() {
                       alt={`${brand.name} logo`}
                       width={120}
                       height={48}
+                      unoptimized
                       className="brand-card__logo"
                     />
                   </div>

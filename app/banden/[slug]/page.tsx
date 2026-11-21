@@ -11,6 +11,7 @@ import {
   subscribeToFavorites,
 } from "@/lib/store";
 import { getSpecTooltip } from "@/lib/tyre-specs";
+import { SummerIcon, WinterIcon, AllSeasonIcon, SeasonIcon } from "@/app/components/SeasonIcons";
 import "../banden.css";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
@@ -87,21 +88,9 @@ const SEASON_LABEL: Record<string, string> = {
 };
 
 const SEASON_ICON: Record<string, React.ReactNode> = {
-  SUMMER: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <circle cx="12" cy="12" r="4" /><line x1="12" y1="2" x2="12" y2="5" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" /><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" /><line x1="2" y1="12" x2="5" y2="12" /><line x1="19" y1="12" x2="22" y2="12" /><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" /><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
-    </svg>
-  ),
-  WINTER: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <line x1="12" y1="2" x2="12" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="7" y1="7" x2="17" y2="17" /><line x1="17" y1="7" x2="7" y2="17" />
-    </svg>
-  ),
-  ALL_SEASON: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-      <path d="M3 12h18M12 3v18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" />
-    </svg>
-  ),
+  SUMMER: <SummerIcon size={14} />,
+  WINTER: <WinterIcon size={14} />,
+  ALL_SEASON: <AllSeasonIcon size={14} />,
 };
 
 /* ── Icons ──────────────────────────────────────────────────────────── */
@@ -245,7 +234,7 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inS
           ) : (
             <span className="tyre-card__brand-text">{tyre.brand}</span>
           )}
-          <span className="tyre-card__season-tag">
+          <span className={`tyre-card__season-tag tyre-card__season-tag--${(tyre.season || "").toLowerCase().replace("_", "-")}`}>
             {SEASON_ICON[tyre.season]}
             {SEASON_LABEL[tyre.season]}
           </span>
@@ -748,14 +737,22 @@ function TyreDetailContent() {
   const isNew = tyre.condition === "NEW";
   const isMainTyreFav = favorites.includes(tyre.id);
 
-  const specs: { label: string; value: string | number | boolean | undefined | null }[] = [
+  const specs: { label: string; value: React.ReactNode }[] = [
     { label: "Merk", value: tyre.brand },
     { label: "Model", value: tyre.model },
     { label: "Maat", value: tyre.size },
     tyre.width ? { label: "Breedte", value: `${tyre.width} mm` } : { label: "", value: null },
     tyre.aspectRatio ? { label: "Aspect ratio", value: `${tyre.aspectRatio}` } : { label: "", value: null },
     tyre.diameter ? { label: "Velgdiameter", value: `${tyre.diameter}″` } : { label: "", value: null },
-    { label: "Seizoen", value: SEASON_LABEL[tyre.season] },
+    {
+      label: "Seizoen",
+      value: (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontWeight: 600 }}>
+          <SeasonIcon season={tyre.season} size={16} />
+          <span>{SEASON_LABEL[tyre.season]}</span>
+        </span>
+      ),
+    },
     { label: "Conditie", value: isNew ? "Nieuw" : "2de hands" },
     {
       label: "Levering & Montage",
@@ -927,7 +924,10 @@ function TyreDetailContent() {
             <div className="pd-info__meta">
               <span className="pd-meta-chip">{tyre.size}</span>
               {speedLoad && <span className="pd-meta-chip pd-meta-chip--accent">{speedLoad}</span>}
-              <span className="pd-meta-chip">{SEASON_LABEL[tyre.season]}</span>
+              <span className={`pd-meta-chip pd-meta-chip--season pd-meta-chip--${(tyre.season || "").toLowerCase().replace("_", "-")}`}>
+                <SeasonIcon season={tyre.season} size={16} />
+                <span>{SEASON_LABEL[tyre.season]}</span>
+              </span>
             </div>
 
             {/* Spec pills */}
@@ -1138,7 +1138,7 @@ function TyreDetailContent() {
                       </span>
                     )}
                   </span>
-                  <span className="pd-spec-value">{String(s.value)}</span>
+                  <span className="pd-spec-value">{s.value}</span>
                 </div>
               );
             })}

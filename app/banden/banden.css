@@ -1584,6 +1584,18 @@
   color: var(--text-muted);
 }
 
+.tyre-card__season-tag--summer {
+  color: #d97706;
+}
+
+.tyre-card__season-tag--winter {
+  color: #0284c7;
+}
+
+.tyre-card__season-tag--all-season {
+  color: #059669;
+}
+
 .tyre-card__model-link {
   text-decoration: none;
 }
@@ -3065,6 +3077,30 @@
   background: var(--primary-subtle);
   color: var(--primary);
   border-color: rgba(1, 110, 185, 0.2);
+}
+
+.pd-meta-chip--season {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.pd-meta-chip--summer {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #b45309;
+}
+
+.pd-meta-chip--winter {
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0369a1;
+}
+
+.pd-meta-chip--all-season {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #047857;
 }
 
 .pd-info__pills {

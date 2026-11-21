@@ -117,6 +117,16 @@ export type SecondhandSubmission = Prisma.SecondhandSubmissionModel
  */
 export type SiteSetting = Prisma.SiteSettingModel
 /**
+ * Model TyreCollection
+ * 
+ */
+export type TyreCollection = Prisma.TyreCollectionModel
+/**
+ * Model TyreCollectionItem
+ * 
+ */
+export type TyreCollectionItem = Prisma.TyreCollectionItemModel
+/**
  * Model Invoice
  * 
  */

@@ -163,7 +163,7 @@ model Tyre {
   plyRating      String? // Ply rating / PR: 6PR, 8PR, 10PR, 12PR, C (commercial)
   loadRange      String? // Load range letter: C, D, E, F (heavier-duty)
   structureType  String? // Casing structure: S1 (standard), SL (Standard Load), RF (Reinforced) etc.
-  tubeless       Boolean @default(true) // Tubeless (TL) vs Tube-type (TT)
+  tubeless       Boolean       @default(true) // Tubeless (TL) vs Tube-type (TT)
   fuelEfficiency String? // EU Tyre label: A, B, C, D, E
   wetGrip        String? // EU Tyre label: A, B, C, D, E
   noiseLevel     Int? // dB, e.g. 70
@@ -173,8 +173,9 @@ model Tyre {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  images     TyreImage[]
-  orderItems OrderItem[]
+  images              TyreImage[]
+  orderItems          OrderItem[]
+  tyreCollectionItems TyreCollectionItem[]
 
   @@map("tyre")
 }
@@ -193,9 +194,9 @@ model TyreImage {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  userId      String?
-  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                 String      @id @default(cuid())
+  userId             String?
+  user               User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Customer info
   guestName          String?
   guestEmail         String?
@@ -206,7 +207,7 @@ model Order {
   deliveryPostalCode String?
   deliveryCity       String?
   deliveryCountry    String?     @default("België")
-  deliveryAddress    String?     // Full formatted delivery address
+  deliveryAddress    String? // Full formatted delivery address
   status             OrderStatus @default(PENDING)
   totalAmount        Float
   notes              String?
@@ -250,21 +251,21 @@ model ReturnRequest {
 }
 
 model Appointment {
-  id          String            @id @default(cuid())
-  userId      String?
-  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id             String            @id @default(cuid())
+  userId         String?
+  user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Guest info
-  guestName   String?
-  guestEmail  String?
-  guestPhone  String?
-  type        AppointmentType   @default(FITTING)
-  dateTime    DateTime
-  status      AppointmentStatus @default(PENDING)
-  notes       String?
-  vehicleInfo String? // e.g. "VW Golf 1.6 TDI"
+  guestName      String?
+  guestEmail     String?
+  guestPhone     String?
+  type           AppointmentType   @default(FITTING)
+  dateTime       DateTime
+  status         AppointmentStatus @default(PENDING)
+  notes          String?
+  vehicleInfo    String? // e.g. "VW Golf 1.6 TDI"
   reminderSentAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@map("appointment")
 }
@@ -273,8 +274,8 @@ model Appointment {
 model PendingAppointmentOtp {
   id              String   @id @default(cuid())
   email           String
-  otp             String   // 6-digit plain code (short-lived, expires in 10 min)
-  appointmentData String   // JSON blob of all form fields
+  otp             String // 6-digit plain code (short-lived, expires in 10 min)
+  appointmentData String // JSON blob of all form fields
   expiresAt       DateTime
   attempts        Int      @default(0)
   createdAt       DateTime @default(now())
@@ -285,11 +286,11 @@ model PendingAppointmentOtp {
 // User activity & cookie-based visitor tracking
 model VisitorSession {
   id             String     @id
-  visitorId      String     // cookie gbs_vid
+  visitorId      String // cookie gbs_vid
   userId         String?
   ip             String?
   userAgent      String?
-  device         String?    // Desktop / Mobile / Tablet
+  device         String? // Desktop / Mobile / Tablet
   browser        String?
   os             String?
   referrer       String?
@@ -307,15 +308,15 @@ model VisitorSession {
 }
 
 model PageView {
-  id         String         @id @default(cuid())
-  sessionId  String
-  session    VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  visitorId  String
-  path       String
-  title      String?
-  referrer   String?
-  duration   Int?           // seconds spent on page
-  createdAt  DateTime       @default(now())
+  id        String         @id @default(cuid())
+  sessionId String
+  session   VisitorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  visitorId String
+  path      String
+  title     String?
+  referrer  String?
+  duration  Int? // seconds spent on page
+  createdAt DateTime       @default(now())
 
   @@index([sessionId])
   @@index([visitorId])
@@ -329,36 +330,36 @@ model PageView {
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum SecondhandStatus {
-  PENDING   // Awaiting admin review
-  ACCEPTED  // Admin decided to buy
-  REJECTED  // Admin declined
+  PENDING // Awaiting admin review
+  ACCEPTED // Admin decided to buy
+  REJECTED // Admin declined
 }
 
 model SecondhandSubmission {
-  id           String            @id @default(cuid())
+  id         String           @id @default(cuid())
   // Customer contact
-  name         String
-  email        String
-  phone        String?
+  name       String
+  email      String
+  phone      String?
   // Tyre details (filled in by customer)
-  brand        String
-  model        String?
-  size         String            // e.g. "205/55 R16"
-  season       String?           // SUMMER / WINTER / ALL_SEASON
-  quantity     Int               @default(4)
-  treadDepth   Float?            // mm remaining tread
-  dotYear      String?           // production year e.g. "2023"
-  condition    String?           // customer's own description
-  extraNotes   String?           // any other info from customer
+  brand      String
+  model      String?
+  size       String // e.g. "205/55 R16"
+  season     String? // SUMMER / WINTER / ALL_SEASON
+  quantity   Int              @default(4)
+  treadDepth Float? // mm remaining tread
+  dotYear    String? // production year e.g. "2023"
+  condition  String? // customer's own description
+  extraNotes String? // any other info from customer
   // Photo URLs (comma-separated or JSON array)
-  photos       String?
+  photos     String?
   // Admin review
-  status       SecondhandStatus  @default(PENDING)
-  offerPrice   Float?            // price admin is willing to pay per tyre
-  adminNotes   String?           // internal admin notes
-  reviewedAt   DateTime?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  status     SecondhandStatus @default(PENDING)
+  offerPrice Float? // price admin is willing to pay per tyre
+  adminNotes String? // internal admin notes
+  reviewedAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   @@map("secondhand_submission")
 }
@@ -373,6 +374,48 @@ model SiteSetting {
   updatedAt DateTime @updatedAt
 
   @@map("site_settings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tyre Collections (staggered fitment sets)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Axle {
+  FRONT
+  REAR
+  ALL
+}
+
+model TyreCollection {
+  id           String               @id @default(cuid())
+  name         String
+  slug         String               @unique
+  description  String?
+  vehicleBrand String?
+  vehicleModel String?
+  vehicleYear  String?
+  season       Season               @default(ALL_SEASON)
+  featured     Boolean              @default(false)
+  active       Boolean              @default(true)
+  imageUrl     String?
+  items        TyreCollectionItem[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@map("tyre_collections")
+}
+
+model TyreCollectionItem {
+  id           String         @id @default(cuid())
+  collectionId String
+  tyreId       String
+  axle         Axle           @default(ALL)
+  quantity     Int            @default(2)
+  sortOrder    Int            @default(0)
+  collection   TyreCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  tyre         Tyre           @relation(fields: [tyreId], references: [id])
+
+  @@map("tyre_collection_items")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -395,13 +438,13 @@ model Invoice {
   customerCity    String?
   customerPostal  String?
   customerCountry String?       @default("België")
-  companyName     String?       // Bedrijfsnaam indien B2B
-  vatNumber       String?       // BTW-nummer e.g. BE 0123.456.789
+  companyName     String? // Bedrijfsnaam indien B2B
+  vatNumber       String? // BTW-nummer e.g. BE 0123.456.789
   status          InvoiceStatus @default(PENDING)
   issueDate       DateTime      @default(now())
   dueDate         DateTime
   paymentMethod   String?       @default("Overschrijving")
-  items           String        // JSON array: [{ description, quantity, price, vatRate }]
+  items           String // JSON array: [{ description, quantity, price, vatRate }]
   subtotal        Float
   vatAmount       Float
   totalAmount     Float
@@ -415,5 +458,3 @@ model Invoice {
 
   @@map("invoice")
 }
-
-

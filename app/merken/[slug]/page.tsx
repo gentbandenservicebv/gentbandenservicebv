@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { BRANDS, brandBySlug } from "../page";
+import { SeasonIcon } from "@/app/components/SeasonIcons";
 import "../brands.css";
 
 const SITE_URL = "https://www.gentbandenservice.be";
@@ -20,6 +21,8 @@ function slugify(name: string) {
 }
 
 /* ── Static params for SSG ───────────────────────────────────────────── */
+export const instant = false;
+
 export async function generateStaticParams() {
   return BRANDS.map((b) => ({ slug: b.slug }));
 }
@@ -416,6 +419,7 @@ export default async function BrandDetailPage({
                 alt={`${brand.name} logo`}
                 width={120}
                 height={60}
+                unoptimized
                 className="brand-detail-hero__logo"
               />
             </div>
@@ -525,7 +529,8 @@ export default async function BrandDetailPage({
                             <div className="brand-tyre-card__model">{tyre.model}</div>
                             <div className="brand-tyre-card__size">{tyre.size}</div>
                             <div className={`brand-tyre-card__season brand-tyre-card__season--${seasonClass}`}>
-                              {SEASON_LABEL[tyre.season]}
+                              <SeasonIcon season={tyre.season} size={13} />
+                              <span>{SEASON_LABEL[tyre.season]}</span>
                             </div>
                             <div className="brand-tyre-card__price">
                               €{tyre.price.toFixed(2)}

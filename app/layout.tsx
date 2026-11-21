@@ -148,7 +148,7 @@ const localBusinessSchema = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="nl" className={inter.variable}>
+    <html lang="nl" className={inter.variable} data-scroll-behavior="smooth">
       <body>
         {/* JSON-LD LocalBusiness schema */}
         <Script

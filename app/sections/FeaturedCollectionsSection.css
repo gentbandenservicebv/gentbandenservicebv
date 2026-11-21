@@ -1,0 +1,324 @@
+/* ─── Featured Collections Section ───────────────────────────── */
+.fcs {
+  background: var(--dark);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle radial glow */
+.fcs::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(1, 110, 185, 0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 30%, rgba(2, 132, 199, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Section header overrides for dark bg */
+.fcs .section-header .label {
+  color: var(--primary-light) !important;
+}
+
+.fcs .section-header .h2 {
+  color: #ffffff !important;
+}
+
+.fcs .section-header .divider {
+  background: rgba(1, 110, 185, 0.5);
+}
+
+.fcs .section-header .lead {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* ─── Grid ────────────────────────────────────────────────────── */
+.fcs__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .fcs__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .fcs__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ─── Card ────────────────────────────────────────────────────── */
+.fcs__card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 280ms ease;
+  height: 100%;
+}
+
+.fcs__card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(1, 110, 185, 0.5);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(1, 110, 185, 0.3);
+}
+
+/* ─── Media ───────────────────────────────────────────────────── */
+.fcs__card-media {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: #12161f;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .fcs__card-media {
+    height: 190px;
+  }
+}
+
+.fcs__card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fcs__card:hover .fcs__card-cover {
+  transform: scale(1.05);
+}
+
+/* Tyre showcase fallback */
+.fcs__card-tyres {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  padding: 20px 24px 12px;
+}
+
+.fcs__card-tyre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.fcs__card-tyre-img {
+  object-fit: contain;
+  drop-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: transform 300ms ease;
+}
+
+.fcs__card:hover .fcs__card-tyre-img {
+  transform: scale(1.06);
+}
+
+.fcs__card-tyre--rear .fcs__card-tyre-img {
+  width: 148px;
+  height: 148px;
+}
+
+.fcs__card-tyre--front .fcs__card-tyre-img {
+  width: 120px;
+  height: 120px;
+}
+
+.fcs__card-tyre-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Badges */
+.fcs__card-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fcs__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.fcs__badge--brand {
+  background: rgba(1, 110, 185, 0.85);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.fcs__badge--season {
+  background: rgba(15, 17, 23, 0.8);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Body ────────────────────────────────────────────────────── */
+.fcs__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 22px;
+  flex: 1;
+}
+
+.fcs__card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fcs__card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.fcs__card-price {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.fcs__card-price-from {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.fcs__card-price-val {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--primary-light, #38bdf8);
+  letter-spacing: -0.02em;
+}
+
+.fcs__card-price-unit {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 500;
+}
+
+.fcs__card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.55;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Sizes */
+.fcs__card-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.fcs__size-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.fcs__size-pill--front {
+  background: rgba(1, 110, 185, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(1, 110, 185, 0.3);
+}
+
+.fcs__size-pill--rear {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* CTA row */
+.fcs__card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary-light, #38bdf8);
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  transition: gap 150ms ease, color 150ms ease;
+}
+
+.fcs__card:hover .fcs__card-cta {
+  gap: 10px;
+  color: #ffffff;
+}
+
+/* ─── Footer CTA ──────────────────────────────────────────────── */
+.fcs__footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.fcs__footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transition: all 180ms ease;
+}
+
+.fcs__footer-link:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  gap: 12px;
+}

@@ -66,6 +66,8 @@ export const ModelName = {
   PageView: 'PageView',
   SecondhandSubmission: 'SecondhandSubmission',
   SiteSetting: 'SiteSetting',
+  TyreCollection: 'TyreCollection',
+  TyreCollectionItem: 'TyreCollectionItem',
   Invoice: 'Invoice'
 } as const
 
@@ -360,6 +362,37 @@ export const SiteSettingScalarFieldEnum = {
 } as const
 
 export type SiteSettingScalarFieldEnum = (typeof SiteSettingScalarFieldEnum)[keyof typeof SiteSettingScalarFieldEnum]
+
+
+export const TyreCollectionScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug',
+  description: 'description',
+  vehicleBrand: 'vehicleBrand',
+  vehicleModel: 'vehicleModel',
+  vehicleYear: 'vehicleYear',
+  season: 'season',
+  featured: 'featured',
+  active: 'active',
+  imageUrl: 'imageUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TyreCollectionScalarFieldEnum = (typeof TyreCollectionScalarFieldEnum)[keyof typeof TyreCollectionScalarFieldEnum]
+
+
+export const TyreCollectionItemScalarFieldEnum = {
+  id: 'id',
+  collectionId: 'collectionId',
+  tyreId: 'tyreId',
+  axle: 'axle',
+  quantity: 'quantity',
+  sortOrder: 'sortOrder'
+} as const
+
+export type TyreCollectionItemScalarFieldEnum = (typeof TyreCollectionItemScalarFieldEnum)[keyof typeof TyreCollectionItemScalarFieldEnum]
 
 
 export const InvoiceScalarFieldEnum = {

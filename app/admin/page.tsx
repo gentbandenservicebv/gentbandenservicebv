@@ -10,6 +10,7 @@ import { UploadDropzone, useUploadThing } from "@/lib/uploadthing";
 import { compressImages } from "@/lib/image-compression";
 import AdminAnalyticsView from "./AdminAnalyticsView";
 import AdminSettingsView from "./AdminSettingsView";
+import AdminCollectionsView from "./AdminCollectionsView";
 import "./admin.css";
 
 interface TyreImage {
@@ -347,7 +348,7 @@ export default function AdminPage() {
   const [imageActionLoading, setImageActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "collections" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics" | "settings">("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   // Invoices state
   const [invoices, setInvoices] = useState<InvoiceEntry[]>([]);
@@ -1671,6 +1672,7 @@ export default function AdminPage() {
             <span className="admin-mobile-bar__tab-badge">
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "tyres" && "Banden"}
+              {activeTab === "collections" && "Collecties"}
               {activeTab === "orders" && "Bestellingen"}
               {activeTab === "appointments" && "Afspraken"}
               {activeTab === "secondhand" && "2de hands"}
@@ -1734,6 +1736,16 @@ export default function AdminPage() {
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
             Bandenbeheer
+          </button>
+          <button
+            className={`admin-nav__item${activeTab === "collections" ? " admin-nav__item--active" : ""}`}
+            onClick={() => { setActiveTab("collections"); setIsMobileNavOpen(false); }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+            </svg>
+            Collecties / Breedsets
           </button>
           <button
             className={`admin-nav__item${activeTab === "orders" ? " admin-nav__item--active" : ""}`}
@@ -7513,6 +7525,9 @@ export default function AdminPage() {
             </>
           );
         })()}
+
+        {/* ── TYRE COLLECTIONS / BREEDSETS TAB ────────────── */}
+        {activeTab === "collections" && <AdminCollectionsView />}
 
         {/* ── ANALYTICS & COOKIE TRACKING TAB ────────────── */}
         {activeTab === "analytics" && <AdminAnalyticsView />}

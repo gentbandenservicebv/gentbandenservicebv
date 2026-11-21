@@ -84,6 +84,15 @@ export const SecondhandStatus = {
 export type SecondhandStatus = (typeof SecondhandStatus)[keyof typeof SecondhandStatus]
 
 
+export const Axle = {
+  FRONT: 'FRONT',
+  REAR: 'REAR',
+  ALL: 'ALL'
+} as const
+
+export type Axle = (typeof Axle)[keyof typeof Axle]
+
+
 export const InvoiceStatus = {
   PENDING: 'PENDING',
   PAID: 'PAID',

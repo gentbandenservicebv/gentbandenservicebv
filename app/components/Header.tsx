@@ -9,6 +9,7 @@ import "./Header.css";
 
 const navLinks = [
   { href: "/banden", label: "Banden" },
+  { href: "/collecties", label: "Breedsets" },
   { href: "/merken", label: "Merken" },
   { href: "/diensten", label: "Diensten" },
   { href: "/mobiele-service", label: "Mobiele Service" },
@@ -135,48 +136,19 @@ function HeaderInner() {
     <>
       <header className={`header${scrolled ? " header--scrolled" : ""}`}>
         {siteSettings.shop_banner_enabled === "true" && !bannerDismissed && (
-          <div
-            style={{
-              background: "linear-gradient(90deg, #016eb9 0%, #0284c7 100%)",
-              color: "#ffffff",
-              fontSize: "0.85rem",
-              fontWeight: 600,
-              padding: "9px 16px",
-              textAlign: "center",
-              position: "relative",
-              zIndex: 1001,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-            }}
-          >
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <div className="header__announcement">
+            <span className="header__announcement-text">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              {siteSettings.shop_message || "Welkom bij Gent Bandenservice BV • Snelle service & vakkundige montage"}
+              <span>{siteSettings.shop_message || "Welkom bij Gent Bandenservice BV • Snelle service & vakkundige montage"}</span>
             </span>
             <button
               type="button"
               onClick={() => setBannerDismissed(true)}
-              style={{
-                background: "rgba(255,255,255,0.15)",
-                border: "none",
-                color: "#ffffff",
-                cursor: "pointer",
-                fontSize: 14,
-                lineHeight: 1,
-                padding: "3px 7px",
-                marginLeft: 8,
-                borderRadius: 4,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+              className="header__announcement-close"
               title="Sluiten"
               aria-label="Sluit melding"
             >
@@ -192,8 +164,8 @@ function HeaderInner() {
                 <Image
                   src="/logo-icon.png"
                   alt="Gent Bandenservice BV"
-                  width={42}
-                  height={42}
+                  width={38}
+                  height={38}
                   className="header__logo-img"
                   priority
                 />
@@ -209,13 +181,21 @@ function HeaderInner() {
 
             {/* Desktop nav */}
             <ul className="header__links">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="header__link">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              {navLinks.map((link) => {
+                const isActive =
+                  pathname === link.href ||
+                  (link.href !== "/" && (pathname ?? "").startsWith(link.href));
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={`header__link${isActive ? " header__link--active" : ""}`}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
 
             {/* CTA + Auth + Burger */}
@@ -395,6 +375,19 @@ function HeaderInner() {
       >
         <div className="mobile-menu__backdrop" onClick={() => setMenuOpen(false)} />
         <div className="mobile-menu__panel">
+          {/* Close button */}
+          <button
+            type="button"
+            className="mobile-menu__close"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Menu sluiten"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+
           {/* Mobile User Profile Section */}
           {session ? (
             <div className="mobile-user-card">
@@ -469,18 +462,23 @@ function HeaderInner() {
           )}
 
           <nav className="mobile-menu__nav">
-            {navLinks.map((link, i) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="mobile-menu__link"
-                style={{ animationDelay: `${i * 60}ms` }}
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.label}
-                <ArrowRightIcon />
-              </Link>
-            ))}
+            {navLinks.map((link, i) => {
+              const isActive =
+                pathname === link.href ||
+                (link.href !== "/" && (pathname ?? "").startsWith(link.href));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`mobile-menu__link${isActive ? " mobile-menu__link--active" : ""}`}
+                  style={{ animationDelay: `${i * 45}ms` }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span>{link.label}</span>
+                  <ArrowRightIcon />
+                </Link>
+              );
+            })}
             <Link
               href="/afspraak"
               className="btn btn--primary w-full mobile-menu__cta"
