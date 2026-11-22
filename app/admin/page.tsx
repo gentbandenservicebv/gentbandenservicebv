@@ -2682,22 +2682,155 @@ export default function AdminPage() {
                             />
                             🏷️ Demoband (Nieuw gedemonteerd 0-50 km)
                           </label>
+                          <label className="admin-label admin-label--checkbox">
+                            <input
+                              type="checkbox"
+                              checked={form.structureType === "FRV"}
+                              onChange={(e) => setForm({ ...form, structureType: e.target.checked ? "FRV" : (form.structureType === "FRV" ? "" : form.structureType) })}
+                              className="admin-checkbox"
+                            />
+                            ✨ FRV (Michelin Full Ring Velvet fluweelzijwand)
+                          </label>
                         </div>
                       </div>
 
                       <div className="admin-field">
-                        <label className="admin-label">OEM / Homologatie markering</label>
-                        <select
-                          className="admin-select"
-                          value={form.oeMarking}
-                          onChange={(e) => setForm({ ...form, oeMarking: e.target.value })}
-                        >
-                          {OE_MARKINGS.map((m) => (
-                            <option key={m.code || "none"} value={m.code}>{m.label}</option>
-                          ))}
-                        </select>
-                        <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: 4, display: "block" }}>
-                          OEM-markering geldig voor specifiek automerk: MO=Mercedes, AO=Audi, *=BMW, N0=Porsche…
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <label className="admin-label" style={{ margin: 0 }}>
+                            OEM / Homologatie markering
+                            <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", fontWeight: "normal", marginLeft: 8 }}>
+                              (meerdere selecteren mogelijk)
+                            </span>
+                          </label>
+                          {form.oeMarking && (
+                            <button
+                              type="button"
+                              onClick={() => setForm({ ...form, oeMarking: "" })}
+                              style={{
+                                background: "transparent",
+                                border: "none",
+                                color: "#f87171",
+                                fontSize: "0.75rem",
+                                cursor: "pointer",
+                                padding: "2px 6px",
+                              }}
+                            >
+                              ✕ Alles wissen
+                            </button>
+                          )}
+                        </div>
+
+                        {(() => {
+                          const selectedList = form.oeMarking
+                            ? form.oeMarking.split(/[,/]+/).map((s) => s.trim()).filter(Boolean)
+                            : [];
+
+                          const toggleOe = (code: string) => {
+                            if (!code) {
+                              setForm({ ...form, oeMarking: "" });
+                              return;
+                            }
+                            let next: string[];
+                            if (selectedList.includes(code)) {
+                              next = selectedList.filter((c) => c !== code);
+                            } else {
+                              next = [...selectedList, code];
+                            }
+                            setForm({ ...form, oeMarking: next.join(", ") });
+                          };
+
+                          return (
+                            <div>
+                              {selectedList.length > 0 && (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: "8px 10px", background: "rgba(168, 85, 247, 0.08)", border: "1px solid rgba(168, 85, 247, 0.25)", borderRadius: 8 }}>
+                                  <span style={{ fontSize: "0.75rem", color: "#c084fc", fontWeight: 600, display: "flex", alignItems: "center", marginRight: 4 }}>
+                                    Geselecteerd ({selectedList.length}):
+                                  </span>
+                                  {selectedList.map((code) => {
+                                    const match = OE_MARKINGS.find((m) => m.code === code);
+                                    return (
+                                      <span
+                                        key={code}
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: 5,
+                                          background: "rgba(168, 85, 247, 0.25)",
+                                          border: "1px solid rgba(168, 85, 247, 0.5)",
+                                          color: "#f3e8ff",
+                                          borderRadius: 9999,
+                                          padding: "3px 9px",
+                                          fontSize: "0.78rem",
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        {code} {match ? `(${match.label.split("—")[1]?.trim() || match.label})` : ""}
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleOe(code)}
+                                          style={{
+                                            background: "rgba(255,255,255,0.2)",
+                                            border: "none",
+                                            borderRadius: "50%",
+                                            width: 14,
+                                            height: 14,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            color: "#fff",
+                                            cursor: "pointer",
+                                            fontSize: "10px",
+                                            lineHeight: 1,
+                                            padding: 0,
+                                          }}
+                                          title={`Verwijder ${code}`}
+                                        >
+                                          ✕
+                                        </button>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 180, overflowY: "auto", padding: "4px 2px" }}>
+                                {OE_MARKINGS.filter((m) => m.code).map((m) => {
+                                  const isSelected = selectedList.includes(m.code);
+                                  return (
+                                    <button
+                                      key={m.code}
+                                      type="button"
+                                      onClick={() => toggleOe(m.code)}
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 5,
+                                        padding: "5px 10px",
+                                        borderRadius: 8,
+                                        fontSize: "0.76rem",
+                                        fontWeight: isSelected ? 600 : 400,
+                                        cursor: "pointer",
+                                        transition: "all 0.15s ease",
+                                        background: isSelected ? "rgba(168, 85, 247, 0.28)" : "rgba(255, 255, 255, 0.05)",
+                                        border: `1px solid ${isSelected ? "rgba(168, 85, 247, 0.6)" : "rgba(255, 255, 255, 0.1)"}`,
+                                        color: isSelected ? "#f3e8ff" : "rgba(255, 255, 255, 0.75)",
+                                      }}
+                                      title={m.label}
+                                    >
+                                      <span>{isSelected ? "✓" : "+"}</span>
+                                      <strong>{m.code}</strong>
+                                      <span style={{ opacity: 0.65, fontSize: "0.7rem" }}>
+                                        {m.label.split("—")[1]?.trim() || m.label}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: 6, display: "block" }}>
+                          Klik om één of meerdere OEM-markeringen toe te voegen (bijv. * voor BMW, MO voor Mercedes, FRV voor Honda, AO voor Audi).
                         </span>
                       </div>
 
@@ -2731,7 +2864,7 @@ export default function AdminPage() {
                       </div>
 
                       <div className="admin-field">
-                        <label className="admin-label">Constructietype / Structuur (S1, SL, RF...)</label>
+                        <label className="admin-label">Constructietype / Structuur (S1, SL, RF, FRV...)</label>
                         <select
                           className="admin-select"
                           value={form.structureType}
@@ -2742,7 +2875,7 @@ export default function AdminPage() {
                           ))}
                         </select>
                         <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.4)", marginTop: 4, display: "block" }}>
-                          Specifieke constructies zoals S1, SL (Standard Load), TL/TT of belettering (BSW/OWL)
+                          Specifieke constructies zoals S1, SL (Standard Load), FRV (Michelin Full Ring Velvet fluweelzijwand), TL/TT of belettering (BSW/OWL)
                         </span>
                       </div>
 
@@ -3187,9 +3320,9 @@ export default function AdminPage() {
                                     {t.demo && (
                                       <span className="admin-spec-pill" style={{ background: "rgba(236, 72, 153, 0.2)", color: "#f472b6", borderColor: "rgba(236, 72, 153, 0.4)" }} data-tooltip={getSpecTooltip("Demo")} title={getSpecTooltip("Demo")}>Demo</span>
                                     )}
-                                    {t.oeMarking && (
-                                      <span className="admin-spec-pill" style={{ background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", borderColor: "rgba(168, 85, 247, 0.4)" }} data-tooltip={getSpecTooltip(t.oeMarking)} title={getSpecTooltip(t.oeMarking)}>{t.oeMarking}</span>
-                                    )}
+                                    {t.oeMarking && t.oeMarking.split(/[,/]+/).map((s) => s.trim()).filter(Boolean).map((oe) => (
+                                      <span key={oe} className="admin-spec-pill" style={{ background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", borderColor: "rgba(168, 85, 247, 0.4)" }} data-tooltip={getSpecTooltip(oe)} title={getSpecTooltip(oe)}>{oe}</span>
+                                    ))}
                                     {t.tyreClass && (
                                       <span className="admin-spec-pill" style={{ background: "rgba(14, 165, 233, 0.2)", color: "#38bdf8", borderColor: "rgba(14, 165, 233, 0.4)" }} data-tooltip={getSpecTooltip(t.tyreClass)} title={getSpecTooltip(t.tyreClass)}>{t.tyreClass}</span>
                                     )}

@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       ...(selfSealing    === "true" && { selfSealing:    true }),
       ...(acoustic       === "true" && { acoustic:       true }),
       ...(demo           === "true" && { demo:           true }),
-      ...(oeMarking      && { oeMarking: { equals: oeMarking, mode: "insensitive" } }),
+      ...(oeMarking      && { oeMarking: { contains: oeMarking, mode: "insensitive" } }),
       ...(tyreClass      && { tyreClass: { equals: tyreClass, mode: "insensitive" } }),
       ...(plyRating      && { plyRating: { equals: plyRating, mode: "insensitive" } }),
       ...(loadRange      && { loadRange: { equals: loadRange, mode: "insensitive" } }),
