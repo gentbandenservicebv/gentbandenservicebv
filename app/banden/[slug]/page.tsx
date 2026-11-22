@@ -310,11 +310,11 @@ function TyreCard({ tyre, isFav, onToggleFav, onAddToCart, deliveryTimeText, inS
               Demo
             </span>
           )}
-          {tyre.oeMarking && (
-            <span className="tc-pill" style={{ background: "rgba(147, 51, 234, 0.12)", color: "#7c3aed", borderColor: "rgba(147, 51, 234, 0.3)" }} data-tooltip={getSpecTooltip(tyre.oeMarking)} title={getSpecTooltip(tyre.oeMarking)}>
-              {tyre.oeMarking}
+          {tyre.oeMarking && tyre.oeMarking.split(/[,/]+/).map((s) => s.trim()).filter(Boolean).map((oe) => (
+            <span key={oe} className="tc-pill" style={{ background: "rgba(147, 51, 234, 0.12)", color: "#7c3aed", borderColor: "rgba(147, 51, 234, 0.3)" }} data-tooltip={getSpecTooltip(oe)} title={getSpecTooltip(oe)}>
+              {oe}
             </span>
-          )}
+          ))}
           {tyre.tyreClass && (
             <span className="tc-pill" style={{ background: "rgba(100, 116, 139, 0.1)", color: "#334155", borderColor: "rgba(100, 116, 139, 0.25)" }} data-tooltip={getSpecTooltip(tyre.tyreClass)} title={getSpecTooltip(tyre.tyreClass)}>
               {tyre.tyreClass}
@@ -982,11 +982,11 @@ function TyreDetailContent() {
                   Demo
                 </span>
               )}
-              {tyre.oeMarking && (
-                <span className="tc-pill" style={{ background: "rgba(147, 51, 234, 0.12)", color: "#7c3aed", borderColor: "rgba(147, 51, 234, 0.3)" }} data-tooltip={getSpecTooltip(tyre.oeMarking)} title={getSpecTooltip(tyre.oeMarking)}>
-                  {tyre.oeMarking}
+              {tyre.oeMarking && tyre.oeMarking.split(/[,/]+/).map((s) => s.trim()).filter(Boolean).map((oe) => (
+                <span key={oe} className="tc-pill" style={{ background: "rgba(147, 51, 234, 0.12)", color: "#7c3aed", borderColor: "rgba(147, 51, 234, 0.3)" }} data-tooltip={getSpecTooltip(oe)} title={getSpecTooltip(oe)}>
+                  {oe}
                 </span>
-              )}
+              ))}
               {tyre.plyRating && (
                 <span className="tc-pill" style={{ background: "rgba(16, 185, 129, 0.12)", color: "#059669", borderColor: "rgba(16, 185, 129, 0.3)" }} data-tooltip={getSpecTooltip(tyre.plyRating)} title={getSpecTooltip(tyre.plyRating)}>
                   {tyre.plyRating}

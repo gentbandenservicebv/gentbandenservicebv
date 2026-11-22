@@ -70,6 +70,7 @@ export const STRUCTURE_TYPES = [
   { code: "S2", label: "S2 — Special structure type 2" },
   { code: "S3", label: "S3 — Special structure type 3" },
   { code: "RF", label: "RF — Reinforced / versterkt" },
+  { code: "FRV", label: "FRV — Michelin Full Ring Velvet (fluwelen Premium Touch zijwand)" },
   { code: "TL", label: "TL — Tubeless (spaakvelg)" },
   { code: "TT", label: "TT — Tube Type (met binnenband)" },
   { code: "RBL", label: "RBL — Raised Black Letters" },
@@ -123,6 +124,8 @@ export const SPEC_TOOLTIPS: Record<string, string> = {
   "S2": "S2 structuur: tweede generatie geoptimaliseerde karkasopbouw.",
   "S3": "S3 structuur: derde generatie geoptimaliseerde karkasopbouw.",
   "RF": "Reinforced (RF): versterkte wang- en gordelstructuur.",
+  "FRV": "Michelin Full Ring Velvet (FRV): Premium Touch zijwandtechnologie met een fluweelachtige, diepzwarte textuur over de volledige flank van de band.",
+  "Full Ring Velvet": "Michelin Full Ring Velvet (FRV): Premium Touch zijwandtechnologie met een fluweelachtige, diepzwarte textuur over de volledige flank van de band.",
   "RBL": "Raised Black Letters: verhoogde zwarte belettering op de zijwand.",
   "OWL": "Outline White Letters: witte omlijnde letters op de zijwand.",
   "BSW": "Black Side Wall: klassieke egaal zwarte zijwand.",
@@ -205,6 +208,14 @@ export const SPEC_TOOLTIPS: Record<string, string> = {
 export function getSpecTooltip(keyOrCode?: string | null): string | undefined {
   if (!keyOrCode) return undefined;
   const trimmed = keyOrCode.trim();
+
+  // If multiple comma- or slash-separated codes (e.g. "*, MO" or "AO, FRV")
+  if (trimmed.includes(",") || trimmed.includes("/")) {
+    const parts = trimmed.split(/[,/]+/).map((p) => p.trim()).filter(Boolean);
+    const tooltips = parts.map((p) => getSpecTooltip(p)).filter(Boolean);
+    if (tooltips.length > 0) return tooltips.join(" | ");
+  }
+
   if (SPEC_TOOLTIPS[trimmed]) return SPEC_TOOLTIPS[trimmed];
 
   const upper = trimmed.toUpperCase();
