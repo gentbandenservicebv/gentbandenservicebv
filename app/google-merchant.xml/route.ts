@@ -24,7 +24,8 @@ function gmCondition(c: TyreCondition): string {
 }
 
 function gmAvailability(stock: number): string {
-  return stock > 0 ? "in_stock" : "out_of_stock";
+  // stock > 0 → direct beschikbaar; stock = 0 → leverbaar binnen 3–5 werkdagen (backorder)
+  return stock > 0 ? "in_stock" : "backorder";
 }
 
 /** Escape characters that break XML text nodes. */
@@ -168,8 +169,13 @@ export async function GET(): Promise<Response> {
       const priceStr = `${t.price.toFixed(2)} EUR`;
       const pType = xmlEscape(productType(t.season as Season, t.condition as TyreCondition));
 
-      // Primary image — only emit g:image_link when we actually have one
-      const primaryImage = t.images[0]?.url ?? null;
+      // Primary image — fall back to a 500×500 placeholder when none is set
+      // (Google Merchant Center requires at least 500×500 px from 2027-01-31)
+      const fallbackImage =
+        t.condition === "USED"
+          ? `${SITE_URL}/tires/tire-fallback-used.png`
+          : `${SITE_URL}/tires/tire-fallback-new.png`;
+      const primaryImage = t.images[0]?.url ?? fallbackImage;
 
       // MPN = brand + model + size (deterministic, non-invented identifier)
       // We do NOT emit g:gtin since we have no barcode data in the schema
@@ -183,7 +189,8 @@ export async function GET(): Promise<Response> {
       <g:id>${xmlEscape(t.id)}</g:id>
       <g:title>${title}</g:title>
       <g:description>${desc}</g:description>
-      <g:link>${link}</g:link>${primaryImage ? `\n      <g:image_link>${xmlEscape(primaryImage)}</g:image_link>` : ""}
+      <g:link>${link}</g:link>
+      <g:image_link>${xmlEscape(primaryImage)}</g:image_link>
       <g:condition>${condition}</g:condition>
       <g:availability>${availability}</g:availability>
       <g:price>${priceStr}</g:price>

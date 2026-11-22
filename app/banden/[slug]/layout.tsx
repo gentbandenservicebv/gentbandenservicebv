@@ -61,10 +61,12 @@ async function buildMetadata(slug: string): Promise<Metadata> {
 
   const seasonLabel = SEASON_LABEL[tyre.season] ?? tyre.season;
   const conditionLabel = tyre.condition === "NEW" ? "Nieuw" : "Tweedehands";
-  const title = `${tyre.brand} ${tyre.model} ${tyre.size} — ${conditionLabel} ${seasonLabel}`;
+  // Include space-separated size variant so Google matches both "205/55R16" and "205 55r16"
+  const sizeSpaced = tyre.size.replace(/[/R]/gi, (m) => (m === "/" ? " " : " R")).replace(/\s+/, " ").trim();
+  const title = `${conditionLabel} ${tyre.brand} ${tyre.model} ${tyre.size} — ${seasonLabel} Gent`;
   const description =
     tyre.description?.slice(0, 155) ??
-    `${conditionLabel} ${tyre.brand} ${tyre.model} band, maat ${tyre.size}. ${seasonLabel}. Slechts €${tyre.price.toFixed(2)} bij Gent Bandenservice BV in Gent / Sint-Amandsberg.`;
+    `${conditionLabel} ${tyre.brand} ${tyre.model} band maat ${tyre.size} (${sizeSpaced}). ${seasonLabel}. Slechts €${tyre.price.toFixed(2)} bij Gent Bandenservice BV in Sint-Amandsberg, Gent.`;
 
   const primaryImg = tyre.images?.find((i) => i.isPrimary) ?? tyre.images?.[0];
   const ogImage = primaryImg?.url ?? OG_IMAGE;
@@ -136,7 +138,7 @@ async function TyreJsonLd({ params }: { params: Promise<{ slug: string }> }) {
       availability:
         tyre.stock > 0
           ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
+          : "https://schema.org/BackOrder",
       itemCondition:
         tyre.condition === "NEW"
           ? "https://schema.org/NewCondition"

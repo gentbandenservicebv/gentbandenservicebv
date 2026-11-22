@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import "@uploadthing/react/styles.css";
@@ -11,7 +11,7 @@ import CookieConsent from "./components/CookieConsent";
 import UserActivityTracker from "./components/UserActivityTracker";
 import { Analytics } from "@vercel/analytics/next"
 
-const inter = Inter({
+const inter = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
@@ -150,12 +150,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="nl" className={inter.variable} data-scroll-behavior="smooth">
       <body>
-        {/* JSON-LD LocalBusiness schema */}
-        <Script
+        {/* JSON-LD LocalBusiness schema — inline so Googlebot sees it without JS execution */}
+        <script
           id="local-business-schema"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
-          strategy="afterInteractive"
         />
 
         <Suspense fallback={<div style={{ height: 72 }} />}>
