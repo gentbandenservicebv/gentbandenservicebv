@@ -60,13 +60,14 @@ interface Collection {
 
 interface Props {
   slug: string;
+  initialCollection?: Collection | null;
 }
 
-export default function CollectionDetail({ slug }: Props) {
+export default function CollectionDetail({ slug, initialCollection = null }: Props) {
   const router = useRouter();
 
-  const [collection, setCollection] = useState<Collection | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [collection, setCollection] = useState<Collection | null>(initialCollection);
+  const [loading, setLoading] = useState(!initialCollection);
   const [error, setError] = useState<string | null>(null);
   const [addedMessage, setAddedMessage] = useState<string | null>(null);
 
@@ -95,6 +96,7 @@ export default function CollectionDetail({ slug }: Props) {
   }, []);
 
   useEffect(() => {
+    if (initialCollection) return;
     if (!slug) return;
     async function loadCollection() {
       try {
@@ -113,7 +115,7 @@ export default function CollectionDetail({ slug }: Props) {
       }
     }
     loadCollection();
-  }, [slug]);
+  }, [slug, initialCollection]);
 
   if (loading) {
     return <CollectionDetailSkeleton />;
