@@ -1379,6 +1379,7 @@ export default function BandenCatalogContent({ initialTyres = [] }: { initialTyr
   const [toast, setToast] = useState<{ message: string; type: "cart" | "fav" } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialMount = useRef(true);
   const ITEMS_PER_PAGE = 12;
 
   // Dynamic delivery time & stock status from site settings
@@ -1621,10 +1622,19 @@ export default function BandenCatalogContent({ initialTyres = [] }: { initialTyr
   }, [filters, search]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      const hasActiveFilters =
+        Object.values(filters).some((v) => (typeof v === "boolean" ? v : Boolean(v))) ||
+        Boolean(search.trim());
+      if (!hasActiveFilters && initialTyres.length > 0) {
+        return;
+      }
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(fetchTyres, 320);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [fetchTyres]);
+  }, [fetchTyres, filters, search, initialTyres.length]);
 
   /* Client-side sorting on price, popularity, newest + favorites filter */
   const sortedTyres = useMemo(() => {

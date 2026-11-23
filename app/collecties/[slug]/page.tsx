@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import CollectionDetail from "./CollectionDetail";
@@ -11,7 +12,7 @@ const SITE_URL = "https://www.gentbandenservice.be";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 async function getCollection(slug: string) {
-  "use cache";
+  await connection();
   try {
     return await prisma.tyreCollection.findFirst({
       where: {
