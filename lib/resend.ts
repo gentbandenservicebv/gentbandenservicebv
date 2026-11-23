@@ -1123,6 +1123,135 @@ export async function sendOrderStatusUpdateEmail(data: OrderStatusEmailData) {
   }
 }
 
+// ── Email Verification ────────────────────────────────────────────────────────
+
+export interface EmailVerificationData {
+  email: string;
+  name?: string | null;
+  url: string;
+  token?: string;
+}
+
+export async function sendEmailVerification(data: EmailVerificationData) {
+  const greeting = data.name ? `Beste ${escapeHtml(data.name)}` : "Beste klant";
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verifieer uw e-mailadres – Gent Bandenservice</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0f172a;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #0b192c 0%, #1a365d 100%);padding:36px 40px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.75);text-transform:uppercase;">Gent Bandenservice BV</p>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+                ✉️ Activeer uw account
+              </h1>
+              <p style="margin:8px 0 0;color:#94a3b8;font-size:14px;">
+                Uw betrouwbare bandspecialist in Gent
+              </p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:40px;">
+              <div style="text-align:center;margin-bottom:24px;">
+                <span style="display:inline-block;width:64px;height:64px;line-height:64px;border-radius:50%;background:#eff6ff;color:#016eb9;font-size:32px;">
+                  📨
+                </span>
+              </div>
+
+              <h2 style="margin:0 0 16px;color:#0b192c;font-size:22px;font-weight:700;text-align:center;">
+                Verifieer uw e-mailadres
+              </h2>
+
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">
+                ${greeting},
+              </p>
+
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#334155;">
+                Bedankt voor uw registratie bij <strong>Gent Bandenservice</strong>. Klik op de onderstaande knop om uw e-mailadres te bevestigen en uw account direct te activeren:
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:28px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.url}" 
+                       target="_blank" 
+                       style="display:inline-block;padding:16px 36px;background:#016eb9;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:999px;box-shadow:0 4px 14px rgba(1,110,185,0.35);letter-spacing:0.3px;">
+                      E-mailadres verifiëren &amp; Inloggen →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Notice box -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:24px;">
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#475569;">
+                  🔒 <strong>Veilige activatie:</strong> Zodra u klikt, wordt uw account geactiveerd en heeft u direct toegang tot uw bestellingen en afspraken.
+                </p>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:#64748b;">
+                  🛡️ <strong>Niet uzelf?</strong> Hebt u dit account niet aangemaakt? Dan kunt u deze e-mail gerust negeren; het account blijft dan inactief.
+                </p>
+              </div>
+
+              <!-- Fallback URL -->
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#94a3b8;word-break:break-all;">
+                Werkt de knop niet? Kopieer en plak de volgende link in uw browser:<br/>
+                <a href="${data.url}" style="color:#016eb9;text-decoration:underline;">${data.url}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0a0a0a;padding:24px 40px;text-align:center;border-top:1px solid #1e293b;">
+              <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#94a3b8;">
+                Gent Bandenservice BV
+              </p>
+              <p style="margin:0;font-size:12px;color:#64748b;">
+                Dendermondsesteenweg 428, 9040 Gent · BTW: BE 1041.093.575<br/>
+                Telefoon: <a href="tel:0467871205" style="color:#016eb9;text-decoration:none;">0467 87 12 05</a> · E-mail: <a href="mailto:info@gentbandenservice.be" style="color:#016eb9;text-decoration:none;">info@gentbandenservice.be</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: [data.email],
+      subject: "✉️ Bevestig uw e-mailadres – Gent Bandenservice",
+      html,
+    });
+
+    if (error) {
+      console.error("[Resend] email verification send failed:", error.message);
+      throw new Error("Verificatie-e-mail kon niet worden verzonden.");
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Resend] email verification exception:", msg);
+    throw err;
+  }
+}
+
 // ── Password Reset Email ──────────────────────────────────────────────────────
 
 export interface PasswordResetEmailData {
@@ -2330,4 +2459,185 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
     return { success: false, error: err?.message || "E-mail verzenden mislukt" };
   }
 }
+
+// ── Customer Review Request Email (after Completed Appointment) ─────────────
+
+export interface ReviewRequestEmailData {
+  appointmentId: string;
+  customerName?: string | null;
+  customerEmail: string;
+  tyre?: {
+    id: string;
+    brand: string;
+    model: string;
+    size: string;
+  } | null;
+}
+
+export async function sendReviewRequestEmail(data: ReviewRequestEmailData) {
+  if (!data.customerEmail) return { success: false, error: "Geen e-mailadres" };
+
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.BETTER_AUTH_URL ??
+    "https://www.gentbandenservice.be";
+
+  const greeting = data.customerName ? `Beste ${escapeHtml(data.customerName)}` : "Beste klant";
+  const tyreInfo = data.tyre
+    ? `${escapeHtml(data.tyre.brand)} ${escapeHtml(data.tyre.model)} (${escapeHtml(data.tyre.size)})`
+    : null;
+
+  const baseReviewUrl = `${appUrl}/review?appointmentId=${encodeURIComponent(data.appointmentId)}${
+    data.tyre ? `&tyreId=${encodeURIComponent(data.tyre.id)}` : ""
+  }`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoe was uw ervaring bij Gent Bandenservice?</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0b0d14;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0b0d14;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.3);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#016eb9 0%,#0f284e 100%);padding:44px 40px 36px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.8);text-transform:uppercase;">Gent Bandenservice BV</p>
+              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
+                ⭐ Uw mening telt voor ons!
+              </h1>
+              <p style="margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">
+                Bedankt voor uw bezoek aan onze werkplaats
+              </p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#0b192c;font-weight:600;">
+                ${greeting},
+              </p>
+
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.65;color:#475569;">
+                Uw recente afspraak bij Gent Bandenservice is afgerond. Wij streven elke dag naar de hoogste kwaliteit, snelle service en vakkundig advies.
+              </p>
+
+              ${
+                tyreInfo
+                  ? `
+              <!-- Specific Tyre Highlight Card -->
+              <div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:14px;padding:20px;margin-bottom:28px;text-align:center;">
+                <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:1px;">
+                  Gemonteerde banden
+                </p>
+                <h2 style="margin:0 0 8px;font-size:18px;font-weight:800;color:#0c4a6e;">
+                  ${tyreInfo}
+                </h2>
+                <p style="margin:0;font-size:14px;color:#0284c7;line-height:1.5;">
+                  Hoe bevallen uw nieuwe banden op de weg? Deel uw ervaring en help andere automobilisten!
+                </p>
+              </div>`
+                  : `
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.65;color:#475569;">
+                Bent u tevreden over de service en montage? We horen heel graag hoe u uw ervaring heeft beleefd.
+              </p>`
+              }
+
+              <!-- Star Rating Selector in Email -->
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:28px 20px;margin-bottom:32px;text-align:center;">
+                <p style="margin:0 0 16px;font-size:14px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:1px;">
+                  Kies een score om uw review te starten:
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 18px;">
+                  <tr>
+                    ${[1, 2, 3, 4, 5]
+                      .map(
+                        (star) => `
+                    <td style="padding:0 6px;">
+                      <a href="${baseReviewUrl}&rating=${star}" 
+                         target="_blank" 
+                         style="display:inline-block;width:48px;height:48px;line-height:48px;background:#ffffff;border:1.5px solid #fbbf24;border-radius:12px;text-align:center;font-size:24px;text-decoration:none;box-shadow:0 3px 10px rgba(251,191,36,0.25);">
+                        ⭐
+                      </a>
+                      <div style="font-size:12px;font-weight:700;color:#64748b;margin-top:4px;">${star}</div>
+                    </td>`
+                      )
+                      .join("")}
+                  </tr>
+                </table>
+                <p style="margin:0;font-size:13px;color:#64748b;">
+                  1 = Zeer ontevreden · 5 = Uitstekend
+                </p>
+              </div>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${baseReviewUrl}&rating=5" 
+                       target="_blank" 
+                       style="display:inline-block;padding:16px 36px;background:#016eb9;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;border-radius:999px;box-shadow:0 4px 16px rgba(1,110,185,0.35);letter-spacing:0.3px;">
+                      Schrijf uw review (1 minuut) →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#94a3b8;text-align:center;">
+                Uw beoordeling helpt ons om onze dienstverlening te blijven verbeteren.<br/>
+                Heeft u een vraag of opmerking? Beantwoord gerust deze e-mail of bel <a href="tel:0467871205" style="color:#016eb9;text-decoration:none;font-weight:600;">0467 87 12 05</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0a0a0a;padding:24px 40px;text-align:center;border-top:1px solid #1e293b;">
+              <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#94a3b8;">
+                Gent Bandenservice BV
+              </p>
+              <p style="margin:0;font-size:12px;color:#64748b;">
+                Dendermondsesteenweg 428, 9040 Gent · BTW: BE 1041.093.575<br/>
+                Open van Ma t/m Za: 09:00 – 18:00
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const { error } = await resend.emails.send(
+      {
+        from: FROM,
+        to: [data.customerEmail],
+        subject: `⭐ Hoe was uw ervaring bij Gent Bandenservice? Deel uw mening!`,
+        html,
+      },
+      { idempotencyKey: `review-request/${data.appointmentId}` }
+    );
+
+    if (error) {
+      console.error("[Resend] Review request email failed:", error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[Resend] Review request exception:", msg);
+    return { success: false, error: msg };
+  }
+}
+
 

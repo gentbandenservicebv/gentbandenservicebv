@@ -33,6 +33,7 @@ model User {
   accounts     Account[]
   orders       Order[]
   appointments Appointment[]
+  reviews      Review[]
 
   @@map("user")
 }
@@ -176,6 +177,8 @@ model Tyre {
   images              TyreImage[]
   orderItems          OrderItem[]
   tyreCollectionItems TyreCollectionItem[]
+  appointments        Appointment[]
+  reviews             Review[]
 
   @@map("tyre")
 }
@@ -254,6 +257,8 @@ model Appointment {
   id             String            @id @default(cuid())
   userId         String?
   user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tyreId         String?
+  tyre           Tyre?             @relation(fields: [tyreId], references: [id], onDelete: SetNull)
   // Guest info
   guestName      String?
   guestEmail     String?
@@ -266,6 +271,8 @@ model Appointment {
   reminderSentAt DateTime?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+
+  reviews        Review[]
 
   @@map("appointment")
 }
@@ -457,4 +464,32 @@ model Invoice {
   updatedAt       DateTime      @updatedAt
 
   @@map("invoice")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tyre Reviews
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Review {
+  id               String       @id @default(cuid())
+  tyreId           String
+  tyre             Tyre         @relation(fields: [tyreId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointmentId    String?
+  appointment      Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  userName         String
+  userEmail        String
+  rating           Int          // 1 to 5 stars
+  title            String?
+  comment          String
+  verifiedPurchase Boolean      @default(false)
+  active           Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([tyreId])
+  @@index([rating])
+  @@index([active])
+  @@map("review")
 }

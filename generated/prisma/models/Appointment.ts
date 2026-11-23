@@ -27,6 +27,7 @@ export type AggregateAppointment = {
 export type AppointmentMinAggregateOutputType = {
   id: string | null
   userId: string | null
+  tyreId: string | null
   guestName: string | null
   guestEmail: string | null
   guestPhone: string | null
@@ -43,6 +44,7 @@ export type AppointmentMinAggregateOutputType = {
 export type AppointmentMaxAggregateOutputType = {
   id: string | null
   userId: string | null
+  tyreId: string | null
   guestName: string | null
   guestEmail: string | null
   guestPhone: string | null
@@ -59,6 +61,7 @@ export type AppointmentMaxAggregateOutputType = {
 export type AppointmentCountAggregateOutputType = {
   id: number
   userId: number
+  tyreId: number
   guestName: number
   guestEmail: number
   guestPhone: number
@@ -77,6 +80,7 @@ export type AppointmentCountAggregateOutputType = {
 export type AppointmentMinAggregateInputType = {
   id?: true
   userId?: true
+  tyreId?: true
   guestName?: true
   guestEmail?: true
   guestPhone?: true
@@ -93,6 +97,7 @@ export type AppointmentMinAggregateInputType = {
 export type AppointmentMaxAggregateInputType = {
   id?: true
   userId?: true
+  tyreId?: true
   guestName?: true
   guestEmail?: true
   guestPhone?: true
@@ -109,6 +114,7 @@ export type AppointmentMaxAggregateInputType = {
 export type AppointmentCountAggregateInputType = {
   id?: true
   userId?: true
+  tyreId?: true
   guestName?: true
   guestEmail?: true
   guestPhone?: true
@@ -198,6 +204,7 @@ export type AppointmentGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 export type AppointmentGroupByOutputType = {
   id: string
   userId: string | null
+  tyreId: string | null
   guestName: string | null
   guestEmail: string | null
   guestPhone: string | null
@@ -235,6 +242,7 @@ export type AppointmentWhereInput = {
   NOT?: Prisma.AppointmentWhereInput | Prisma.AppointmentWhereInput[]
   id?: Prisma.StringFilter<"Appointment"> | string
   userId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  tyreId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestPhone?: Prisma.StringNullableFilter<"Appointment"> | string | null
@@ -247,11 +255,14 @@ export type AppointmentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  tyre?: Prisma.XOR<Prisma.TyreNullableScalarRelationFilter, Prisma.TyreWhereInput> | null
+  reviews?: Prisma.ReviewListRelationFilter
 }
 
 export type AppointmentOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
+  tyreId?: Prisma.SortOrderInput | Prisma.SortOrder
   guestName?: Prisma.SortOrderInput | Prisma.SortOrder
   guestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   guestPhone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -264,6 +275,8 @@ export type AppointmentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  tyre?: Prisma.TyreOrderByWithRelationInput
+  reviews?: Prisma.ReviewOrderByRelationAggregateInput
 }
 
 export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
@@ -272,6 +285,7 @@ export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AppointmentWhereInput[]
   NOT?: Prisma.AppointmentWhereInput | Prisma.AppointmentWhereInput[]
   userId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  tyreId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestPhone?: Prisma.StringNullableFilter<"Appointment"> | string | null
@@ -284,11 +298,14 @@ export type AppointmentWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  tyre?: Prisma.XOR<Prisma.TyreNullableScalarRelationFilter, Prisma.TyreWhereInput> | null
+  reviews?: Prisma.ReviewListRelationFilter
 }, "id">
 
 export type AppointmentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
+  tyreId?: Prisma.SortOrderInput | Prisma.SortOrder
   guestName?: Prisma.SortOrderInput | Prisma.SortOrder
   guestEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   guestPhone?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -311,6 +328,7 @@ export type AppointmentScalarWhereWithAggregatesInput = {
   NOT?: Prisma.AppointmentScalarWhereWithAggregatesInput | Prisma.AppointmentScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Appointment"> | string
   userId?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
+  tyreId?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   guestName?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   guestEmail?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
   guestPhone?: Prisma.StringNullableWithAggregatesFilter<"Appointment"> | string | null
@@ -338,11 +356,14 @@ export type AppointmentCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutAppointmentsInput
+  tyre?: Prisma.TyreCreateNestedOneWithoutAppointmentsInput
+  reviews?: Prisma.ReviewCreateNestedManyWithoutAppointmentInput
 }
 
 export type AppointmentUncheckedCreateInput = {
   id?: string
   userId?: string | null
+  tyreId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   guestPhone?: string | null
@@ -354,6 +375,7 @@ export type AppointmentUncheckedCreateInput = {
   reminderSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutAppointmentInput
 }
 
 export type AppointmentUpdateInput = {
@@ -370,11 +392,14 @@ export type AppointmentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutAppointmentsNestedInput
+  tyre?: Prisma.TyreUpdateOneWithoutAppointmentsNestedInput
+  reviews?: Prisma.ReviewUpdateManyWithoutAppointmentNestedInput
 }
 
 export type AppointmentUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tyreId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -386,11 +411,13 @@ export type AppointmentUncheckedUpdateInput = {
   reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviews?: Prisma.ReviewUncheckedUpdateManyWithoutAppointmentNestedInput
 }
 
 export type AppointmentCreateManyInput = {
   id?: string
   userId?: string | null
+  tyreId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   guestPhone?: string | null
@@ -422,6 +449,7 @@ export type AppointmentUpdateManyMutationInput = {
 export type AppointmentUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tyreId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -448,6 +476,7 @@ export type AppointmentOrderByRelationAggregateInput = {
 export type AppointmentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  tyreId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
   guestPhone?: Prisma.SortOrder
@@ -464,6 +493,7 @@ export type AppointmentCountOrderByAggregateInput = {
 export type AppointmentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  tyreId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
   guestPhone?: Prisma.SortOrder
@@ -480,6 +510,7 @@ export type AppointmentMaxOrderByAggregateInput = {
 export type AppointmentMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  tyreId?: Prisma.SortOrder
   guestName?: Prisma.SortOrder
   guestEmail?: Prisma.SortOrder
   guestPhone?: Prisma.SortOrder
@@ -491,6 +522,11 @@ export type AppointmentMinOrderByAggregateInput = {
   reminderSentAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type AppointmentNullableScalarRelationFilter = {
+  is?: Prisma.AppointmentWhereInput | null
+  isNot?: Prisma.AppointmentWhereInput | null
 }
 
 export type AppointmentCreateNestedManyWithoutUserInput = {
@@ -535,12 +571,70 @@ export type AppointmentUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
 }
 
+export type AppointmentCreateNestedManyWithoutTyreInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput> | Prisma.AppointmentCreateWithoutTyreInput[] | Prisma.AppointmentUncheckedCreateWithoutTyreInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutTyreInput | Prisma.AppointmentCreateOrConnectWithoutTyreInput[]
+  createMany?: Prisma.AppointmentCreateManyTyreInputEnvelope
+  connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+}
+
+export type AppointmentUncheckedCreateNestedManyWithoutTyreInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput> | Prisma.AppointmentCreateWithoutTyreInput[] | Prisma.AppointmentUncheckedCreateWithoutTyreInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutTyreInput | Prisma.AppointmentCreateOrConnectWithoutTyreInput[]
+  createMany?: Prisma.AppointmentCreateManyTyreInputEnvelope
+  connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+}
+
+export type AppointmentUpdateManyWithoutTyreNestedInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput> | Prisma.AppointmentCreateWithoutTyreInput[] | Prisma.AppointmentUncheckedCreateWithoutTyreInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutTyreInput | Prisma.AppointmentCreateOrConnectWithoutTyreInput[]
+  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutTyreInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutTyreInput[]
+  createMany?: Prisma.AppointmentCreateManyTyreInputEnvelope
+  set?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  disconnect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  delete?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutTyreInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutTyreInput[]
+  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutTyreInput | Prisma.AppointmentUpdateManyWithWhereWithoutTyreInput[]
+  deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
+}
+
+export type AppointmentUncheckedUpdateManyWithoutTyreNestedInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput> | Prisma.AppointmentCreateWithoutTyreInput[] | Prisma.AppointmentUncheckedCreateWithoutTyreInput[]
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutTyreInput | Prisma.AppointmentCreateOrConnectWithoutTyreInput[]
+  upsert?: Prisma.AppointmentUpsertWithWhereUniqueWithoutTyreInput | Prisma.AppointmentUpsertWithWhereUniqueWithoutTyreInput[]
+  createMany?: Prisma.AppointmentCreateManyTyreInputEnvelope
+  set?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  disconnect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  delete?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  connect?: Prisma.AppointmentWhereUniqueInput | Prisma.AppointmentWhereUniqueInput[]
+  update?: Prisma.AppointmentUpdateWithWhereUniqueWithoutTyreInput | Prisma.AppointmentUpdateWithWhereUniqueWithoutTyreInput[]
+  updateMany?: Prisma.AppointmentUpdateManyWithWhereWithoutTyreInput | Prisma.AppointmentUpdateManyWithWhereWithoutTyreInput[]
+  deleteMany?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
+}
+
 export type EnumAppointmentTypeFieldUpdateOperationsInput = {
   set?: $Enums.AppointmentType
 }
 
 export type EnumAppointmentStatusFieldUpdateOperationsInput = {
   set?: $Enums.AppointmentStatus
+}
+
+export type AppointmentCreateNestedOneWithoutReviewsInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutReviewsInput, Prisma.AppointmentUncheckedCreateWithoutReviewsInput>
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutReviewsInput
+  connect?: Prisma.AppointmentWhereUniqueInput
+}
+
+export type AppointmentUpdateOneWithoutReviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.AppointmentCreateWithoutReviewsInput, Prisma.AppointmentUncheckedCreateWithoutReviewsInput>
+  connectOrCreate?: Prisma.AppointmentCreateOrConnectWithoutReviewsInput
+  upsert?: Prisma.AppointmentUpsertWithoutReviewsInput
+  disconnect?: Prisma.AppointmentWhereInput | boolean
+  delete?: Prisma.AppointmentWhereInput | boolean
+  connect?: Prisma.AppointmentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AppointmentUpdateToOneWithWhereWithoutReviewsInput, Prisma.AppointmentUpdateWithoutReviewsInput>, Prisma.AppointmentUncheckedUpdateWithoutReviewsInput>
 }
 
 export type AppointmentCreateWithoutUserInput = {
@@ -556,10 +650,13 @@ export type AppointmentCreateWithoutUserInput = {
   reminderSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  tyre?: Prisma.TyreCreateNestedOneWithoutAppointmentsInput
+  reviews?: Prisma.ReviewCreateNestedManyWithoutAppointmentInput
 }
 
 export type AppointmentUncheckedCreateWithoutUserInput = {
   id?: string
+  tyreId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   guestPhone?: string | null
@@ -571,6 +668,7 @@ export type AppointmentUncheckedCreateWithoutUserInput = {
   reminderSentAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutAppointmentInput
 }
 
 export type AppointmentCreateOrConnectWithoutUserInput = {
@@ -605,6 +703,7 @@ export type AppointmentScalarWhereInput = {
   NOT?: Prisma.AppointmentScalarWhereInput | Prisma.AppointmentScalarWhereInput[]
   id?: Prisma.StringFilter<"Appointment"> | string
   userId?: Prisma.StringNullableFilter<"Appointment"> | string | null
+  tyreId?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestName?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestEmail?: Prisma.StringNullableFilter<"Appointment"> | string | null
   guestPhone?: Prisma.StringNullableFilter<"Appointment"> | string | null
@@ -618,8 +717,153 @@ export type AppointmentScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Appointment"> | Date | string
 }
 
+export type AppointmentCreateWithoutTyreInput = {
+  id?: string
+  guestName?: string | null
+  guestEmail?: string | null
+  guestPhone?: string | null
+  type?: $Enums.AppointmentType
+  dateTime: Date | string
+  status?: $Enums.AppointmentStatus
+  notes?: string | null
+  vehicleInfo?: string | null
+  reminderSentAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAppointmentsInput
+  reviews?: Prisma.ReviewCreateNestedManyWithoutAppointmentInput
+}
+
+export type AppointmentUncheckedCreateWithoutTyreInput = {
+  id?: string
+  userId?: string | null
+  guestName?: string | null
+  guestEmail?: string | null
+  guestPhone?: string | null
+  type?: $Enums.AppointmentType
+  dateTime: Date | string
+  status?: $Enums.AppointmentStatus
+  notes?: string | null
+  vehicleInfo?: string | null
+  reminderSentAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutAppointmentInput
+}
+
+export type AppointmentCreateOrConnectWithoutTyreInput = {
+  where: Prisma.AppointmentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput>
+}
+
+export type AppointmentCreateManyTyreInputEnvelope = {
+  data: Prisma.AppointmentCreateManyTyreInput | Prisma.AppointmentCreateManyTyreInput[]
+  skipDuplicates?: boolean
+}
+
+export type AppointmentUpsertWithWhereUniqueWithoutTyreInput = {
+  where: Prisma.AppointmentWhereUniqueInput
+  update: Prisma.XOR<Prisma.AppointmentUpdateWithoutTyreInput, Prisma.AppointmentUncheckedUpdateWithoutTyreInput>
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutTyreInput, Prisma.AppointmentUncheckedCreateWithoutTyreInput>
+}
+
+export type AppointmentUpdateWithWhereUniqueWithoutTyreInput = {
+  where: Prisma.AppointmentWhereUniqueInput
+  data: Prisma.XOR<Prisma.AppointmentUpdateWithoutTyreInput, Prisma.AppointmentUncheckedUpdateWithoutTyreInput>
+}
+
+export type AppointmentUpdateManyWithWhereWithoutTyreInput = {
+  where: Prisma.AppointmentScalarWhereInput
+  data: Prisma.XOR<Prisma.AppointmentUpdateManyMutationInput, Prisma.AppointmentUncheckedUpdateManyWithoutTyreInput>
+}
+
+export type AppointmentCreateWithoutReviewsInput = {
+  id?: string
+  guestName?: string | null
+  guestEmail?: string | null
+  guestPhone?: string | null
+  type?: $Enums.AppointmentType
+  dateTime: Date | string
+  status?: $Enums.AppointmentStatus
+  notes?: string | null
+  vehicleInfo?: string | null
+  reminderSentAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user?: Prisma.UserCreateNestedOneWithoutAppointmentsInput
+  tyre?: Prisma.TyreCreateNestedOneWithoutAppointmentsInput
+}
+
+export type AppointmentUncheckedCreateWithoutReviewsInput = {
+  id?: string
+  userId?: string | null
+  tyreId?: string | null
+  guestName?: string | null
+  guestEmail?: string | null
+  guestPhone?: string | null
+  type?: $Enums.AppointmentType
+  dateTime: Date | string
+  status?: $Enums.AppointmentStatus
+  notes?: string | null
+  vehicleInfo?: string | null
+  reminderSentAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type AppointmentCreateOrConnectWithoutReviewsInput = {
+  where: Prisma.AppointmentWhereUniqueInput
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutReviewsInput, Prisma.AppointmentUncheckedCreateWithoutReviewsInput>
+}
+
+export type AppointmentUpsertWithoutReviewsInput = {
+  update: Prisma.XOR<Prisma.AppointmentUpdateWithoutReviewsInput, Prisma.AppointmentUncheckedUpdateWithoutReviewsInput>
+  create: Prisma.XOR<Prisma.AppointmentCreateWithoutReviewsInput, Prisma.AppointmentUncheckedCreateWithoutReviewsInput>
+  where?: Prisma.AppointmentWhereInput
+}
+
+export type AppointmentUpdateToOneWithWhereWithoutReviewsInput = {
+  where?: Prisma.AppointmentWhereInput
+  data: Prisma.XOR<Prisma.AppointmentUpdateWithoutReviewsInput, Prisma.AppointmentUncheckedUpdateWithoutReviewsInput>
+}
+
+export type AppointmentUpdateWithoutReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAppointmentTypeFieldUpdateOperationsInput | $Enums.AppointmentType
+  dateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumAppointmentStatusFieldUpdateOperationsInput | $Enums.AppointmentStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vehicleInfo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAppointmentsNestedInput
+  tyre?: Prisma.TyreUpdateOneWithoutAppointmentsNestedInput
+}
+
+export type AppointmentUncheckedUpdateWithoutReviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tyreId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAppointmentTypeFieldUpdateOperationsInput | $Enums.AppointmentType
+  dateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumAppointmentStatusFieldUpdateOperationsInput | $Enums.AppointmentStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vehicleInfo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type AppointmentCreateManyUserInput = {
   id?: string
+  tyreId?: string | null
   guestName?: string | null
   guestEmail?: string | null
   guestPhone?: string | null
@@ -646,10 +890,30 @@ export type AppointmentUpdateWithoutUserInput = {
   reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tyre?: Prisma.TyreUpdateOneWithoutAppointmentsNestedInput
+  reviews?: Prisma.ReviewUpdateManyWithoutAppointmentNestedInput
 }
 
 export type AppointmentUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  tyreId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAppointmentTypeFieldUpdateOperationsInput | $Enums.AppointmentType
+  dateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumAppointmentStatusFieldUpdateOperationsInput | $Enums.AppointmentStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vehicleInfo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviews?: Prisma.ReviewUncheckedUpdateManyWithoutAppointmentNestedInput
+}
+
+export type AppointmentUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tyreId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -663,7 +927,23 @@ export type AppointmentUncheckedUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type AppointmentUncheckedUpdateManyWithoutUserInput = {
+export type AppointmentCreateManyTyreInput = {
+  id?: string
+  userId?: string | null
+  guestName?: string | null
+  guestEmail?: string | null
+  guestPhone?: string | null
+  type?: $Enums.AppointmentType
+  dateTime: Date | string
+  status?: $Enums.AppointmentStatus
+  notes?: string | null
+  vehicleInfo?: string | null
+  reminderSentAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type AppointmentUpdateWithoutTyreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -676,13 +956,78 @@ export type AppointmentUncheckedUpdateManyWithoutUserInput = {
   reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneWithoutAppointmentsNestedInput
+  reviews?: Prisma.ReviewUpdateManyWithoutAppointmentNestedInput
 }
 
+export type AppointmentUncheckedUpdateWithoutTyreInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAppointmentTypeFieldUpdateOperationsInput | $Enums.AppointmentType
+  dateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumAppointmentStatusFieldUpdateOperationsInput | $Enums.AppointmentStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vehicleInfo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviews?: Prisma.ReviewUncheckedUpdateManyWithoutAppointmentNestedInput
+}
+
+export type AppointmentUncheckedUpdateManyWithoutTyreInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  guestPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumAppointmentTypeFieldUpdateOperationsInput | $Enums.AppointmentType
+  dateTime?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  status?: Prisma.EnumAppointmentStatusFieldUpdateOperationsInput | $Enums.AppointmentStatus
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  vehicleInfo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reminderSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type AppointmentCountOutputType
+ */
+
+export type AppointmentCountOutputType = {
+  reviews: number
+}
+
+export type AppointmentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  reviews?: boolean | AppointmentCountOutputTypeCountReviewsArgs
+}
+
+/**
+ * AppointmentCountOutputType without action
+ */
+export type AppointmentCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AppointmentCountOutputType
+   */
+  select?: Prisma.AppointmentCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * AppointmentCountOutputType without action
+ */
+export type AppointmentCountOutputTypeCountReviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReviewWhereInput
+}
 
 
 export type AppointmentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  tyreId?: boolean
   guestName?: boolean
   guestEmail?: boolean
   guestPhone?: boolean
@@ -695,11 +1040,15 @@ export type AppointmentSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
+  reviews?: boolean | Prisma.Appointment$reviewsArgs<ExtArgs>
+  _count?: boolean | Prisma.AppointmentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  tyreId?: boolean
   guestName?: boolean
   guestEmail?: boolean
   guestPhone?: boolean
@@ -712,11 +1061,13 @@ export type AppointmentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
+  tyreId?: boolean
   guestName?: boolean
   guestEmail?: boolean
   guestPhone?: boolean
@@ -729,11 +1080,13 @@ export type AppointmentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
 }, ExtArgs["result"]["appointment"]>
 
 export type AppointmentSelectScalar = {
   id?: boolean
   userId?: boolean
+  tyreId?: boolean
   guestName?: boolean
   guestEmail?: boolean
   guestPhone?: boolean
@@ -747,25 +1100,33 @@ export type AppointmentSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "guestName" | "guestEmail" | "guestPhone" | "type" | "dateTime" | "status" | "notes" | "vehicleInfo" | "reminderSentAt" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
+export type AppointmentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "tyreId" | "guestName" | "guestEmail" | "guestPhone" | "type" | "dateTime" | "status" | "notes" | "vehicleInfo" | "reminderSentAt" | "createdAt" | "updatedAt", ExtArgs["result"]["appointment"]>
 export type AppointmentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
+  reviews?: boolean | Prisma.Appointment$reviewsArgs<ExtArgs>
+  _count?: boolean | Prisma.AppointmentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AppointmentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
 }
 export type AppointmentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Appointment$userArgs<ExtArgs>
+  tyre?: boolean | Prisma.Appointment$tyreArgs<ExtArgs>
 }
 
 export type $AppointmentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Appointment"
   objects: {
     user: Prisma.$UserPayload<ExtArgs> | null
+    tyre: Prisma.$TyrePayload<ExtArgs> | null
+    reviews: Prisma.$ReviewPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string | null
+    tyreId: string | null
     guestName: string | null
     guestEmail: string | null
     guestPhone: string | null
@@ -1172,6 +1533,8 @@ readonly fields: AppointmentFieldRefs;
 export interface Prisma__AppointmentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.Appointment$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Appointment$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  tyre<T extends Prisma.Appointment$tyreArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Appointment$tyreArgs<ExtArgs>>): Prisma.Prisma__TyreClient<runtime.Types.Result.GetResult<Prisma.$TyrePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  reviews<T extends Prisma.Appointment$reviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Appointment$reviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1203,6 +1566,7 @@ export interface Prisma__AppointmentClient<T, Null = never, ExtArgs extends runt
 export interface AppointmentFieldRefs {
   readonly id: Prisma.FieldRef<"Appointment", 'String'>
   readonly userId: Prisma.FieldRef<"Appointment", 'String'>
+  readonly tyreId: Prisma.FieldRef<"Appointment", 'String'>
   readonly guestName: Prisma.FieldRef<"Appointment", 'String'>
   readonly guestEmail: Prisma.FieldRef<"Appointment", 'String'>
   readonly guestPhone: Prisma.FieldRef<"Appointment", 'String'>
@@ -1631,6 +1995,49 @@ export type Appointment$userArgs<ExtArgs extends runtime.Types.Extensions.Intern
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * Appointment.tyre
+ */
+export type Appointment$tyreArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Tyre
+   */
+  select?: Prisma.TyreSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Tyre
+   */
+  omit?: Prisma.TyreOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TyreInclude<ExtArgs> | null
+  where?: Prisma.TyreWhereInput
+}
+
+/**
+ * Appointment.reviews
+ */
+export type Appointment$reviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Review
+   */
+  select?: Prisma.ReviewSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Review
+   */
+  omit?: Prisma.ReviewOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReviewInclude<ExtArgs> | null
+  where?: Prisma.ReviewWhereInput
+  orderBy?: Prisma.ReviewOrderByWithRelationInput | Prisma.ReviewOrderByWithRelationInput[]
+  cursor?: Prisma.ReviewWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReviewScalarFieldEnum | Prisma.ReviewScalarFieldEnum[]
 }
 
 /**

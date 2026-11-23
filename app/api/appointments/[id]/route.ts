@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { sendAppointmentStatusChange, sendAppointmentRescheduled } from "@/lib/resend";
+import {
+  sendAppointmentStatusChange,
+  sendAppointmentRescheduled,
+  sendReviewRequestEmail,
+} from "@/lib/resend";
 import { parseBrusselsDateTime } from "@/lib/appointments";
 
 // Helper – verify admin
@@ -130,7 +134,10 @@ export async function PATCH(
         notes: updatedNotes,
         ...(body.vehicleInfo !== undefined ? { vehicleInfo: body.vehicleInfo ? String(body.vehicleInfo).trim() : null } : {}),
       },
-      include: { user: { select: { name: true, email: true } } },
+      include: {
+        user: { select: { name: true, email: true } },
+        tyre: { select: { id: true, brand: true, model: true, size: true } },
+      },
     });
 
     const emailPayload = {
@@ -151,6 +158,42 @@ export async function PATCH(
       sendAppointmentRescheduled(emailPayload, oldDateTime, newDateTime).catch(console.error);
     } else if (statusChanged && ["CONFIRMED", "CANCELLED", "COMPLETED"].includes(newStatus)) {
       sendAppointmentStatusChange(emailPayload, newStatus).catch(console.error);
+
+      // Along with completion email, send review request email
+      if (newStatus === "COMPLETED") {
+        const customerEmail = updated.user?.email || updated.guestEmail;
+        if (customerEmail) {
+          (async () => {
+            let matchedTyre = updated.tyre;
+            // Fallback match from notes or vehicleInfo if not linked by FK
+            if (!matchedTyre && (updated.notes || updated.vehicleInfo)) {
+              try {
+                const combined = `${updated.notes || ""} ${updated.vehicleInfo || ""}`.toLowerCase();
+                const sampleTyres = await prisma.tyre.findMany({
+                  where: { active: true },
+                  select: { id: true, brand: true, model: true, size: true },
+                  take: 60,
+                });
+                for (const t of sampleTyres) {
+                  if (combined.includes(t.brand.toLowerCase()) && combined.includes(t.model.toLowerCase())) {
+                    matchedTyre = t;
+                    break;
+                  }
+                }
+              } catch (e) {
+                console.error("[Match tyre error]:", e);
+              }
+            }
+
+            await sendReviewRequestEmail({
+              appointmentId: updated.id,
+              customerName: updated.user?.name || updated.guestName,
+              customerEmail,
+              tyre: matchedTyre,
+            });
+          })().catch((err) => console.error("[Review Request Email failed]:", err));
+        }
+      }
     }
 
     return NextResponse.json(updated);

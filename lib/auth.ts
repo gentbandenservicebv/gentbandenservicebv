@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
-import { sendPasswordResetEmail } from "@/lib/resend";
+import { sendPasswordResetEmail, sendEmailVerification } from "@/lib/resend";
 
 export const auth = betterAuth({
   appName: "Gent Bandenservice",
@@ -10,7 +10,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
     async sendResetPassword(data) {
       const appUrl =
         process.env.NEXT_PUBLIC_APP_URL ??
@@ -21,6 +21,26 @@ export const auth = betterAuth({
         email: data.user.email,
         name: data.user.name,
         resetUrl,
+        token: data.token,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    async sendVerificationEmail(data) {
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ??
+        process.env.BETTER_AUTH_URL ??
+        "http://localhost:3000";
+      const verifyUrl = data.url.startsWith("http")
+        ? data.url
+        : `${appUrl}${data.url.startsWith("/") ? "" : "/"}${data.url}`;
+
+      await sendEmailVerification({
+        email: data.user.email,
+        name: data.user.name,
+        url: verifyUrl,
         token: data.token,
       });
     },

@@ -65,6 +65,22 @@ interface Tyre {
   images: TyreImage[];
 }
 
+interface ReviewItem {
+  id: string;
+  userName: string;
+  rating: number;
+  title: string | null;
+  comment: string;
+  verifiedPurchase: boolean;
+  createdAt: string;
+}
+
+interface ReviewMeta {
+  totalCount: number;
+  averageRating: number;
+  distribution: Record<number, number>;
+}
+
 /* ── Static ─────────────────────────────────────────────────────────── */
 const brandLogos: Record<string, string> = {
   Michelin: "/brands/michelin.svg",
@@ -558,6 +574,11 @@ function TyreDetailContent() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [relatedTyres, setRelatedTyres] = useState<Tyre[]>([]);
 
+  // Reviews state
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [reviewMeta, setReviewMeta] = useState<ReviewMeta | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
   // Hover zoom lens & floating window state (like Bandenleader)
   const [zoomActive, setZoomActive] = useState(false);
   const [lensPos, setLensPos] = useState({ x: 0, y: 0 });
@@ -572,6 +593,26 @@ function TyreDetailContent() {
     unit: "werkdagen",
     inStockText: "Op voorraad",
   });
+
+  // Fetch reviews when tyre is loaded
+  useEffect(() => {
+    if (!tyre?.id) return;
+    setReviewsLoading(true);
+    fetch(`/api/reviews?tyreId=${encodeURIComponent(tyre.id)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setReviews(data.reviews || []);
+          setReviewMeta({
+            totalCount: data.totalCount || 0,
+            averageRating: data.averageRating || 0,
+            distribution: data.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setReviewsLoading(false));
+  }, [tyre?.id]);
 
   useEffect(() => {
     fetch("/api/settings?public=1")
@@ -920,6 +961,27 @@ function TyreDetailContent() {
 
             <h1 className="pd-info__title">{tyre.brand} {tyre.model}</h1>
 
+            {/* Review stars rating teaser */}
+            <div className="pd-info__rating-row">
+              {reviewMeta && reviewMeta.totalCount > 0 ? (
+                <a href="#reviews" className="pd-info__rating-link">
+                  <span className="pd-rating-stars-gold">
+                    {"★".repeat(Math.round(reviewMeta.averageRating))}
+                    {"☆".repeat(5 - Math.round(reviewMeta.averageRating))}
+                  </span>
+                  <span className="pd-rating-num">{reviewMeta.averageRating.toFixed(1)}</span>
+                  <span className="pd-rating-count">
+                    ({reviewMeta.totalCount} {reviewMeta.totalCount === 1 ? "beoordeling" : "beoordelingen"})
+                  </span>
+                </a>
+              ) : (
+                <a href="#reviews" className="pd-info__rating-link pd-info__rating-link--none">
+                  <span className="pd-rating-stars-dim">☆☆☆☆☆</span>
+                  <span className="pd-rating-none-text">Nog geen reviews — Deel uw ervaring</span>
+                </a>
+              )}
+            </div>
+
             {/* Key specs inline */}
             <div className="pd-info__meta">
               <span className="pd-meta-chip">{tyre.size}</span>
@@ -1143,6 +1205,133 @@ function TyreDetailContent() {
               );
             })}
           </div>
+        </div>
+
+        {/* Customer Reviews Section */}
+        <div className="container pd-reviews-section" id="reviews">
+          <div className="pd-reviews-header">
+            <div>
+              <h2 className="pd-reviews-title">Klantbeoordelingen &amp; Ervaringen</h2>
+              <p className="pd-reviews-subtitle">
+                Echte meningen en scores van bestuurders voor de {tyre.brand} {tyre.model}
+              </p>
+            </div>
+            <Link
+              href={`/review?tyreId=${encodeURIComponent(tyre.id)}`}
+              className="btn btn--primary pd-write-review-btn"
+            >
+              ★ Schrijf een review
+            </Link>
+          </div>
+
+          {/* Rating Summary Card */}
+          <div className="pd-reviews-summary-card">
+            {/* Left: Overall score */}
+            <div className="pd-reviews-score-col">
+              <div className="pd-reviews-big-score">
+                {reviewMeta && reviewMeta.totalCount > 0 ? reviewMeta.averageRating.toFixed(1) : "—"}
+              </div>
+              <div className="pd-reviews-stars-wrap">
+                {"★".repeat(reviewMeta && reviewMeta.totalCount > 0 ? Math.round(reviewMeta.averageRating) : 0)}
+                {"☆".repeat(reviewMeta && reviewMeta.totalCount > 0 ? 5 - Math.round(reviewMeta.averageRating) : 5)}
+              </div>
+              <div className="pd-reviews-total-text">
+                {reviewMeta && reviewMeta.totalCount > 0
+                  ? `Gebaseerd op ${reviewMeta.totalCount} ${reviewMeta.totalCount === 1 ? "beoordeling" : "beoordelingen"}`
+                  : "Nog geen beoordelingen"}
+              </div>
+            </div>
+
+            {/* Middle: Bars distribution */}
+            <div className="pd-reviews-bars-col">
+              {[5, 4, 3, 2, 1].map((stars) => {
+                const count = reviewMeta?.distribution?.[stars] || 0;
+                const total = reviewMeta?.totalCount || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={stars} className="pd-review-bar-row">
+                    <span className="pd-review-bar-label">{stars} sterren</span>
+                    <div className="pd-review-bar-track">
+                      <div className="pd-review-bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="pd-review-bar-count">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right: CTA box */}
+            <div className="pd-reviews-cta-col">
+              <div className="pd-reviews-cta-title">Heeft u ervaring met deze band?</div>
+              <p className="pd-reviews-cta-desc">
+                Help andere bestuurders bij het kiezen van de juiste banden.
+              </p>
+              <Link
+                href={`/review?tyreId=${encodeURIComponent(tyre.id)}`}
+                className="pd-reviews-cta-btn"
+              >
+                Schrijf een beoordeling →
+              </Link>
+            </div>
+          </div>
+
+          {/* Reviews list */}
+          {reviewsLoading ? (
+            <div className="pd-reviews-loading">Reviews laden...</div>
+          ) : reviews.length === 0 ? (
+            <div className="pd-reviews-empty">
+              <div className="pd-reviews-empty-icon">⭐</div>
+              <h3 className="pd-reviews-empty-title">Wees de eerste die deze band beoordeelt!</h3>
+              <p className="pd-reviews-empty-desc">
+                Heeft u de {tyre.brand} {tyre.model} gekocht of laten monteren? Deel uw ervaring over grip, comfort en slijtage.
+              </p>
+              <Link
+                href={`/review?tyreId=${encodeURIComponent(tyre.id)}`}
+                className="btn btn--primary"
+                style={{ marginTop: 18 }}
+              >
+                ★ Schrijf de eerste review
+              </Link>
+            </div>
+          ) : (
+            <div className="pd-reviews-list">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="pd-review-item">
+                  <div className="pd-review-item__head">
+                    <div className="pd-review-item__avatar">
+                      {rev.userName ? rev.userName[0].toUpperCase() : "U"}
+                    </div>
+                    <div className="pd-review-item__meta">
+                      <div className="pd-review-item__author-row">
+                        <span className="pd-review-item__name">{rev.userName}</span>
+                        {rev.verifiedPurchase && (
+                          <span className="pd-review-item__verified" title="Klant heeft deze band via Gent Bandenservice gekocht of gemonteerd">
+                            ✓ Geverifieerde aankoop
+                          </span>
+                        )}
+                      </div>
+                      <div className="pd-review-item__date">
+                        {new Date(rev.createdAt).toLocaleDateString("nl-BE", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    <div className="pd-review-item__stars">
+                      <span className="pd-review-item__stars-fill">{"★".repeat(rev.rating)}</span>
+                      <span className="pd-review-item__stars-empty">{"☆".repeat(5 - rev.rating)}</span>
+                    </div>
+                  </div>
+
+                  {rev.title && (
+                    <h4 className="pd-review-item__title">{rev.title}</h4>
+                  )}
+                  <p className="pd-review-item__comment">{rev.comment}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Related Products Section (Using exact same TyreCard as tires page) */}

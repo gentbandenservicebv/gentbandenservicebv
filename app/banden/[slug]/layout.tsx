@@ -24,6 +24,15 @@ async function fetchTyre(slugOrId: string) {
         images: {
           orderBy: [{ isPrimary: "desc" }, { order: "asc" }],
         },
+        reviews: {
+          where: { active: true },
+          select: {
+            rating: true,
+            comment: true,
+            userName: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -36,6 +45,15 @@ async function fetchTyre(slugOrId: string) {
         include: {
           images: {
             orderBy: [{ isPrimary: "desc" }, { order: "asc" }],
+          },
+          reviews: {
+            where: { active: true },
+            select: {
+              rating: true,
+              comment: true,
+              userName: true,
+              createdAt: true,
+            },
           },
         },
       });
@@ -118,7 +136,13 @@ async function TyreJsonLd({ params }: { params: Promise<{ slug: string }> }) {
   const tyre = await fetchTyre(slug);
   if (!tyre) return null;
 
-  const schema = {
+  const totalReviews = tyre.reviews?.length || 0;
+  const avgRating =
+    totalReviews > 0
+      ? Number((tyre.reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1))
+      : 0;
+
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: `${tyre.brand} ${tyre.model} ${tyre.size}`,
@@ -148,6 +172,30 @@ async function TyreJsonLd({ params }: { params: Promise<{ slug: string }> }) {
         name: "Gent Bandenservice BV",
       },
     },
+    ...(totalReviews > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: avgRating,
+        reviewCount: totalReviews,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      review: tyre.reviews.slice(0, 5).map((r) => ({
+        "@type": "Review",
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: r.rating,
+          bestRating: 5,
+          worstRating: 1,
+        },
+        author: {
+          "@type": "Person",
+          name: r.userName,
+        },
+        reviewBody: r.comment,
+        datePublished: r.createdAt.toISOString().split("T")[0],
+      })),
+    }),
   };
 
   return (
