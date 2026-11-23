@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import BandenCatalogContent from "./BandenCatalogContent";
 
@@ -8,6 +9,7 @@ const SITE_URL = "https://www.gentbandenservice.be";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 async function getInitialTyres() {
+  await connection();
   try {
     const tyres = await prisma.tyre.findMany({
       where: { active: true },

@@ -1,9 +1,12 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import CollectiesClient from "./CollectiesClient";
 
+export const instant = false;
+
 async function getInitialCollections() {
-  "use cache";
+  await connection();
   try {
     const collections = await prisma.tyreCollection.findMany({
       where: { active: true },
