@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "@/lib/auth-client";
+import { signIn, sendVerificationEmail } from "@/lib/auth-client";
 import "./auth.css";
 
 function SignInContent() {
@@ -16,11 +16,18 @@ function SignInContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isNotVerified, setIsNotVerified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendNotice, setResendNotice] = useState<string | null>(null);
+
   const resetSuccess = searchParams.get("reset") === "success";
+  const verifiedSuccess = searchParams.get("verified") === "true";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setResendNotice(null);
+    setIsNotVerified(false);
     setLoading(true);
 
     const { error: signInError } = await signIn.email({
@@ -30,11 +37,44 @@ function SignInContent() {
     });
 
     if (signInError) {
-      setError(signInError.message ?? "Aanmelden mislukt. Controleer uw gegevens.");
+      const isUnverified =
+        signInError.code === "EMAIL_NOT_VERIFIED" ||
+        signInError.message?.toLowerCase().includes("not verified") ||
+        signInError.message?.toLowerCase().includes("verifieer");
+
+      if (isUnverified) {
+        setIsNotVerified(true);
+        setError("Uw e-mailadres is nog niet geverifieerd. Bevestig eerst uw e-mailadres via de verificatielink.");
+      } else {
+        setError(signInError.message ?? "Aanmelden mislukt. Controleer uw gegevens.");
+      }
       setLoading(false);
     } else {
       router.push(callbackUrl);
       router.refresh();
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!email || resendLoading) return;
+    setResendLoading(true);
+    setResendNotice(null);
+
+    try {
+      const res = await sendVerificationEmail({
+        email,
+        callbackURL: `/auth/signin?verified=true&callbackUrl=${encodeURIComponent(callbackUrl)}`,
+      });
+
+      if (res?.error) {
+        setResendNotice(res.error.message || "Kon geen e-mail versturen. Probeer later opnieuw.");
+      } else {
+        setResendNotice(`Nieuwe verificatielink verstuurd naar ${email}! Controleer uw inbox.`);
+      }
+    } catch {
+      setResendNotice("Er is een fout opgetreden bij het verzenden.");
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -47,10 +87,24 @@ function SignInContent() {
           <p className="auth-subtitle">Welkom terug bij Gent Bandenservice</p>
         </div>
 
+        {verifiedSuccess && (
+          <div className="auth-success" style={{ marginBottom: 20 }} role="status">
+            <span>✅</span>
+            <span>Uw e-mailadres is succesvol geverifieerd! U kunt nu inloggen met uw account.</span>
+          </div>
+        )}
+
         {resetSuccess && (
           <div className="auth-success" style={{ marginBottom: 20 }} role="status">
             <span>✅</span>
             <span>Uw wachtwoord is succesvol gewijzigd. U kunt nu inloggen met uw nieuwe wachtwoord.</span>
+          </div>
+        )}
+
+        {resendNotice && (
+          <div className="auth-success" style={{ marginBottom: 20 }} role="status">
+            <span>📧</span>
+            <span>{resendNotice}</span>
           </div>
         )}
 
@@ -112,7 +166,28 @@ function SignInContent() {
 
           {error && (
             <div className="auth-error" role="alert">
-              {error}
+              <div>{error}</div>
+              {isNotVerified && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    marginTop: "8px",
+                    color: "#38bdf8",
+                    textDecoration: "underline",
+                    cursor: resendLoading ? "not-allowed" : "pointer",
+                    fontSize: "0.85rem",
+                    display: "block",
+                    fontWeight: 600,
+                  }}
+                >
+                  {resendLoading ? "Bezig met verzenden..." : "📩 Nieuwe verificatielink naar mijn e-mail sturen"}
+                </button>
+              )}
             </div>
           )}
 

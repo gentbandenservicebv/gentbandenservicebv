@@ -11,6 +11,7 @@ import { compressImages } from "@/lib/image-compression";
 import AdminAnalyticsView from "./AdminAnalyticsView";
 import AdminSettingsView from "./AdminSettingsView";
 import AdminCollectionsView from "./AdminCollectionsView";
+import AdminReviewsView from "./AdminReviewsView";
 import "./admin.css";
 
 interface TyreImage {
@@ -348,7 +349,7 @@ export default function AdminPage() {
   const [imageActionLoading, setImageActionLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "collections" | "orders" | "appointments" | "secondhand" | "invoices" | "analytics" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "tyres" | "collections" | "orders" | "appointments" | "secondhand" | "invoices" | "reviews" | "analytics" | "settings">("dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   // Invoices state
   const [invoices, setInvoices] = useState<InvoiceEntry[]>([]);
@@ -1677,6 +1678,7 @@ export default function AdminPage() {
               {activeTab === "appointments" && "Afspraken"}
               {activeTab === "secondhand" && "2de hands"}
               {activeTab === "invoices" && "Facturen"}
+              {activeTab === "reviews" && "Klantbeoordelingen"}
               {activeTab === "analytics" && "Statistieken"}
               {activeTab === "settings" && "Instellingen"}
             </span>
@@ -1800,6 +1802,13 @@ export default function AdminPage() {
                 {invoices.filter((i) => i.status === "PENDING").length}
               </span>
             )}
+          </button>
+          <button
+            className={`admin-nav__item${activeTab === "reviews" ? " admin-nav__item--active" : ""}`}
+            onClick={() => { setActiveTab("reviews"); setIsMobileNavOpen(false); }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Reviews
           </button>
           <button
             className={`admin-nav__item${activeTab === "analytics" ? " admin-nav__item--active" : ""}`}
@@ -7661,6 +7670,9 @@ export default function AdminPage() {
 
         {/* ── TYRE COLLECTIONS / BREEDSETS TAB ────────────── */}
         {activeTab === "collections" && <AdminCollectionsView />}
+
+        {/* ── REVIEWS TAB ──────────────────────────────────── */}
+        {activeTab === "reviews" && <AdminReviewsView />}
 
         {/* ── ANALYTICS & COOKIE TRACKING TAB ────────────── */}
         {activeTab === "analytics" && <AdminAnalyticsView />}

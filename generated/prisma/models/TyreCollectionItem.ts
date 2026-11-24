@@ -289,7 +289,7 @@ export type TyreCollectionItemCreateInput = {
   quantity?: number
   sortOrder?: number
   collection: Prisma.TyreCollectionCreateNestedOneWithoutItemsInput
-  tyre: Prisma.TyreCreateNestedOneWithoutCollectionItemsInput
+  tyre: Prisma.TyreCreateNestedOneWithoutTyreCollectionItemsInput
 }
 
 export type TyreCollectionItemUncheckedCreateInput = {
@@ -307,7 +307,7 @@ export type TyreCollectionItemUpdateInput = {
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   collection?: Prisma.TyreCollectionUpdateOneRequiredWithoutItemsNestedInput
-  tyre?: Prisma.TyreUpdateOneRequiredWithoutCollectionItemsNestedInput
+  tyre?: Prisma.TyreUpdateOneRequiredWithoutTyreCollectionItemsNestedInput
 }
 
 export type TyreCollectionItemUncheckedUpdateInput = {
@@ -538,7 +538,7 @@ export type TyreCollectionItemCreateWithoutCollectionInput = {
   axle?: $Enums.Axle
   quantity?: number
   sortOrder?: number
-  tyre: Prisma.TyreCreateNestedOneWithoutCollectionItemsInput
+  tyre: Prisma.TyreCreateNestedOneWithoutTyreCollectionItemsInput
 }
 
 export type TyreCollectionItemUncheckedCreateWithoutCollectionInput = {
@@ -620,7 +620,7 @@ export type TyreCollectionItemUpdateWithoutCollectionInput = {
   axle?: Prisma.EnumAxleFieldUpdateOperationsInput | $Enums.Axle
   quantity?: Prisma.IntFieldUpdateOperationsInput | number
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
-  tyre?: Prisma.TyreUpdateOneRequiredWithoutCollectionItemsNestedInput
+  tyre?: Prisma.TyreUpdateOneRequiredWithoutTyreCollectionItemsNestedInput
 }
 
 export type TyreCollectionItemUncheckedUpdateWithoutCollectionInput = {

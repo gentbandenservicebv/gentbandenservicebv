@@ -68,7 +68,8 @@ export const ModelName = {
   SiteSetting: 'SiteSetting',
   TyreCollection: 'TyreCollection',
   TyreCollectionItem: 'TyreCollectionItem',
-  Invoice: 'Invoice'
+  Invoice: 'Invoice',
+  Review: 'Review'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -265,6 +266,7 @@ export type ReturnRequestScalarFieldEnum = (typeof ReturnRequestScalarFieldEnum)
 export const AppointmentScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
+  tyreId: 'tyreId',
   guestName: 'guestName',
   guestEmail: 'guestEmail',
   guestPhone: 'guestPhone',
@@ -425,6 +427,25 @@ export const InvoiceScalarFieldEnum = {
 } as const
 
 export type InvoiceScalarFieldEnum = (typeof InvoiceScalarFieldEnum)[keyof typeof InvoiceScalarFieldEnum]
+
+
+export const ReviewScalarFieldEnum = {
+  id: 'id',
+  tyreId: 'tyreId',
+  userId: 'userId',
+  appointmentId: 'appointmentId',
+  userName: 'userName',
+  userEmail: 'userEmail',
+  rating: 'rating',
+  title: 'title',
+  comment: 'comment',
+  verifiedPurchase: 'verifiedPurchase',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
 
 
 export const SortOrder = {

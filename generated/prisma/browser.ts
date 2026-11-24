@@ -107,3 +107,8 @@ export type TyreCollectionItem = Prisma.TyreCollectionItemModel
  * 
  */
 export type Invoice = Prisma.InvoiceModel
+/**
+ * Model Review
+ * 
+ */
+export type Review = Prisma.ReviewModel
