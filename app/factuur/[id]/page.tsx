@@ -4,6 +4,7 @@ import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
 import "@/app/bestelling/factuur/[id]/invoice.css";
 import { generateEpcQrDataUrl, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
+import { parseWarrantyFromNotes } from "@/lib/warranty";
 
 interface InvoiceItem {
   description: string;
@@ -33,6 +34,7 @@ interface InvoiceData {
   vatAmount: number;
   totalAmount: number;
   notes?: string | null;
+  warranty?: string | null;
   sentAt?: string | null;
   paidAt?: string | null;
 }
@@ -112,6 +114,9 @@ function InvoiceDetailContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const isPaid = invoice.status === "PAID";
+  const { warranty: parsedWarranty, notes: cleanNotes } = parseWarrantyFromNotes(invoice.notes);
+  const effectiveWarranty = (invoice.warranty || parsedWarranty || "").trim();
+  const displayNotes = cleanNotes || (effectiveWarranty ? "" : invoice.notes);
   const issueDateFormatted = new Date(invoice.issueDate).toLocaleDateString("nl-BE", {
     day: "numeric",
     month: "long",
@@ -302,14 +307,45 @@ function InvoiceDetailContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
 
+          {/* Garantiebewijs if set */}
+          {effectiveWarranty && (
+            <div
+              style={{
+                marginTop: 22,
+                padding: "16px 20px",
+                background: "#f0fdf4",
+                borderRadius: 12,
+                border: "1.5px solid #86efac",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: "1.3rem" }}>🛡️</span>
+                <div>
+                  <strong style={{ fontSize: "0.95rem", color: "#15803d", display: "block" }}>
+                    Officieel Garantiebewijs — Gent Bandenservice BV
+                  </strong>
+                  <span style={{ fontSize: "0.78rem", color: "#166534" }}>
+                    Geldig in onze werkplaats te Dendermondsesteenweg 428, 9040 Gent
+                  </span>
+                </div>
+              </div>
+              <div style={{ margin: "8px 0 0", fontSize: "0.9rem", color: "#14532d", fontWeight: 700, padding: "8px 12px", background: "#ffffff", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                {effectiveWarranty}
+              </div>
+              <p style={{ margin: "8px 0 0", fontSize: "0.78rem", color: "#166534", lineHeight: 1.45 }}>
+                Deze factuur geldt als uw aankoop- en garantiebewijs. De garantie dekt materiaal- en montagefouten bij normaal gebruik conform de geldende garantievoorwaarden.
+              </p>
+            </div>
+          )}
+
           {/* Notes if any */}
-          {invoice.notes && (
+          {displayNotes && (
             <div style={{ marginTop: 20, padding: "12px 16px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
               <strong style={{ fontSize: "0.825rem", color: "#1e293b", display: "block", marginBottom: 3 }}>
                 Opmerkingen:
               </strong>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "#475569", lineHeight: 1.5 }}>
-                {invoice.notes}
+                {displayNotes}
               </p>
             </div>
           )}

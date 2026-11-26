@@ -49,7 +49,9 @@ export default function HomePage() {
         <FeaturedCollectionsSection />
       </Suspense>
       <BrandsSection />
-      <TestimonialsSection />
+      <Suspense fallback={null}>
+        <TestimonialsSection />
+      </Suspense>
     </>
   );
 }

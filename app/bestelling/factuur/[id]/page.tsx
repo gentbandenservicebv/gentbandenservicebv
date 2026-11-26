@@ -327,6 +327,33 @@ function InvoiceContent({ params }: { params: Promise<{ id: string }> }) {
             ) : null;
           })()}
 
+          {/* Garantiebewijs & Kwaliteitsgarantie */}
+          <div
+            style={{
+              padding: "14px 18px",
+              background: "#f0fdf4",
+              borderRadius: 8,
+              border: "1px solid #86efac",
+              marginBottom: 14,
+              textAlign: "left",
+            }}
+          >
+            <strong style={{ fontSize: "0.85rem", color: "#15803d", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <span>🛡️</span>
+              <span>Garantiebepaling &amp; Kwaliteitsdekking:</span>
+            </strong>
+            <p style={{ margin: 0, fontSize: "0.775rem", color: "#166534", lineHeight: 1.5 }}>
+              <strong>Nieuwe banden:</strong> 2 jaar wettelijke fabrieksgarantie conform de Belgische consumentenwetgeving (Boek VI WER) op fabricage- en materiaalfouten.{" "}
+              <strong>Tweedehands banden:</strong> Zorgvuldig gecontroleerde kwaliteit met garantie op karkasintegriteit en profieldiepte.{" "}
+              {hasMontage && (
+                <>
+                  <strong>Montage &amp; Balancering:</strong> 100% werkplaatsgarantie op vakkundige montage uitgevoerd door Gent Bandenservice BV.{" "}
+                </>
+              )}
+              Bewaar deze factuur als uw officieel garantie- en aankoopbewijs.
+            </p>
+          </div>
+
           {/* Footer legal */}
           <div className="invoice-footer">
             <div style={{ padding: "12px 16px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", marginBottom: 14, textAlign: "left" }}>

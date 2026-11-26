@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { parseWarrantyFromNotes, combineNotesAndWarranty } from "@/lib/warranty";
 
 async function checkAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -31,7 +32,14 @@ export async function GET(
       return NextResponse.json({ error: "Factuur niet gevonden" }, { status: 404 });
     }
 
-    return NextResponse.json(invoice);
+    const { warranty, notes: cleanNotes } = parseWarrantyFromNotes(invoice.notes);
+
+    return NextResponse.json({
+      ...invoice,
+      warranty,
+      notes: cleanNotes,
+      rawNotes: invoice.notes,
+    });
   } catch (error: any) {
     console.error("GET /api/invoices/[id] error:", error);
     return NextResponse.json({ error: "Fout bij ophalen factuur" }, { status: 500 });
@@ -67,7 +75,17 @@ export async function PATCH(
     if (body.issueDate !== undefined) dataToUpdate.issueDate = new Date(body.issueDate);
     if (body.dueDate !== undefined) dataToUpdate.dueDate = new Date(body.dueDate);
     if (body.paymentMethod !== undefined) dataToUpdate.paymentMethod = body.paymentMethod;
-    if (body.notes !== undefined) dataToUpdate.notes = body.notes;
+
+    if (body.notes !== undefined || body.warranty !== undefined) {
+      const existing = await prisma.invoice.findFirst({
+        where: { OR: [{ id }, { invoiceNumber: id }] },
+        select: { notes: true },
+      });
+      const parsed = parseWarrantyFromNotes(existing?.notes);
+      const notesToUse = body.notes !== undefined ? body.notes : parsed.notes;
+      const warrantyToUse = body.warranty !== undefined ? body.warranty : parsed.warranty;
+      dataToUpdate.notes = combineNotesAndWarranty(notesToUse, warrantyToUse) || null;
+    }
 
     if (body.status !== undefined) {
       dataToUpdate.status = body.status;

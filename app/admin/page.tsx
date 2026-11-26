@@ -13,6 +13,7 @@ import AdminSettingsView from "./AdminSettingsView";
 import AdminCollectionsView from "./AdminCollectionsView";
 import AdminReviewsView from "./AdminReviewsView";
 import "./admin.css";
+import { WARRANTY_PRESETS, parseWarrantyFromNotes } from "@/lib/warranty";
 
 interface TyreImage {
   id: string;
@@ -85,6 +86,7 @@ interface InvoiceEntry {
   vatAmount: number;
   totalAmount: number;
   notes: string | null;
+  warranty?: string | null;
   sentAt: string | null;
   paidAt: string | null;
   createdAt: string;
@@ -376,6 +378,7 @@ export default function AdminPage() {
     status: "PENDING" | "PAID";
     items: Array<{ description: string; quantity: number; price: number; vatRate: number }>;
     notes: string;
+    warranty: string;
     sendDirectly: boolean;
   }>({
     customerName: "",
@@ -394,6 +397,7 @@ export default function AdminPage() {
     status: "PENDING",
     items: [{ description: "Montage & balanceren banden", quantity: 4, price: 19.99, vatRate: 21 }],
     notes: "Gelieve het openstaande bedrag over te maken binnen 14 dagen met vermelding van het factuurnummer.",
+    warranty: "",
     sendDirectly: true,
   });
 
@@ -414,6 +418,7 @@ export default function AdminPage() {
     status: "PENDING" | "PAID" | "CANCELLED";
     items: Array<{ description: string; quantity: number; price: number; vatRate: number }>;
     notes: string;
+    warranty: string;
   }>({
     customerName: "",
     customerEmail: "",
@@ -430,6 +435,7 @@ export default function AdminPage() {
     status: "PENDING",
     items: [],
     notes: "",
+    warranty: "",
   });
 
   const [secondhandSubmissions, setSecondhandSubmissions] = useState<SecondhandEntry[]>([]);
@@ -797,6 +803,7 @@ export default function AdminPage() {
           status: "PENDING",
           items: [{ description: "Montage & balanceren banden", quantity: 4, price: 19.99, vatRate: 21 }],
           notes: "Gelieve het openstaande bedrag over te maken binnen 14 dagen met vermelding van het factuurnummer.",
+          warranty: "",
           sendDirectly: true,
         });
       } else {
@@ -817,6 +824,8 @@ export default function AdminPage() {
       parsedItems = [{ description: "Diensten / Banden", quantity: 1, price: inv.totalAmount, vatRate: 21 }];
     }
 
+    const { warranty: parsedWarranty, notes: cleanNotes } = parseWarrantyFromNotes(inv.notes);
+
     setEditingInvoice(inv);
     setEditInvoiceForm({
       customerName: inv.customerName || "",
@@ -833,7 +842,8 @@ export default function AdminPage() {
       paymentMethod: inv.paymentMethod || "Overschrijving",
       status: inv.status as any,
       items: parsedItems.length > 0 ? parsedItems : [{ description: "Dienst / Band", quantity: 1, price: 0, vatRate: 21 }],
-      notes: inv.notes || "",
+      notes: cleanNotes || inv.notes || "",
+      warranty: inv.warranty || parsedWarranty || "",
     });
   }
 
@@ -6648,7 +6658,7 @@ export default function AdminPage() {
                             >
                               {/* Invoice Number */}
                               <td style={{ padding: "14px 18px" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   <a
                                     href={`/factuur/${inv.id}`}
                                     target="_blank"
@@ -6658,6 +6668,25 @@ export default function AdminPage() {
                                   >
                                     #{inv.invoiceNumber}
                                   </a>
+                                  {(inv.warranty || (inv.notes && inv.notes.includes("[GARANTIE:"))) && (
+                                    <span
+                                      title={inv.warranty || "Garantiebewijs actief op factuur"}
+                                      style={{
+                                        fontSize: "0.68rem",
+                                        fontWeight: 700,
+                                        color: "#34d399",
+                                        background: "rgba(16, 185, 129, 0.12)",
+                                        border: "1px solid rgba(16, 185, 129, 0.3)",
+                                        borderRadius: 6,
+                                        padding: "2px 6px",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: 3,
+                                      }}
+                                    >
+                                      🛡️ Garantie
+                                    </span>
+                                  )}
                                 </div>
                               </td>
 
@@ -7206,6 +7235,28 @@ export default function AdminPage() {
                             >
                               + Reparatie toevoegen
                             </button>
+
+                            <button
+                              type="button"
+                              className="admin-quick-time-pill"
+                              onClick={() => {
+                                setNewInvoiceForm({
+                                  ...newInvoiceForm,
+                                  items: [
+                                    ...newInvoiceForm.items,
+                                    {
+                                      description: "Garantiecertificaat banden & montage",
+                                      quantity: 1,
+                                      price: 0.0,
+                                      vatRate: 21,
+                                    },
+                                  ],
+                                });
+                              }}
+                              style={{ padding: "6px 12px", borderColor: "rgba(16, 185, 129, 0.4)", color: "#34d399" }}
+                            >
+                              🛡️ + Garantiecertificaat regel toevoegen
+                            </button>
                           </div>
 
                           {/* Subtotal & Total Preview */}
@@ -7219,17 +7270,66 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* 4. Notities & Verzendoptie */}
+                        {/* 4. Garantie, Notities & Verzendoptie */}
                         <div className="admin-appt-section">
                           <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                              <polyline points="14 2 14 8 20 8" />
-                              <line x1="16" y1="13" x2="8" y2="13" />
-                              <line x1="16" y1="17" x2="8" y2="17" />
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                             </svg>
-                            <span>4. Notities &amp; Verzending</span>
+                            <span>4. Garantie, Notities &amp; Verzending</span>
                           </div>
+
+                          {/* Garantie Optie Dropdown & Input */}
+                          <div className="admin-field" style={{ marginBottom: 14 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                              <label className="admin-label" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                                <span>🛡️ Garantiebewijs op factuur (Optioneel)</span>
+                              </label>
+                              <span style={{ fontSize: "0.72rem", color: newInvoiceForm.warranty ? "#34d399" : "rgba(255,255,255,0.4)", fontWeight: 600 }}>
+                                {newInvoiceForm.warranty ? "✓ Actief op factuur & PDF" : "Geen garantie"}
+                              </span>
+                            </div>
+
+                            <select
+                              className="admin-select"
+                              value={
+                                WARRANTY_PRESETS.some((p) => p.text === newInvoiceForm.warranty && p.text !== "")
+                                  ? newInvoiceForm.warranty
+                                  : newInvoiceForm.warranty
+                                  ? "CUSTOM"
+                                  : ""
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "CUSTOM") {
+                                  if (!newInvoiceForm.warranty) {
+                                    setNewInvoiceForm({ ...newInvoiceForm, warranty: "6 maanden garantie op karkas en profiel" });
+                                  }
+                                } else {
+                                  setNewInvoiceForm({ ...newInvoiceForm, warranty: val });
+                                }
+                              }}
+                              style={{ marginBottom: newInvoiceForm.warranty ? 8 : 0 }}
+                            >
+                              {WARRANTY_PRESETS.map((p) => (
+                                <option key={p.id} value={p.text || (p.id === "custom" ? "CUSTOM" : "")}>
+                                  {p.label}
+                                </option>
+                              ))}
+                            </select>
+
+                            {newInvoiceForm.warranty !== "" && (
+                              <input
+                                type="text"
+                                className="admin-input"
+                                placeholder="Garantietekst (bijv. 6 maanden omruilgarantie op karkas en profiel)..."
+                                value={newInvoiceForm.warranty}
+                                onChange={(e) => setNewInvoiceForm({ ...newInvoiceForm, warranty: e.target.value })}
+                                style={{ fontSize: "0.82rem", borderColor: "rgba(16, 185, 129, 0.4)", color: "#ecfdf5" }}
+                              />
+                            )}
+                          </div>
+
                           <div className="admin-field">
                             <label className="admin-label">Factuurnotities (verschijnen op factuur)</label>
                             <textarea
@@ -7589,7 +7689,7 @@ export default function AdminPage() {
                             </div>
 
                             {/* Add row button */}
-                            <div style={{ marginTop: 8 }}>
+                            <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                               <button
                                 type="button"
                                 className="admin-quick-time-pill"
@@ -7602,6 +7702,28 @@ export default function AdminPage() {
                                 style={{ padding: "6px 14px", fontSize: "0.8rem" }}
                               >
                                 + Regel toevoegen
+                              </button>
+
+                              <button
+                                type="button"
+                                className="admin-quick-time-pill"
+                                onClick={() => {
+                                  setEditInvoiceForm({
+                                    ...editInvoiceForm,
+                                    items: [
+                                      ...editInvoiceForm.items,
+                                      {
+                                        description: "Garantiecertificaat banden & montage",
+                                        quantity: 1,
+                                        price: 0.0,
+                                        vatRate: 21,
+                                      },
+                                    ],
+                                  });
+                                }}
+                                style={{ padding: "6px 12px", fontSize: "0.8rem", borderColor: "rgba(16, 185, 129, 0.4)", color: "#34d399" }}
+                              >
+                                🛡️ + Garantiecertificaat toevoegen
                               </button>
                             </div>
 
@@ -7616,18 +7738,68 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          {/* 4. Notities */}
+                          {/* 4. Garantie & Factuurnotities */}
                           <div className="admin-appt-section">
                             <div className="admin-appt-section-header" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                               </svg>
-                              <span>4. Factuurnotities</span>
+                              <span>4. Garantie &amp; Factuurnotities</span>
                             </div>
+
+                            {/* Garantie Optie Dropdown & Input */}
+                            <div className="admin-field" style={{ marginBottom: 14 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                <label className="admin-label" style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                                  <span>🛡️ Garantiebewijs op factuur (Optioneel)</span>
+                                </label>
+                                <span style={{ fontSize: "0.72rem", color: editInvoiceForm.warranty ? "#34d399" : "rgba(255,255,255,0.4)", fontWeight: 600 }}>
+                                  {editInvoiceForm.warranty ? "✓ Actief op factuur & PDF" : "Geen garantie"}
+                                </span>
+                              </div>
+
+                              <select
+                                className="admin-select"
+                                value={
+                                  WARRANTY_PRESETS.some((p) => p.text === editInvoiceForm.warranty && p.text !== "")
+                                    ? editInvoiceForm.warranty
+                                    : editInvoiceForm.warranty
+                                    ? "CUSTOM"
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "CUSTOM") {
+                                    if (!editInvoiceForm.warranty) {
+                                      setEditInvoiceForm({ ...editInvoiceForm, warranty: "6 maanden garantie op karkas en profiel" });
+                                    }
+                                  } else {
+                                    setEditInvoiceForm({ ...editInvoiceForm, warranty: val });
+                                  }
+                                }}
+                                style={{ marginBottom: editInvoiceForm.warranty ? 8 : 0 }}
+                              >
+                                {WARRANTY_PRESETS.map((p) => (
+                                  <option key={p.id} value={p.text || (p.id === "custom" ? "CUSTOM" : "")}>
+                                    {p.label}
+                                  </option>
+                                ))}
+                              </select>
+
+                              {editInvoiceForm.warranty !== "" && (
+                                <input
+                                  type="text"
+                                  className="admin-input"
+                                  placeholder="Garantietekst (bijv. 6 maanden omruilgarantie op karkas en profiel)..."
+                                  value={editInvoiceForm.warranty}
+                                  onChange={(e) => setEditInvoiceForm({ ...editInvoiceForm, warranty: e.target.value })}
+                                  style={{ fontSize: "0.82rem", borderColor: "rgba(16, 185, 129, 0.4)", color: "#ecfdf5" }}
+                                />
+                              )}
+                            </div>
+
                             <div className="admin-field">
+                              <label className="admin-label">Factuurnotities (verschijnen op factuur)</label>
                               <textarea
                                 className="admin-textarea"
                                 rows={2}

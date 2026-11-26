@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { sendInvoiceEmail } from "@/lib/resend";
+import { parseWarrantyFromNotes, combineNotesAndWarranty } from "@/lib/warranty";
 
 async function checkAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -59,7 +60,17 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(invoices);
+    const mappedInvoices = invoices.map((inv) => {
+      const { warranty, notes: cleanNotes } = parseWarrantyFromNotes(inv.notes);
+      return {
+        ...inv,
+        warranty,
+        notes: cleanNotes,
+        rawNotes: inv.notes,
+      };
+    });
+
+    return NextResponse.json(mappedInvoices);
   } catch (error: any) {
     console.error("GET /api/invoices error:", error);
     return NextResponse.json({ error: "Fout bij ophalen facturen" }, { status: 500 });
@@ -91,6 +102,7 @@ export async function POST(req: NextRequest) {
       paymentMethod = "Overschrijving",
       items,
       notes,
+      warranty,
       sendDirectly = false,
     } = body;
 
@@ -151,7 +163,7 @@ export async function POST(req: NextRequest) {
         subtotal: Math.round(subtotal * 100) / 100,
         vatAmount: Math.round(totalVat * 100) / 100,
         totalAmount: Math.round(totalAmount * 100) / 100,
-        notes: notes?.trim() || null,
+        notes: combineNotesAndWarranty(notes, warranty) || null,
       },
     });
 

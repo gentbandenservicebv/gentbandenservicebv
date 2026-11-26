@@ -19,7 +19,7 @@ export default function Hero() {
       <div className="container hero__container">
         <div className="hero__content">
           {/* Label */}
-          <div className="hero__badge animate-fade-up">
+          <div className="hero__badge">
             <span className="badge badge--primary" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px" }}>
               <Image
                 src="/logo-icon.png"
@@ -33,19 +33,19 @@ export default function Hero() {
           </div>
 
           {/* Headline */}
-          <h1 className="display-1 text-white hero__headline animate-fade-up delay-1">
+          <h1 className="display-1 text-white hero__headline">
             Banden van topkwaliteit —{" "}
             <span className="hero__headline-accent">nieuw & tweedehands</span>
           </h1>
 
           {/* Subline */}
-          <p className="hero__sub animate-fade-up delay-2">
+          <p className="hero__sub">
             Professionele montage, TPMS service, bandenherstelling en inspectie.
             Vlakbij in Gent, zonder wachttijden.
           </p>
 
           {/* CTA Buttons */}
-          <div className="hero__actions animate-fade-up delay-3">
+          <div className="hero__actions">
             <Link href="/banden" className="btn btn--primary btn--lg">
               Banden bekijken
               <ArrowRightIcon />
@@ -55,7 +55,7 @@ export default function Hero() {
             </Link>
           </div>
 
-          <div className="hero__quick-appt animate-fade-up delay-3">
+          <div className="hero__quick-appt">
             <Link href="/afspraak" className="hero__quick-appt-link">
               <span className="hero__quick-appt-badge">
                 <CalendarIcon />
@@ -69,7 +69,7 @@ export default function Hero() {
           </div>
 
           {/* Quick trust */}
-          <div className="hero__trust animate-fade-up delay-4">
+          <div className="hero__trust">
             <div className="hero__trust-item">
               <CheckIcon />
               <span>Gratis bandeninspectie</span>
@@ -86,7 +86,7 @@ export default function Hero() {
         </div>
 
         {/* Tire Size Finder Card */}
-        <div className="hero__finder animate-fade-up delay-2">
+        <div className="hero__finder">
           <TireFinder />
         </div>
       </div>
