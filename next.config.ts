@@ -38,6 +38,16 @@ const nextConfig: NextConfig = {
         destination: "/auth/signup",
         permanent: true,
       },
+      {
+        source: "/nl/:path*",
+        destination: "/:path*",
+        permanent: true,
+      },
+      {
+        source: "/nl",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
 };

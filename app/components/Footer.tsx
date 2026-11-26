@@ -15,6 +15,7 @@ const services = [
 
 const quickLinks = [
   { href: "/banden", label: "Banden" },
+  { href: "/tweedehands-banden", label: "Tweedehands banden" },
   { href: "/diensten", label: "Diensten" },
   { href: "/mobiele-service", label: "Mobiele Service" },
   { href: "/verkoop-banden", label: "Tweedehands banden verkopen" },
