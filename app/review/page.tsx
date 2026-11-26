@@ -173,16 +173,7 @@ function ReviewContent() {
               Uw ervaring is succesvol opgeslagen. U helpt hiermee andere bestuurders bij het kiezen van de juiste banden.
             </p>
 
-            <div
-              style={{
-                display: "inline-block",
-                background: "rgba(251, 191, 36, 0.12)",
-                border: "1px solid rgba(251, 191, 36, 0.3)",
-                borderRadius: "14px",
-                padding: "16px 24px",
-                marginBottom: "32px",
-              }}
-            >
+            <div className="review-success-score-box">
               <div style={{ fontSize: "24px", marginBottom: "6px" }}>
                 {"⭐".repeat(rating)}
               </div>
@@ -191,7 +182,7 @@ function ReviewContent() {
               </p>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: "340px", margin: "0 auto" }}>
+            <div className="review-success-actions">
               {tyre?.slug && (
                 <Link
                   href={`/banden/${tyre.slug}`}
@@ -204,17 +195,7 @@ function ReviewContent() {
 
               <Link
                 href="/banden"
-                style={{
-                  display: "inline-block",
-                  padding: "13px 20px",
-                  background: "rgba(255, 255, 255, 0.06)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  borderRadius: "12px",
-                  color: "#fff",
-                  fontSize: "0.95rem",
-                  textDecoration: "none",
-                  textAlign: "center",
-                }}
+                className="review-back-catalog-btn"
               >
                 Naar bandenaanbod
               </Link>
@@ -358,8 +339,8 @@ function ReviewContent() {
               />
             </div>
 
-            {/* Name & Email in grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+            {/* Name & Email in responsive grid */}
+            <div className="review-grid-2">
               <div className="review-field">
                 <label htmlFor="review-name" className="review-label">
                   Uw naam *

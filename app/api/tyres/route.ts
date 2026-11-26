@@ -8,7 +8,7 @@ import { generateTyreSlug, slugify } from "@/lib/slug";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const season     = searchParams.get("season");
-  const condition  = searchParams.get("condition");
+  const rawCondition  = searchParams.get("condition") || searchParams.get("type") || searchParams.get("state");
   const brand      = searchParams.get("brand");
   const search     = searchParams.get("search");
   const speedIndex     = searchParams.get("speedIndex");
@@ -53,11 +53,18 @@ export async function GET(req: NextRequest) {
     else if (s === "ALL_SEASON" || s === "ALL-SEASON" || s === "ALLSEASON") seasonEnum = "ALL_SEASON";
   }
 
+  let conditionEnum: "NEW" | "USED" | undefined;
+  if (rawCondition) {
+    const c = rawCondition.toUpperCase().trim();
+    if (c === "NEW" || c === "NIEUW") conditionEnum = "NEW";
+    else if (c === "USED" || c === "TWEEDEHANDS" || c === "2DEHANDS" || c === "GEBRUIKT") conditionEnum = "USED";
+  }
+
   const tyres = await prisma.tyre.findMany({
     where: {
       active: true,
       ...(seasonEnum && { season: seasonEnum }),
-      ...(condition  && { condition: condition as "NEW" | "USED" }),
+      ...(conditionEnum && { condition: conditionEnum }),
       ...(brand      && { brand: { equals: brand, mode: "insensitive" } }),
       ...(widthNum       && !isNaN(widthNum)       && { width: widthNum }),
       ...(aspectRatioNum && !isNaN(aspectRatioNum) && { aspectRatio: aspectRatioNum }),

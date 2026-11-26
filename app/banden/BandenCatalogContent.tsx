@@ -1416,7 +1416,7 @@ export default function BandenCatalogContent({ initialTyres = [] }: { initialTyr
     const profileParam = searchParams.get("profile") || searchParams.get("aspectRatio");
     const rimParam = searchParams.get("rim") || searchParams.get("diameter");
     const seasonParam = searchParams.get("season");
-    const conditionParam = searchParams.get("condition");
+    const conditionParam = searchParams.get("condition") || searchParams.get("type") || searchParams.get("state");
     const brandParam = searchParams.get("brand");
     const searchParam = searchParams.get("search") || searchParams.get("q");
     const speedIndexParam = searchParams.get("speedIndex");
@@ -1444,7 +1444,7 @@ export default function BandenCatalogContent({ initialTyres = [] }: { initialTyr
     if (conditionParam) {
       const c = conditionParam.toUpperCase().trim();
       if (c === "NEW" || c === "NIEUW") conditionVal = "NEW";
-      else if (c === "USED" || c === "TWEEDEHANDS" || c === "2DEHANDS") conditionVal = "USED";
+      else if (c === "USED" || c === "TWEEDEHANDS" || c === "2DEHANDS" || c === "GEBRUIKT") conditionVal = "USED";
     }
 
     const getBool = (key: string) => searchParams.get(key) === "true";
@@ -1775,6 +1775,21 @@ export default function BandenCatalogContent({ initialTyres = [] }: { initialTyr
       {/* Catalog */}
       <section className="section bg-surface bc-catalog">
         <div className="container">
+          {/* Quick SEO link to second-hand landing pages */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "10px 16px", marginBottom: "20px", fontSize: "0.88rem" }}>
+            <span style={{ color: "#475569" }}>
+              🔍 Op zoek naar gekeurde <strong>tweedehands banden</strong> in Gent?
+            </span>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+              <Link href="/tweedehands-banden/205-55-r16" style={{ color: "#016eb9", fontWeight: 700, textDecoration: "none", background: "rgba(1,110,185,0.08)", padding: "4px 10px", borderRadius: "6px" }}>
+                205/55 R16 Occasies →
+              </Link>
+              <Link href="/tweedehands-banden" style={{ color: "#475569", fontWeight: 600, textDecoration: "none", padding: "4px 8px" }}>
+                Alle tweedehands banden
+              </Link>
+            </div>
+          </div>
+
           {/* Search bar */}
           <div className="bc-search-wrap" style={{ marginBottom: 20 }}>
             <span className="bc-search-icon"><SearchIcon /></span>
