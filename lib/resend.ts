@@ -2119,6 +2119,7 @@ export interface InvoiceEmailData {
   status: string;
   paymentMethod?: string | null;
   notes?: string | null;
+  warranty?: string | null;
 }
 
 /**
@@ -2128,6 +2129,7 @@ import fs from "fs";
 import path from "path";
 import { generateInvoicePdfBuffer } from "@/lib/invoice-pdf";
 import { generateEpcQrBuffer, generateEpcQrDataUrl, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
+import { parseWarrantyFromNotes } from "@/lib/warranty";
 
 export async function sendInvoiceEmail(data: InvoiceEmailData) {
   if (!data.customerEmail) return { success: false, error: "Geen e-mailadres" };
@@ -2154,6 +2156,9 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
 
   const isPaid = data.status === "PAID";
   const isOverschrijving = !data.paymentMethod || data.paymentMethod.toLowerCase().includes("overschrijving");
+
+  const { warranty: parsedWarranty, notes: cleanNotes } = parseWarrantyFromNotes(data.notes);
+  const effectiveWarranty = (data.warranty || parsedWarranty || "").trim();
 
   // Read logo for inline CID embedding (guaranteed display in email clients)
   let logoBuffer: Buffer | null = null;
@@ -2342,6 +2347,26 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
                   : ""
               }
 
+              ${
+                effectiveWarranty
+                  ? `
+              <!-- Garantiebewijs box in email -->
+              <div style="margin:24px 0 0;padding:16px 20px;background:rgba(16,185,129,0.08);border:1.5px solid rgba(16,185,129,0.3);border-radius:12px;text-align:left;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <span style="font-size:16px;">🛡️</span>
+                  <strong style="color:#10b981;font-size:13px;letter-spacing:0.02em;">OFFICIEEL GARANTIEBEWIJS</strong>
+                </div>
+                <p style="margin:0;color:#e2e8f0;font-size:13px;line-height:1.5;">
+                  ${escapeHtml(effectiveWarranty)}
+                </p>
+                <p style="margin:4px 0 0;color:rgba(255,255,255,0.45);font-size:11px;">
+                  Gedekt door Gent Bandenservice BV te Dendermondsesteenweg 428, 9040 Gent. Bewaar deze factuur als garantiebewijs.
+                </p>
+              </div>
+              `
+                  : ""
+              }
+
               <!-- Call to Action Button -->
               <div style="text-align:center;margin-top:32px;padding-top:24px;border-top:1px dashed rgba(255,255,255,0.08);">
                 <a href="${invoiceUrl}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#016eb9,#0284c7);color:#ffffff;font-size:14px;font-weight:800;padding:14px 28px;border-radius:10px;text-decoration:none;box-shadow:0 4px 14px rgba(1,110,185,0.4);">
@@ -2397,7 +2422,8 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
       subtotal: data.subtotal,
       vatAmount: data.vatAmount,
       totalAmount: data.totalAmount,
-      notes: data.notes,
+      notes: cleanNotes || data.notes,
+      warranty: effectiveWarranty,
     });
   } catch (pdfErr: any) {
     console.error("[Resend] PDF generation failed:", pdfErr);

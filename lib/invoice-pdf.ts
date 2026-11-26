@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { generateEpcQrBuffer, DEFAULT_COMPANY_IBAN } from "@/lib/invoice-qr";
+import { parseWarrantyFromNotes } from "@/lib/warranty";
 import path from "path";
 import fs from "fs";
 
@@ -28,6 +29,7 @@ export interface InvoicePdfData {
   vatAmount: number;
   totalAmount: number;
   notes?: string | null;
+  warranty?: string | null;
 }
 
 export async function generateInvoicePdfBuffer(data: InvoicePdfData): Promise<Buffer> {
@@ -205,10 +207,15 @@ export async function generateInvoicePdfBuffer(data: InvoicePdfData): Promise<Bu
       doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(10).text("TOTAAL:", totalsBoxX + 12, totalsY + 50);
       doc.fillColor("#016eb9").font("Helvetica-Bold").fontSize(12).text(`€${data.totalAmount.toFixed(2)}`, totalsBoxX + 100, totalsY + 48, { width: 98, align: "right" });
 
+      // Extract warranty and clean notes
+      const { warranty: parsedWarranty, notes: cleanNotes } = parseWarrantyFromNotes(data.notes);
+      const effectiveWarranty = (data.warranty || parsedWarranty || "").trim();
+
       // Notes / Payment instructions (Left of totals)
       const noteW = totalsBoxX - 55;
+      const noteH = qrBuffer ? 85 : 70;
+
       if (!isPaid) {
-        const noteH = qrBuffer ? 85 : 70;
         doc.roundedRect(40, totalsY, noteW, noteH, 6).fillAndStroke("#fffbeb", "#fde68a");
 
         if (qrBuffer) {
@@ -231,11 +238,32 @@ export async function generateInvoicePdfBuffer(data: InvoicePdfData): Promise<Bu
             { width: noteW - 20 }
           );
         }
-      } else if (data.notes) {
+      } else if (cleanNotes && !effectiveWarranty) {
         doc.roundedRect(40, totalsY, noteW, 70, 6).fillAndStroke("#f8fafc", "#e2e8f0");
         doc.fillColor("#475569").font("Helvetica-Bold").fontSize(8.5).text("OPMERKINGEN:", 50, totalsY + 8);
         doc.fillColor("#334155").font("Helvetica").fontSize(8).lineGap(2);
-        doc.text(data.notes, 50, totalsY + 22, { width: noteW - 20 });
+        doc.text(cleanNotes, 50, totalsY + 22, { width: noteW - 20 });
+      }
+
+      // ── Dedicated Warranty (Garantie) & Notes Section below totals ──
+      let sectionY = totalsY + Math.max(70, isPaid ? 70 : noteH) + 12;
+
+      if (effectiveWarranty) {
+        doc.roundedRect(40, sectionY, 515, 42, 6).fillAndStroke("#f0fdf4", "#86efac");
+        doc.fillColor("#15803d").font("Helvetica-Bold").fontSize(8.5).text("OFFICIEEL GARANTIEBEWIJS (GENT BANDENSERVICE BV)", 52, sectionY + 8);
+        doc.fillColor("#166534").font("Helvetica").fontSize(8).lineGap(1.5).text(
+          `${effectiveWarranty} · Vakkundige montage en karkasdekking door Gent Bandenservice BV te Sint-Amandsberg. Bewaar deze factuur als officieel garantiebewijs.`,
+          52,
+          sectionY + 22,
+          { width: 490 }
+        );
+        sectionY += 50;
+      }
+
+      if (cleanNotes && (!isPaid || effectiveWarranty)) {
+        doc.roundedRect(40, sectionY, 515, 36, 6).fillAndStroke("#f8fafc", "#e2e8f0");
+        doc.fillColor("#475569").font("Helvetica-Bold").fontSize(8).text("OPMERKINGEN / EXTRA INFO:", 50, sectionY + 7);
+        doc.fillColor("#334155").font("Helvetica").fontSize(7.5).lineGap(1.5).text(cleanNotes, 50, sectionY + 19, { width: 490 });
       }
 
       // ── Footer ──

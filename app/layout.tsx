@@ -157,13 +157,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
 
-        <Suspense fallback={<div style={{ height: 72 }} />}>
-          <Header />
-        </Suspense>
+        <Header />
         <main>{children}</main>
-        <Suspense fallback={null}>
-          <Footer />
-        </Suspense>
+        <Footer />
         <CartDrawer />
 
         {/* Cookie-based activity tracking */}
