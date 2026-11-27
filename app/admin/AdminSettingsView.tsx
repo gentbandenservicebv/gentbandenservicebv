@@ -2,13 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import { SiteSettings, DEFAULT_SITE_SETTINGS } from "@/lib/settings-types";
+import { getMontagePriceForTyre, extractTyreDiameter } from "@/lib/montage";
 
 export default function AdminSettingsView() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<"ALL" | "DELIVERY" | "SHOP" | "INVOICE" | "COMPANY">("ALL");
+  const [activeSection, setActiveSection] = useState<"ALL" | "DELIVERY" | "MONTAGE" | "SHOP" | "INVOICE" | "COMPANY">("ALL");
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Live calculator state
+  const [calcSize, setCalcSize] = useState("205/55 R16");
+  const [calcRunflat, setCalcRunflat] = useState(false);
+  const [calcQty, setCalcQty] = useState(4);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -183,6 +189,20 @@ export default function AdminSettingsView() {
             icon: (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+            ),
+          },
+          {
+            id: "MONTAGE",
+            label: "Montage Tarieven",
+            icon: (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
               </svg>
             ),
           },
@@ -400,6 +420,408 @@ export default function AdminSettingsView() {
                   placeholder="Bijv. Snelle levering in heel België & Nederland • Track & Trace via e-mail"
                   className="admin-settings-input"
                 />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTION: MONTAGE TARIEVEN PER BANDENMAAT ───── */}
+        {(activeSection === "ALL" || activeSection === "MONTAGE") && (
+          <div className="admin-settings-card">
+            {/* Header */}
+            <div className="admin-settings-card__header">
+              <div className="admin-settings-card__icon" style={{ background: "rgba(245, 158, 11, 0.12)", color: "#f59e0b" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="4" />
+                  <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+                  <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+                  <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+                  <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <h2 className="admin-settings-card__title">
+                      Montage Tarieven per Bandenmaat
+                    </h2>
+                    <p className="admin-settings-card__sub">
+                      Stel montagetarieven (inclusief balanceren &amp; nieuw ventiel) in per velgmaat (inch) en eventuele runflat-toeslag.
+                    </p>
+                  </div>
+                  {/* Preset Quick Actions */}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--sm admin-btn--outline"
+                      onClick={() => {
+                        setSettings((prev) => ({
+                          ...prev,
+                          montage_price_13_15: "17.50",
+                          montage_price_16: "19.99",
+                          montage_price_17: "21.50",
+                          montage_price_18: "22.50",
+                          montage_price_19: "25.00",
+                          montage_price_20: "27.50",
+                          montage_price_21: "30.00",
+                          montage_price_22_plus: "35.00",
+                          montage_default_price: "19.99",
+                          montage_runflat_surcharge: "0.00",
+                        }));
+                      }}
+                      title="Herstel aanbevolen gestaffelde tarieven per inchmaat"
+                      style={{ fontSize: "0.78rem" }}
+                    >
+                      ⚡ Staffel toepassen
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--sm admin-btn--outline"
+                      onClick={() => {
+                        setSettings((prev) => ({
+                          ...prev,
+                          montage_price_13_15: "19.99",
+                          montage_price_16: "19.99",
+                          montage_price_17: "19.99",
+                          montage_price_18: "19.99",
+                          montage_price_19: "19.99",
+                          montage_price_20: "19.99",
+                          montage_price_21: "19.99",
+                          montage_price_22_plus: "19.99",
+                          montage_default_price: "19.99",
+                        }));
+                      }}
+                      title="Zet alle maten op een vaste prijs van €19.99"
+                      style={{ fontSize: "0.78rem" }}
+                    >
+                      €19.99 voor alle maten
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Visual Overview of Current Rates */}
+            <div className="admin-settings-preview" style={{ background: "rgba(245, 158, 11, 0.05)", borderColor: "rgba(245, 158, 11, 0.2)" }}>
+              <div style={{ width: "100%" }}>
+                <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 1, color: "#f59e0b", fontWeight: 800 }}>
+                  Actieve Montage Staffels (per band incl. balanceren &amp; ventiel)
+                </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  {[
+                    { label: "13\"–15\"", price: settings.montage_price_13_15 },
+                    { label: "16\"", price: settings.montage_price_16 },
+                    { label: "17\"", price: settings.montage_price_17 },
+                    { label: "18\"", price: settings.montage_price_18 },
+                    { label: "19\"", price: settings.montage_price_19 },
+                    { label: "20\"", price: settings.montage_price_20 },
+                    { label: "21\"", price: settings.montage_price_21 },
+                    { label: "22\"+", price: settings.montage_price_22_plus },
+                  ].map((tier) => (
+                    <div
+                      key={tier.label}
+                      style={{
+                        padding: "6px 12px",
+                        background: "rgba(255,255,255,0.04)",
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, color: "#f59e0b", fontSize: "0.85rem" }}>{tier.label}:</span>
+                      <span style={{ fontWeight: 700, color: "#fff", fontSize: "0.9rem" }}>€{parseFloat(tier.price || "19.99").toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {parseFloat(settings.montage_runflat_surcharge || "0") > 0 && (
+                    <div
+                      style={{
+                        padding: "6px 12px",
+                        background: "rgba(239, 68, 68, 0.1)",
+                        borderRadius: 8,
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        color: "#f87171",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Runflat: +€{parseFloat(settings.montage_runflat_surcharge).toFixed(2)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Price Inputs Grid */}
+            <div className="admin-settings-grid">
+              {/* 13-15 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  13&quot; – 15&quot; inch (bijv. 175/65 R14, 195/65 R15)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_13_15}
+                    onChange={(e) => handleChange("montage_price_13_15", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Kleine maten (stadsauto&apos;s en compacte wagens).</span>
+              </div>
+
+              {/* 16 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  16&quot; inch (bijv. 205/55 R16, 215/60 R16)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_16}
+                    onChange={(e) => handleChange("montage_price_16", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Meest voorkomende standaard personenwagenmaat.</span>
+              </div>
+
+              {/* 17 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  17&quot; inch (bijv. 225/45 R17, 215/55 R17)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_17}
+                    onChange={(e) => handleChange("montage_price_17", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Middenklasse en lichte sportieve maten.</span>
+              </div>
+
+              {/* 18 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  18&quot; inch (bijv. 225/40 R18, 245/45 R18)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_18}
+                    onChange={(e) => handleChange("montage_price_18", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Populaire sportmaat en lichte SUV&apos;s.</span>
+              </div>
+
+              {/* 19 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  19&quot; inch (bijv. 235/35 R19, 255/35 R19)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_19}
+                    onChange={(e) => handleChange("montage_price_19", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Grote sportvelgen en lage profielen.</span>
+              </div>
+
+              {/* 20 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  20&quot; inch (bijv. 255/40 R20, 275/35 R20)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_20}
+                    onChange={(e) => handleChange("montage_price_20", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Grote SUV&apos;s, Tesla Model X/Y en luxe sedans.</span>
+              </div>
+
+              {/* 21 Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  21&quot; inch (bijv. 275/40 R21, 295/35 R21)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_21}
+                    onChange={(e) => handleChange("montage_price_21", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Extra grote premium en performance wielen.</span>
+              </div>
+
+              {/* 22+ Inch */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  22&quot; inch en groter (bijv. 285/35 R22, 23&quot;, 24&quot;)
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_price_22_plus}
+                    onChange={(e) => handleChange("montage_price_22_plus", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Maximale bandenmaten (zware montage machines vereist).</span>
+              </div>
+
+              {/* Runflat Toeslag */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  Runflat toeslag per band
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">+€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_runflat_surcharge}
+                    onChange={(e) => handleChange("montage_runflat_surcharge", e.target.value)}
+                    placeholder="0.00"
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Extra toeslag per band indien de band Runflat (RFT/ROF/SSR) is (0 = geen toeslag).</span>
+              </div>
+
+              {/* Default / Fallback Price */}
+              <div className="admin-settings-field">
+                <label className="admin-settings-label">
+                  Standaard / Fallback montageprijs
+                </label>
+                <div className="admin-settings-input-wrap">
+                  <span className="admin-settings-prefix">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.montage_default_price}
+                    onChange={(e) => handleChange("montage_default_price", e.target.value)}
+                    className="admin-settings-input"
+                  />
+                </div>
+                <span className="admin-settings-hint">Wordt gebruikt als de bandenmaat onbekend of niet herkenbaar is.</span>
+              </div>
+            </div>
+
+            {/* Interactive Live Calculator / Tester */}
+            <div style={{ marginTop: 24, padding: "18px 20px", background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(245, 158, 11, 0.3)", borderRadius: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: "1rem" }}>🧮</span>
+                <span style={{ fontWeight: 700, fontSize: "0.92rem", color: "#f59e0b" }}>
+                  Live Tarief Calculator (Test een bandenmaat)
+                </span>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" }}>
+                <div style={{ flex: "1 1 180px" }}>
+                  <label style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.6)", display: "block", marginBottom: 4 }}>
+                    Test bandenmaat
+                  </label>
+                  <input
+                    type="text"
+                    value={calcSize}
+                    onChange={(e) => setCalcSize(e.target.value)}
+                    placeholder="Bijv. 225/45 R17"
+                    className="admin-settings-input"
+                    style={{ padding: "8px 12px", fontSize: "0.9rem" }}
+                  />
+                </div>
+                <div style={{ flex: "0 0 110px" }}>
+                  <label style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.6)", display: "block", marginBottom: 4 }}>
+                    Aantal banden
+                  </label>
+                  <select
+                    value={calcQty}
+                    onChange={(e) => setCalcQty(parseInt(e.target.value, 10))}
+                    className="admin-settings-input"
+                    style={{ padding: "8px 12px", fontSize: "0.9rem" }}
+                  >
+                    <option value={1}>1 band</option>
+                    <option value={2}>2 banden</option>
+                    <option value={4}>4 banden</option>
+                  </select>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 18 }}>
+                  <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer", color: "rgba(255,255,255,0.8)" }}>
+                    <input
+                      type="checkbox"
+                      checked={calcRunflat}
+                      onChange={(e) => setCalcRunflat(e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: "#f59e0b" }}
+                    />
+                    Runflat band
+                  </label>
+                </div>
+                <div style={{ marginLeft: "auto", textAlign: "right", minWidth: 160 }}>
+                  <span style={{ fontSize: "0.72rem", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", display: "block" }}>
+                    Berekende Montageprijs
+                  </span>
+                  {(() => {
+                    const unitP = getMontagePriceForTyre(
+                      { size: calcSize, runflat: calcRunflat },
+                      settings
+                    );
+                    const totalP = (unitP * calcQty).toFixed(2);
+                    const d = extractTyreDiameter(calcSize);
+                    return (
+                      <div>
+                        <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#10b981" }}>
+                          €{totalP}
+                        </span>
+                        <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.6)", display: "block" }}>
+                          ({calcQty}× €{unitP.toFixed(2)} / band · {d ? `${d} inch` : "standaard"})
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           </div>

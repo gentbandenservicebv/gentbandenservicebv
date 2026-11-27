@@ -22,6 +22,19 @@ export interface SiteSettings {
   contact_email: string;
   contact_address: string;
   opening_hours: string;
+
+  // Montage Tarieven per bandenmaat
+  montage_default_price: string;
+  montage_price_13_15: string;
+  montage_price_16: string;
+  montage_price_17: string;
+  montage_price_18: string;
+  montage_price_19: string;
+  montage_price_20: string;
+  montage_price_21: string;
+  montage_price_22_plus: string;
+  montage_runflat_surcharge: string;
+  montage_custom_rates_json: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -48,4 +61,17 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contact_email: "info@gentbandenservice.be",
   contact_address: "Dendermondsesteenweg 428, 9040 Gent",
   opening_hours: "Maandag - Zat: 09:00 - 18:00",
+
+  // Montage Tarieven per bandenmaat (standaard tarieven per band incl. balanceren)
+  montage_default_price: "19.99",
+  montage_price_13_15: "17.50",
+  montage_price_16: "19.99",
+  montage_price_17: "21.50",
+  montage_price_18: "22.50",
+  montage_price_19: "25.00",
+  montage_price_20: "27.50",
+  montage_price_21: "30.00",
+  montage_price_22_plus: "35.00",
+  montage_runflat_surcharge: "0.00",
+  montage_custom_rates_json: "{}",
 };

@@ -35,6 +35,17 @@ export async function GET(req: NextRequest) {
       contact_email: settings.contact_email,
       contact_address: settings.contact_address,
       opening_hours: settings.opening_hours,
+      montage_default_price: settings.montage_default_price,
+      montage_price_13_15: settings.montage_price_13_15,
+      montage_price_16: settings.montage_price_16,
+      montage_price_17: settings.montage_price_17,
+      montage_price_18: settings.montage_price_18,
+      montage_price_19: settings.montage_price_19,
+      montage_price_20: settings.montage_price_20,
+      montage_price_21: settings.montage_price_21,
+      montage_price_22_plus: settings.montage_price_22_plus,
+      montage_runflat_surcharge: settings.montage_runflat_surcharge,
+      montage_custom_rates_json: settings.montage_custom_rates_json,
     });
   }
 

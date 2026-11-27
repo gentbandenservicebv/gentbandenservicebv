@@ -5,6 +5,8 @@ import {
   sendAppointmentConfirmation,
   sendAppointmentNotification,
 } from "@/lib/resend";
+import { getSiteSettings } from "@/lib/settings";
+import { getMontagePriceForTyre, calculateCartMontage } from "@/lib/montage";
 
 // Process-level in-flight mutex keyed by Stripe session ID to prevent race condition
 // duplicates when Stripe webhook and user redirect hit the server simultaneously.
@@ -136,7 +138,7 @@ async function doFulfillStripeSession(session: Stripe.Checkout.Session) {
       continue;
     }
 
-    const itemPrice = it.price ?? tyre.price;
+    const itemPrice = tyre.price;
     tyreTotal += itemPrice * it.quantity;
     totalTyreCount += it.quantity;
 
@@ -151,7 +153,25 @@ async function doFulfillStripeSession(session: Stripe.Checkout.Session) {
   }
 
   const requestedQty = parseInt(meta.totalTyres || "4", 10) || (totalTyreCount > 0 ? totalTyreCount : 4);
-  const montageTotal = withMontage ? 19.99 * (totalTyreCount > 0 ? totalTyreCount : requestedQty) : 0;
+
+  // Dynamic montage total: sum per-tyre price based on the actual tyre size from DB
+  let montageTotal = 0;
+  if (withMontage) {
+    let settings = null;
+    try {
+      settings = await getSiteSettings();
+    } catch {}
+    for (const item of orderItemsData) {
+      const unitPrice = getMontagePriceForTyre({ size: item.size }, settings);
+      montageTotal += unitPrice * item.quantity;
+    }
+    // Fallback: if no items (pure service appointment), use default price × requestedQty
+    if (orderItemsData.length === 0) {
+      const defaultPrice = settings ? parseFloat(settings.montage_default_price) || 19.99 : 19.99;
+      montageTotal = defaultPrice * requestedQty;
+    }
+    montageTotal = Math.round(montageTotal * 100) / 100;
+  }
   const calculatedTotal = tyreTotal + montageTotal;
   const finalTotal = session.amount_total ? session.amount_total / 100 : calculatedTotal;
 
@@ -273,7 +293,7 @@ async function doFulfillStripeSession(session: Stripe.Checkout.Session) {
                 model: "Montage & Balancering (Werkplaats)",
                 size: `${requestedQty} banden`,
                 quantity: requestedQty,
-                price: 19.99,
+                price: withMontage ? (montageTotal / requestedQty) : 0,
               },
             ],
         invoiceUrl,

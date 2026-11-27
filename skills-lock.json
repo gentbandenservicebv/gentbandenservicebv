@@ -13,6 +13,13 @@
       "skillPath": "skills/emil-design-eng/SKILL.md",
       "computedHash": "51f2537e04d15911b41d78e2de24c36a0e26d41beae15e82a954fe5496a5eda9"
     },
+    "local-seo": {
+      "source": "every-app/open-seo",
+      "ref": "main",
+      "sourceType": "github",
+      "skillPath": "plugins/openseo/skills/local-seo/SKILL.md",
+      "computedHash": "38505376fa19535b5d95706ed23306f07c14f447cc0667eb03da0c4f986b24e3"
+    },
     "prisma-8": {
       "source": "prisma/orm",
       "sourceType": "github",

@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getSiteSettings } from "@/lib/settings";
-
-const MONTAGE_PRICE_CENTS = 1999; // €19.99 per tyre
+import { getMontagePriceForTyre } from "@/lib/montage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -92,6 +91,9 @@ export async function POST(req: NextRequest) {
     let totalTyreCount = 0;
     const fulfillmentItems: Array<{ tyreId: string; quantity: number; price: number }> = [];
 
+    // Load site settings once (needed for montage pricing + shipping)
+    const siteSettings = await getSiteSettings();
+
     for (const item of itemsToProcess) {
       const tyre = tyresMap.get(item.tyreId)!;
       totalTyreCount += item.quantity;
@@ -118,23 +120,48 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Add montage & balancing line if requested (+€19.99 per tyre)
+    // Add montage & balancing — dynamic per-tyre price based on rim diameter from settings
     if (withMontage) {
-      lineItems.push({
-        price_data: {
-          currency: "eur",
-          product_data: {
-            name: "Montage & Balancering",
-            description: `Vakkundige montage en balancering ter plaatse in onze werkplaats (Dendermondsesteenweg 428, 9040 Gent) — ${totalTyreCount} band${totalTyreCount > 1 ? "en" : ""}`,
+      // Group by per-tyre montage price to allow different line items if sizes differ
+      const montageByPrice: Map<number, { count: number; label: string }> = new Map();
+
+      for (const item of itemsToProcess) {
+        const tyre = tyresMap.get(item.tyreId)!;
+        const unitPriceCents = Math.round(
+          getMontagePriceForTyre(
+            { size: tyre.size, diameter: tyre.diameter ?? null, runflat: tyre.runflat },
+            siteSettings
+          ) * 100
+        );
+
+        const existing = montageByPrice.get(unitPriceCents);
+        if (existing) {
+          existing.count += item.quantity;
+        } else {
+          const inchLabel = tyre.diameter ? `${tyre.diameter}"` : tyre.size || "";
+          montageByPrice.set(unitPriceCents, {
+            count: item.quantity,
+            label: `Montage & Balancering${inchLabel ? ` (${inchLabel})` : ""}`,
+          });
+        }
+      }
+
+      for (const [unitAmountCents, { count, label }] of montageByPrice.entries()) {
+        lineItems.push({
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: label,
+              description: `Vakkundige montage en balancering ter plaatse in onze werkplaats (Dendermondsesteenweg 428, 9040 Gent)`,
+            },
+            unit_amount: unitAmountCents,
           },
-          unit_amount: MONTAGE_PRICE_CENTS,
-        },
-        quantity: totalTyreCount,
-      });
+          quantity: count,
+        });
+      }
     }
 
-    // Shipping fee rule: Free shipping from 2 tyres, 1 tyre customer pays shipping
-    const siteSettings = await getSiteSettings();
+    // Shipping fee rule: Free shipping from N tyres; otherwise server setting cost
     const minTyresForFreeShipping = parseInt(siteSettings.free_shipping_min_tyres, 10) || 2;
     const singleTyreShippingCost = parseFloat(siteSettings.shipping_cost) || 9.95;
     const applyShippingFee = !withMontage && totalTyreCount > 0 && totalTyreCount < minTyresForFreeShipping && singleTyreShippingCost > 0;
