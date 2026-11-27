@@ -3,8 +3,8 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-const MONTAGE_PRICE_CENTS = 1999; // €19.99 per tyre
+import { getSiteSettings } from "@/lib/settings";
+import { getMontagePriceForTyre } from "@/lib/montage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,7 +51,11 @@ export async function POST(req: NextRequest) {
     const fulfillmentItems: Array<{ tyreId: string; quantity: number; price: number }> = [];
     const qtyNum = parseInt(String(quantity), 10) || 4;
 
+    // Load site settings for dynamic montage pricing
+    const siteSettings = await getSiteSettings();
+
     // 1. If customer is buying tyres from stock
+    let dbTyreForMontage: { size?: string | null; diameter?: number | null; runflat?: boolean } = {};
     if (tyreId && payTires) {
       const dbTyre = await prisma.tyre.findUnique({
         where: { id: tyreId, active: true },
@@ -90,18 +94,23 @@ export async function POST(req: NextRequest) {
         quantity: qtyNum,
         price: dbTyre.price,
       });
+
+      dbTyreForMontage = { size: dbTyre.size, diameter: dbTyre.diameter ?? null, runflat: dbTyre.runflat };
     }
 
-    // 2. Montage & balancering service line item
+    // 2. Montage & balancering — dynamic price per tyre size from admin settings
     if (withMontage) {
+      const montageUnitPrice = getMontagePriceForTyre(dbTyreForMontage, siteSettings);
+      const montageUnitCents = Math.round(montageUnitPrice * 100);
+      const inchLabel = dbTyreForMontage.diameter ? ` (${dbTyreForMontage.diameter}")` : "";
       lineItems.push({
         price_data: {
           currency: "eur",
           product_data: {
-            name: "Montage & Balancering (Werkplaats Gent)",
+            name: `Montage & Balancering${inchLabel} (Werkplaats Gent)`,
             description: `Montage, balanceren en nieuwe ventielen voor ${qtyNum} banden bij Gent Bandenservice BV`,
           },
-          unit_amount: MONTAGE_PRICE_CENTS,
+          unit_amount: montageUnitCents,
         },
         quantity: qtyNum,
       });

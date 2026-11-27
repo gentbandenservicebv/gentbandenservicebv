@@ -17,7 +17,62 @@ import { useSession, signOut } from "@/lib/auth-client";
 import StripeAddressAutocomplete from "./StripeAddressAutocomplete";
 import "./checkout.css";
 
-const MONTAGE_PRICE = 19.99; // €19.99 per tyre
+// Montage settings loaded from admin (also computed server-side, this is display-only)
+interface MontageSettings {
+  default_price: number;
+  price_13_15: number;
+  price_16: number;
+  price_17: number;
+  price_18: number;
+  price_19: number;
+  price_20: number;
+  price_21: number;
+  price_22_plus: number;
+  runflat_surcharge: number;
+}
+
+const DEFAULT_MONTAGE: MontageSettings = {
+  default_price: 19.99,
+  price_13_15: 17.50,
+  price_16: 19.99,
+  price_17: 21.50,
+  price_18: 22.50,
+  price_19: 25.00,
+  price_20: 27.50,
+  price_21: 30.00,
+  price_22_plus: 35.00,
+  runflat_surcharge: 0,
+};
+
+function extractDiameter(sizeStr?: string | null): number | null {
+  if (!sizeStr) return null;
+  const match = sizeStr.toUpperCase().match(/(?:R|ZR|-|\/|\s)\s*(\d{2})(?:[C\s]|$)/);
+  if (match) {
+    const val = parseInt(match[1], 10);
+    if (val >= 10 && val <= 32) return val;
+  }
+  const m2 = sizeStr.match(/\d{3}\/\d{2}\s*(?:R|ZR)?\s*(\d{2})/i);
+  if (m2) {
+    const val = parseInt(m2[1], 10);
+    if (val >= 10 && val <= 32) return val;
+  }
+  return null;
+}
+
+function getMontagePrice(item: { size?: string; condition?: string }, settings: MontageSettings): number {
+  const d = extractDiameter(item.size);
+  const isRunflat = false; // cart items don't expose runflat; server always verifies
+  const surcharge = isRunflat ? (settings.runflat_surcharge || 0) : 0;
+  if (!d) return settings.default_price + surcharge;
+  if (d <= 15) return settings.price_13_15 + surcharge;
+  if (d === 16) return settings.price_16 + surcharge;
+  if (d === 17) return settings.price_17 + surcharge;
+  if (d === 18) return settings.price_18 + surcharge;
+  if (d === 19) return settings.price_19 + surcharge;
+  if (d === 20) return settings.price_20 + surcharge;
+  if (d === 21) return settings.price_21 + surcharge;
+  return settings.price_22_plus + surcharge;
+}
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
@@ -46,6 +101,9 @@ function CheckoutContent() {
     cost: 9.95,
   });
 
+  // Dynamic montage pricing from admin settings
+  const [montageSettings, setMontageSettings] = useState<MontageSettings>(DEFAULT_MONTAGE);
+
   useEffect(() => {
     fetch("/api/settings?public=1")
       .then((r) => (r.ok ? r.json() : null))
@@ -54,6 +112,18 @@ function CheckoutContent() {
           setShippingSettings({
             minTyres: parseInt(d.free_shipping_min_tyres, 10) || 2,
             cost: parseFloat(d.shipping_cost) || 9.95,
+          });
+          setMontageSettings({
+            default_price: parseFloat(d.montage_default_price) || 19.99,
+            price_13_15: parseFloat(d.montage_price_13_15) || 17.50,
+            price_16: parseFloat(d.montage_price_16) || 19.99,
+            price_17: parseFloat(d.montage_price_17) || 21.50,
+            price_18: parseFloat(d.montage_price_18) || 22.50,
+            price_19: parseFloat(d.montage_price_19) || 25.00,
+            price_20: parseFloat(d.montage_price_20) || 27.50,
+            price_21: parseFloat(d.montage_price_21) || 30.00,
+            price_22_plus: parseFloat(d.montage_price_22_plus) || 35.00,
+            runflat_surcharge: parseFloat(d.montage_runflat_surcharge) || 0,
           });
         }
       })
@@ -156,7 +226,17 @@ function CheckoutContent() {
 
   const totalCount = cart.reduce((acc, it) => acc + it.quantity, 0);
   const tyreSubtotal = cart.reduce((acc, it) => acc + it.price * it.quantity, 0);
-  const montageSubtotal = withMontage ? MONTAGE_PRICE * totalCount : 0;
+
+  // Per-tyre montage price based on size from admin settings (display only — server always recalculates)
+  const montageSubtotal = withMontage
+    ? cart.reduce((acc, it) => acc + getMontagePrice(it, montageSettings) * it.quantity, 0)
+    : 0;
+  const montageUnitLabel = withMontage && cart.length > 0
+    ? (() => {
+        const prices = [...new Set(cart.map((it) => getMontagePrice(it, montageSettings).toFixed(2)))];
+        return prices.length === 1 ? `€${prices[0]}/band` : "variabel/band";
+      })()
+    : "";
   const isFreeShipping = totalCount >= shippingSettings.minTyres;
   const shippingFee = (!withMontage && totalCount > 0 && !isFreeShipping) ? shippingSettings.cost : 0;
   const grandTotal = tyreSubtotal + montageSubtotal + shippingFee;
@@ -729,7 +809,7 @@ function CheckoutContent() {
 
                   {withMontage ? (
                     <div className="checkout-breakdown-row checkout-breakdown-row--highlight">
-                      <span>✓ {totalCount}× Montage &amp; Balancering</span>
+                      <span>✓ {totalCount}× Montage &amp; Balancering{montageUnitLabel ? ` (${montageUnitLabel})` : ""}</span>
                       <span>€{montageSubtotal.toFixed(2)}</span>
                     </div>
                   ) : (

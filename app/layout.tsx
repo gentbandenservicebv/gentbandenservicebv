@@ -131,6 +131,7 @@ const localBusinessSchema = {
   sameAs: [
     "https://www.facebook.com/GentBandenservice",
     "https://www.instagram.com/gentbandenservice",
+    "https://www.tiktok.com/@gentbandenservice"
   ],
   hasOfferCatalog: {
     "@type": "OfferCatalog",

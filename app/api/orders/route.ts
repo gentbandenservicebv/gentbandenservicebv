@@ -2,10 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getSiteSettings } from "@/lib/settings";
+import { calculateCartMontage } from "@/lib/montage";
 
-// POST /api/orders - place an order (guest or authenticated)
+// POST /api/orders - manual order creation (admin only; customer orders go through Stripe /api/checkout)
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return NextResponse.json(
+      { error: "Niet geautoriseerd. Klanten bestellen via de online kassa." },
+      { status: 401 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  if (user?.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Alleen beheerders kunnen handmatig bestellingen invoeren. Klanten bestellen via de checkout." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
 
   // Validate items
@@ -23,23 +44,69 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Eén of meer banden niet beschikbaar" }, { status: 400 });
   }
 
-  // Build order items and check stock
-  const orderItems = body.items.map((item: { tyreId: string; quantity: number }) => {
-    const tyre = tyres.find((t) => t.id === item.tyreId)!;
-    if (tyre.stock < item.quantity) {
-      throw new Error(`Onvoldoende voorraad voor ${tyre.brand} ${tyre.model}`);
-    }
-    return {
-      tyreId: item.tyreId,
-      quantity: item.quantity,
-      price: tyre.price,
-    };
-  });
+  const tyresMap = new Map(tyres.map((t) => [t.id, t]));
 
-  const totalAmount = orderItems.reduce(
-    (sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity,
-    0
-  );
+  // Build order items and check stock authoritatively from DB
+  let totalTyres = 0;
+  const orderItems: Array<{ tyreId: string; quantity: number; price: number }> = [];
+
+  for (const item of body.items as Array<{ tyreId: string; quantity: number }>) {
+    const tyre = tyresMap.get(item.tyreId);
+    if (!tyre) continue;
+    const qty = Math.max(1, parseInt(String(item.quantity), 10) || 1);
+    if (tyre.stock < qty) {
+      return NextResponse.json(
+        { error: `Onvoldoende voorraad voor ${tyre.brand} ${tyre.model}. Slechts ${tyre.stock} beschikbaar.` },
+        { status: 400 }
+      );
+    }
+    totalTyres += qty;
+    orderItems.push({
+      tyreId: tyre.id,
+      quantity: qty,
+      price: tyre.price, // Always authoritative DB price
+    });
+  }
+
+  const isMontage = body.serviceType === "MONTAGE" || !!body.withMontage;
+
+  // Validate secondhand delivery restriction
+  const hasSecondhand = orderItems.some((item) => tyresMap.get(item.tyreId)?.condition === "USED");
+  if (hasSecondhand && !isMontage) {
+    return NextResponse.json(
+      { error: "Tweedehands banden kunnen niet verzonden worden. Kies voor montage of afhaling in de werkplaats." },
+      { status: 400 }
+    );
+  }
+
+  const tyresTotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // Dynamic montage total per tyre size from admin settings
+  const siteSettings = await getSiteSettings();
+  const montageResult = isMontage
+    ? calculateCartMontage(
+        orderItems.map((oi) => {
+          const tyre = tyresMap.get(oi.tyreId);
+          return {
+            tyreId: oi.tyreId,
+            size: tyre?.size ?? null,
+            diameter: tyre?.diameter ?? null,
+            runflat: tyre?.runflat ?? false,
+            quantity: oi.quantity,
+          };
+        }),
+        siteSettings
+      )
+    : { total: 0, totalTyres: 0 };
+  const montageTotal = montageResult.total;
+  const minTyresForFreeShipping = parseInt(siteSettings.free_shipping_min_tyres, 10) || 2;
+  const singleTyreShippingCost = parseFloat(siteSettings.shipping_cost) || 9.95;
+  const shippingTotal =
+    !isMontage && totalTyres > 0 && totalTyres < minTyresForFreeShipping && singleTyreShippingCost > 0
+      ? singleTyreShippingCost
+      : 0;
+
+  const totalAmount = tyresTotal + montageTotal + shippingTotal;
 
   // Create order + update stock in a transaction
   const order = await prisma.$transaction(async (tx) => {
@@ -63,7 +130,7 @@ export async function POST(req: NextRequest) {
         guestName: body.guestName ?? null,
         guestEmail: body.guestEmail ?? null,
         guestPhone: body.guestPhone ?? null,
-        serviceType: body.serviceType ?? (body.withMontage ? "MONTAGE" : "DELIVERY"),
+        serviceType: isMontage ? "MONTAGE" : "DELIVERY",
         deliveryStreet: body.deliveryStreet ?? null,
         deliveryPostalCode: body.deliveryPostalCode ?? null,
         deliveryCity: body.deliveryCity ?? null,
@@ -79,7 +146,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Reduce stock
-    for (const item of body.items as { tyreId: string; quantity: number }[]) {
+    for (const item of orderItems) {
       await tx.tyre.update({
         where: { id: item.tyreId },
         data: { stock: { decrement: item.quantity } },
