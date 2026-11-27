@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css";
 import "@uploadthing/react/styles.css";
 import Header from "./components/Header";
@@ -171,6 +171,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <CookieConsent />
         </Suspense>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
